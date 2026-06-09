@@ -2,109 +2,121 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>بازی ضرب‌المثل‌های ایموجی</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>بازی ایموجی‌ها</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Eitaa Official WebApp SDK -->
+    <!-- Eitaa SDK -->
     <script src="https://developer.eitaa.com/eitaa-web-app.js"></script>
 </head>
-<body data-theme="light">
-    <div id="app">
-        <!-- Header: Stats & Progress -->
-        <header class="glass-header">
-            <div class="header-left">
-                <span class="level-badge" aria-label="مرحله فعلی">مرحله <span id="ui-level">1</span></span>
-            </div>
-            <div class="header-center">
-                <div class="progress-bar">
-                    <div id="ui-progress-fill" class="progress-fill"></div>
+<body>
+    <!-- Screen 1: Home / Categories -->
+    <div id="screen-home" class="screen active">
+        <header class="ios-header">
+            <div class="user-info">
+                <div class="avatar" id="user-avatar">👤</div>
+                <div class="user-text">
+                    <span class="greeting">سلام،</span>
+                    <strong id="user-name">کاربر عزیز</strong>
                 </div>
             </div>
-            <div class="header-right">
-                <span class="score-badge" aria-label="امتیاز">⭐ <span id="ui-score">0</span></span>
+            <div class="header-actions">
+                <div class="score-pill">⭐ <span id="home-total-score">0</span></div>
+                <button id="btn-open-settings" class="icon-btn ios-btn" aria-label="تنظیمات">⚙️</button>
             </div>
         </header>
 
-        <main class="game-container">
-            <!-- Emoji Display Area -->
-            <section class="emoji-area glass-card" id="emoji-display" aria-label="ایموجی‌های مرحله">
-                <!-- Emojis will be injected here -->
-            </section>
-
-            <!-- Action Buttons (Hint, Settings, Progress) -->
-            <section class="actions-area">
-                <button id="btn-hint" class="action-btn" aria-label="راهنما">
-                    💡 راهنما (۲۰- امتیاز)
-                </button>
-                <div class="side-actions">
-                    <button id="btn-stats" class="icon-btn" aria-label="آمار">📊</button>
-                    <button id="btn-settings" class="icon-btn" aria-label="تنظیمات">⚙️</button>
+        <main class="home-scroll">
+            <!-- Medals Section -->
+            <section class="medals-section">
+                <div class="section-header">
+                    <h2>افتخارات شما</h2>
+                    <span class="badge" id="medals-count">0/0</span>
+                </div>
+                <div class="medals-scroll" id="medals-container">
+                    <!-- Medals will be injected here -->
                 </div>
             </section>
 
-            <!-- Answer Slots Area -->
-            <section class="answer-area" id="answer-slots" aria-label="محل قرارگیری حروف">
-                <!-- Slots will be injected here -->
-            </section>
-
-            <!-- Keyboard Area -->
-            <section class="keyboard-area" id="keyboard" aria-label="کیبورد حروف">
-                <!-- Keys will be injected here -->
+            <!-- Categories Section -->
+            <section class="categories-section">
+                <div class="section-header">
+                    <h2>دسته‌بندی‌ها</h2>
+                </div>
+                <div class="categories-list" id="categories-container">
+                    <!-- Categories will be injected here -->
+                </div>
             </section>
         </main>
     </div>
 
-    <!-- Level Complete Modal -->
+    <!-- Screen 2: Game -->
+    <div id="screen-game" class="screen">
+        <header class="ios-header glass-nav">
+            <button id="btn-back-home" class="icon-btn text-btn">❮ بازگشت</button>
+            <div class="nav-title" id="game-category-title">مرحله</div>
+            <div class="score-pill">⭐ <span id="game-score">0</span></div>
+        </header>
+
+        <main class="game-container">
+            <div class="level-indicator">مرحله <span id="ui-level">1</span></div>
+            
+            <section class="emoji-area ios-card" id="emoji-display"></section>
+
+            <section class="actions-area">
+                <button id="btn-hint" class="ios-btn primary-btn">
+                    💡 راهنما (۲۰- امتیاز)
+                </button>
+            </section>
+
+            <section class="answer-area" id="answer-slots"></section>
+
+            <section class="keyboard-area ios-card" id="keyboard"></section>
+        </main>
+    </div>
+
+    <!-- Success Modal -->
     <div id="modal-success" class="modal-overlay hidden">
-        <div class="modal-content glass-card bounce-in">
-            <h2>🎉 آفرین!</h2>
+        <div class="ios-modal pop-in">
+            <div class="modal-icon">🎉</div>
+            <h2>آفرین!</h2>
             <p>پاسخ شما کاملاً درست بود.</p>
             <div class="reward-box">
-                <span>امتیاز مرحله: <strong id="reward-base">+10</strong></span>
-                <span id="reward-bonus" class="bonus-text hidden">پاداش سرعت: <strong>+5</strong></span>
+                <span class="reward-row">امتیاز مرحله: <strong>+10</strong></span>
+                <span id="reward-bonus" class="reward-row bonus-text hidden">پاداش سرعت: <strong>+5</strong></span>
             </div>
-            <button id="btn-next-level" class="primary-btn">مرحله بعدی 🚀</button>
+            <button id="btn-next-level" class="ios-btn success-btn w-100">ادامه بازی 🚀</button>
         </div>
     </div>
 
     <!-- Settings Modal -->
     <div id="modal-settings" class="modal-overlay hidden">
-        <div class="modal-content glass-card slide-up">
-            <button class="close-btn" data-close="modal-settings">❌</button>
-            <h2>⚙️ تنظیمات</h2>
-            <div class="setting-item">
-                <label>صداهای بازی</label>
-                <label class="switch">
-                    <input type="checkbox" id="toggle-sound" checked>
-                    <span class="slider"></span>
-                </label>
+        <div class="ios-modal slide-up">
+            <div class="modal-header">
+                <h2>تنظیمات</h2>
+                <button class="close-btn" data-close="modal-settings">×</button>
             </div>
-            <div class="setting-item">
-                <label>حالت تاریک</label>
-                <label class="switch">
-                    <input type="checkbox" id="toggle-theme">
-                    <span class="slider"></span>
-                </label>
+            <div class="ios-list">
+                <div class="ios-list-item">
+                    <span>صداهای بازی</span>
+                    <label class="ios-switch">
+                        <input type="checkbox" id="toggle-sound" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="ios-list-item">
+                    <span>حالت تاریک</span>
+                    <label class="ios-switch">
+                        <input type="checkbox" id="toggle-theme">
+                        <span class="slider"></span>
+                    </label>
+                </div>
             </div>
-            <div class="setting-item">
-                <button id="btn-reset" class="danger-btn">پاک کردن پیشرفت</button>
-            </div>
+            <button id="btn-reset" class="ios-btn danger-btn w-100 mt-20">پاک کردن پیشرفت</button>
         </div>
     </div>
 
-    <!-- Progress Modal -->
-    <div id="modal-stats" class="modal-overlay hidden">
-        <div class="modal-content glass-card slide-up">
-            <button class="close-btn" data-close="modal-stats">❌</button>
-            <h2>📊 پیشرفت شما</h2>
-            <ul class="stats-list">
-                <li>کاربر: <strong id="stat-user">نامشخص</strong></li>
-                <li>مراحل حل شده: <strong id="stat-completed">0</strong></li>
-                <li>امتیاز کل: <strong id="stat-total-score">0</strong></li>
-                <li>درصد اتمام: <strong id="stat-percentage">0%</strong></li>
-            </ul>
-        </div>
-    </div>
+    <!-- Toast Notification for Medals -->
+    <div id="toast-container" class="toast-container"></div>
 
     <script src="app.js"></script>
 </body>

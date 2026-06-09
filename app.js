@@ -1,505 +1,472 @@
 /**
- * Emoji Proverb Game
- * Engine: Pure Vanilla JS
- * Environment: Eitaa Mini App / Web App
+ * iOS-Style Emoji Guessing Game
+ * Engine: Pure Vanilla JS (ES6+)
+ * Framework-less, highly optimized.
  */
 
-/* =========================================
-   1. Game Constants & Sound Engine
-========================================= */
 const PERSIAN_ALPHABET = "ابپتثجچحخدذرزژسشصضطظعغفقکگلمنوهی";
 const HINT_COST = 20;
 const BASE_SCORE = 10;
-const FAST_BONUS = 5;
 const FAST_TIME_LIMIT = 15; // seconds
 
-// Built-in WebAudio Synthesizer for zero-dependency sounds
+/* =========================================
+   1. Database & State Definitions
+========================================= */
+let DB = { categories: [] };
+
+const GameState = {
+    user: { id: 'guest', first_name: 'کاربر مهمان' },
+    globalScore: 0,
+    progress: {}, // { categoryId: [0, 1, 3] } -> array of completed level indices
+    unlockedMedals: [], // array of medal IDs
+    settings: { sound: true, darkMode: false },
+    // Runtime properties (Not saved)
+    activeCategory: null,
+    activeLevelIndex: 0,
+    startTime: 0,
+    slots: [],
+    keys: []
+};
+
+// Achievements System Thresholds
+const MEDALS_DB = [
+    { id: 'first_blood', name: 'اولین قدم', icon: '🥉', desc: 'اولین مرحله را حل کن', check: (state) => getTotalCompleted(state) >= 1 },
+    { id: 'proverbs_novice', name: 'ضرب‌المثل آموز', icon: '📜', desc: '۵ ضرب‌المثل را حل کن', check: (state) => (state.progress['proverbs']?.length || 0) >= 5 },
+    { id: 'proverbs_master', name: 'استاد کهن', icon: '👑', desc: '۱۵ ضرب‌المثل را حل کن', check: (state) => (state.progress['proverbs']?.length || 0) >= 15 },
+    { id: 'movie_buff', name: 'عشق سینما', icon: '🍿', desc: '۵ فیلم را حدس بزن', check: (state) => (state.progress['movies']?.length || 0) >= 5 },
+    { id: 'globetrotter', name: 'جهانگرد', icon: '🌍', desc: '۵ کشور را حدس بزن', check: (state) => (state.progress['countries']?.length || 0) >= 5 },
+    { id: 'rich', name: 'ثروتمند', icon: '💎', desc: '۵۰۰ امتیاز کسب کن', check: (state) => state.globalScore >= 500 }
+];
+
+function getTotalCompleted(state) {
+    return Object.values(state.progress).reduce((sum, arr) => sum + arr.length, 0);
+}
+
+/* =========================================
+   2. Audio Engine (Web Audio API)
+========================================= */
 const AudioEngine = (function() {
     let audioCtx = null;
-
     function init() {
-        if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        if (audioCtx.state === 'suspended') {
-            audioCtx.resume();
-        }
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
     }
-
-    function playTone(frequency, type, duration, vol = 0.1) {
+    function playTone(freq, type, dur, vol = 0.05) {
         if (!GameState.settings.sound) return;
         init();
-        const oscillator = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-        
-        oscillator.type = type;
-        oscillator.frequency.setValueAtTime(frequency, audioCtx.currentTime);
-        
-        gainNode.gain.setValueAtTime(vol, audioCtx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-        
-        oscillator.start();
-        oscillator.stop(audioCtx.currentTime + duration);
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + dur);
     }
-
     return {
-        click: () => playTone(600, 'sine', 0.1, 0.05),
-        slotClick: () => playTone(400, 'triangle', 0.1, 0.05),
-        error: () => playTone(150, 'sawtooth', 0.3, 0.1),
-        success: () => {
-            playTone(400, 'sine', 0.1, 0.1);
-            setTimeout(() => playTone(500, 'sine', 0.1, 0.1), 100);
-            setTimeout(() => playTone(650, 'sine', 0.2, 0.1), 200);
-        },
-        hint: () => {
-            playTone(800, 'sine', 0.1, 0.05);
-            setTimeout(() => playTone(1200, 'sine', 0.2, 0.05), 100);
-        }
+        tap: () => playTone(600, 'sine', 0.1, 0.02),
+        pop: () => playTone(400, 'triangle', 0.1, 0.03),
+        error: () => playTone(150, 'sawtooth', 0.3, 0.05),
+        success: () => { playTone(400, 'sine', 0.1); setTimeout(() => playTone(600, 'sine', 0.15), 100); },
+        medal: () => { playTone(500, 'sine', 0.1); setTimeout(() => playTone(800, 'sine', 0.3), 100); }
     };
 })();
 
 /* =========================================
-   2. Utilities & Text Normalization
+   3. Data Storage (Eitaa Cloud + Local)
 ========================================= */
-function normalizePersian(text) {
-    if (!text) return "";
-    return text.replace(/ي/g, "ی")
-               .replace(/ك/g, "ک")
-               .replace(/[\u200B-\u200D\uFEFF]/g, "") // Remove zero-width spaces
-               .replace(/\s+/g, " ") // Normalize standard spaces
-               .trim();
-}
-
-function shuffleArray(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-    }
-    return array;
-}
-
-/* =========================================
-   3. State & Storage Manager
-========================================= */
-const GameState = {
-    user: { id: 'local_guest', first_name: 'مهمان' },
-    currentLevel: 0,
-    score: 0,
-    completedLevels: [],
-    settings: { sound: true, darkMode: false },
-    questions: [],
-    startTime: 0,
-    // Active Level State
-    slots: [], // Flat array of slot objects
-    keys: []   // Array of keyboard key objects
-};
-
 const StorageManager = {
-    getStorageKey: () => `eitaa_emoji_game_${GameState.user.id}`,
-
+    getKey: () => `ios_emoji_game_${GameState.user.id}`,
     save: function() {
-        const data = {
-            currentLevel: GameState.currentLevel,
-            score: GameState.score,
-            completedLevels: GameState.completedLevels,
-            settings: GameState.settings,
-            lastPlayed: new Date().toISOString()
-        };
-        const strData = JSON.stringify(data);
-
-        // Try Eitaa Cloud Storage first
-        if (window.Eitaa && window.Eitaa.WebApp && window.Eitaa.WebApp.CloudStorage) {
-            window.Eitaa.WebApp.CloudStorage.setItem(this.getStorageKey(), strData, (err, success) => {
-                if(err) console.warn("CloudStorage error, falling back to LocalStorage.");
-            });
-        }
-        // Always save to LocalStorage as a fallback
-        localStorage.setItem(this.getStorageKey(), strData);
-    },
-
-    load: function(callback) {
-        const defaultState = { currentLevel: 0, score: 0, completedLevels: [], settings: { sound: true, darkMode: false } };
+        const payload = JSON.stringify({
+            globalScore: GameState.globalScore,
+            progress: GameState.progress,
+            unlockedMedals: GameState.unlockedMedals,
+            settings: GameState.settings
+        });
         
-        const parseAndApply = (str) => {
+        if (window.Eitaa && window.Eitaa.WebApp && window.Eitaa.WebApp.CloudStorage) {
+            window.Eitaa.WebApp.CloudStorage.setItem(this.getKey(), payload, () => {});
+        }
+        localStorage.setItem(this.getKey(), payload);
+    },
+    load: function(callback) {
+        const applyData = (str) => {
             if (str) {
                 try {
-                    const parsed = JSON.parse(str);
-                    GameState.currentLevel = parsed.currentLevel || 0;
-                    GameState.score = parsed.score || 0;
-                    GameState.completedLevels = parsed.completedLevels || [];
-                    GameState.settings = parsed.settings || defaultState.settings;
-                } catch(e) { console.error("Parse error", e); }
+                    const data = JSON.parse(str);
+                    GameState.globalScore = data.globalScore || 0;
+                    GameState.progress = data.progress || {};
+                    GameState.unlockedMedals = data.unlockedMedals || [];
+                    GameState.settings = data.settings || GameState.settings;
+                } catch(e) { console.error("Data parse error."); }
             }
             callback();
         };
 
         if (window.Eitaa && window.Eitaa.WebApp && window.Eitaa.WebApp.CloudStorage) {
-            window.Eitaa.WebApp.CloudStorage.getItem(this.getStorageKey(), (err, value) => {
-                if (!err && value) {
-                    parseAndApply(value);
-                } else {
-                    parseAndApply(localStorage.getItem(this.getStorageKey()));
-                }
+            window.Eitaa.WebApp.CloudStorage.getItem(this.getKey(), (err, val) => {
+                applyData((!err && val) ? val : localStorage.getItem(this.getKey()));
             });
         } else {
-            parseAndApply(localStorage.getItem(this.getStorageKey()));
+            applyData(localStorage.getItem(this.getKey()));
         }
     }
 };
 
 /* =========================================
-   4. Initialization & Eitaa Integration
+   4. UI Management & Flow
 ========================================= */
-function initEitaa() {
-    if (typeof window.Eitaa !== 'undefined' && window.Eitaa.WebApp) {
-        const webapp = window.Eitaa.WebApp;
-        webapp.ready();
-        webapp.expand();
-        
-        if (webapp.setHeaderColor) {
-            webapp.setHeaderColor(GameState.settings.darkMode ? '#1e1e28' : '#ffffff');
-        }
-        
-        if (webapp.initDataUnsafe && webapp.initDataUnsafe.user) {
-            GameState.user = webapp.initDataUnsafe.user;
-        }
-    }
+function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    window.scrollTo(0, 0);
 }
 
-async function loadQuestions() {
-    try {
-        const response = await fetch('questions.json');
-        if (!response.ok) throw new Error("Network response was not ok");
-        GameState.questions = await response.json();
-    } catch (error) {
-        console.warn("Failed to load questions.json, using inline fallback data.", error);
-        GameState.questions = [
-            { "emoji": "👂🏻🚪👂🏻🥅", "answer": "یه گوشش دره یه گوشش دروازه" },
-            { "emoji": "💧💧➕🌊", "answer": "قطره قطره جمع گردد وانگهی دریا شود" },
-            { "emoji": "🐫💤☁️🌱", "answer": "شتر در خواب بیند پنبه دانه" },
-            { "emoji": "⛰️❌⛰️👤✅👤", "answer": "کوه به کوه نمیرسه آدم به آدم میرسه" },
-            { "emoji": "🐁❌🕳️🧹🪢", "answer": "موش تو سوراخ نمیرفت جارو به دمش میبست" }
-        ];
-    }
+function showToast(message, icon = '✨') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerHTML = `<span style="font-size:1.5rem">${icon}</span> <span>${message}</span>`;
+    container.appendChild(toast);
+    AudioEngine.medal();
+    setTimeout(() => toast.remove(), 3500);
 }
 
-function applySettings() {
+function applyTheme() {
     document.body.setAttribute('data-theme', GameState.settings.darkMode ? 'dark' : 'light');
-    document.getElementById('toggle-theme').checked = GameState.settings.darkMode;
-    document.getElementById('toggle-sound').checked = GameState.settings.sound;
-    
     if (window.Eitaa && window.Eitaa.WebApp && window.Eitaa.WebApp.setHeaderColor) {
-        window.Eitaa.WebApp.setHeaderColor(GameState.settings.darkMode ? '#1e1e28' : '#ffffff');
+        window.Eitaa.WebApp.setHeaderColor(GameState.settings.darkMode ? '#000000' : '#f2f2f7');
     }
+}
+
+function checkMedals() {
+    MEDALS_DB.forEach(medal => {
+        if (!GameState.unlockedMedals.includes(medal.id) && medal.check(GameState)) {
+            GameState.unlockedMedals.push(medal.id);
+            showToast(`مدال جدید: ${medal.name}`, medal.icon);
+        }
+    });
 }
 
 /* =========================================
-   5. Game Logic & Rendering
+   5. Home Screen Logic
 ========================================= */
-function renderLevel() {
-    // If completed all questions
-    if (GameState.currentLevel >= GameState.questions.length) {
-        GameState.currentLevel = 0; // Loop around for endless mode
+function renderHome() {
+    document.getElementById('home-total-score').textContent = GameState.globalScore;
+    document.getElementById('user-name').textContent = GameState.user.first_name;
+
+    // Render Medals
+    const medalsContainer = document.getElementById('medals-container');
+    medalsContainer.innerHTML = '';
+    MEDALS_DB.forEach(medal => {
+        const isUnlocked = GameState.unlockedMedals.includes(medal.id);
+        const div = document.createElement('div');
+        div.className = `medal-card ${isUnlocked ? 'unlocked' : ''}`;
+        div.innerHTML = `
+            <span class="medal-icon">${medal.icon}</span>
+            <span class="medal-name">${medal.name}</span>
+        `;
+        medalsContainer.appendChild(div);
+    });
+    document.getElementById('medals-count').textContent = `${GameState.unlockedMedals.length}/${MEDALS_DB.length}`;
+
+    // Render Categories
+    const catContainer = document.getElementById('categories-container');
+    catContainer.innerHTML = '';
+    
+    DB.categories.forEach(cat => {
+        const completed = GameState.progress[cat.id]?.length || 0;
+        const total = cat.levels.length;
+        const perc = total > 0 ? (completed / total) * 100 : 0;
+        const isComplete = completed === total && total > 0;
+
+        const div = document.createElement('div');
+        div.className = `category-card ${isComplete ? 'completed' : ''}`;
+        div.innerHTML = `
+            <div class="cat-icon">${cat.icon}</div>
+            <div class="cat-info">
+                <h3 class="cat-title">${cat.name}</h3>
+                <div class="cat-stats">${completed} از ${total} مرحله</div>
+                <div class="progress-track">
+                    <div class="progress-fill" style="width: ${perc}%"></div>
+                </div>
+            </div>
+        `;
+        div.addEventListener('click', () => {
+            AudioEngine.tap();
+            startCategory(cat);
+        });
+        catContainer.appendChild(div);
+    });
+}
+
+/* =========================================
+   6. Game Logic
+========================================= */
+function normalizeText(text) {
+    return text.replace(/ي/g, "ی").replace(/ك/g, "ک").replace(/[\u200B-\u200D\uFEFF]/g, "").replace(/\s+/g, " ").trim();
+}
+
+function startCategory(category) {
+    GameState.activeCategory = category;
+    document.getElementById('game-category-title').textContent = category.name;
+    
+    // Find first uncompleted level, or loop back to 0
+    let completedArr = GameState.progress[category.id] || [];
+    let nextIndex = 0;
+    for(let i=0; i < category.levels.length; i++) {
+        if(!completedArr.includes(i)) {
+            nextIndex = i;
+            break;
+        }
     }
+    GameState.activeLevelIndex = nextIndex;
+    showScreen('screen-game');
+    renderLevel();
+}
 
-    const q = GameState.questions[GameState.currentLevel];
-    const answer = normalizePersian(q.answer);
-    
-    // UI updates
-    document.getElementById('ui-level').textContent = GameState.currentLevel + 1;
-    document.getElementById('ui-score').textContent = GameState.score;
-    document.getElementById('emoji-display').textContent = q.emoji;
-    
-    // Progress bar
-    const progressPerc = ((GameState.currentLevel) / GameState.questions.length) * 100;
-    document.getElementById('ui-progress-fill').style.width = `${progressPerc}%`;
+function renderLevel() {
+    const cat = GameState.activeCategory;
+    // Loop if finished all
+    if (GameState.activeLevelIndex >= cat.levels.length) GameState.activeLevelIndex = 0;
 
-    // Process Answer Slots
-    const words = answer.split(' ');
+    const levelData = cat.levels[GameState.activeLevelIndex];
+    const answer = normalizeText(levelData.answer);
+    
+    document.getElementById('ui-level').textContent = GameState.activeLevelIndex + 1;
+    document.getElementById('game-score').textContent = GameState.globalScore;
+    document.getElementById('emoji-display').textContent = levelData.emoji;
+
+    // Build Slots
     const answerArea = document.getElementById('answer-slots');
     answerArea.innerHTML = '';
-    
     GameState.slots = [];
-    let slotIdCounter = 0;
     let requiredChars = [];
+    let slotId = 0;
 
-    words.forEach(word => {
-        const wordGroup = document.createElement('div');
-        wordGroup.className = 'word-group';
-        
+    answer.split(' ').forEach(word => {
+        const group = document.createElement('div');
+        group.className = 'word-group';
         for (let char of word) {
-            const slotObj = { id: slotIdCounter++, char: char, filledWith: '', keyId: null, locked: false };
+            const slotObj = { id: slotId++, char: char, filledWith: '', keyId: null, locked: false };
             GameState.slots.push(slotObj);
             requiredChars.push(char);
-
+            
             const slotEl = document.createElement('div');
             slotEl.className = 'slot';
             slotEl.id = `slot-${slotObj.id}`;
             slotEl.addEventListener('click', () => handleSlotClick(slotObj.id));
-            wordGroup.appendChild(slotEl);
+            group.appendChild(slotEl);
         }
-        answerArea.appendChild(wordGroup);
+        answerArea.appendChild(group);
     });
 
-    // Generate Keyboard
+    // Build Keyboard
     let keyChars = [...requiredChars];
-    const totalKeys = Math.max(24, requiredChars.length + 6);
-    while(keyChars.length < totalKeys) {
+    const targetKeyCount = Math.max(24, requiredChars.length + 6);
+    while(keyChars.length < targetKeyCount) {
         keyChars.push(PERSIAN_ALPHABET[Math.floor(Math.random() * PERSIAN_ALPHABET.length)]);
     }
-    shuffleArray(keyChars);
+    // Shuffle
+    for (let i = keyChars.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [keyChars[i], keyChars[j]] = [keyChars[j], keyChars[i]];
+    }
 
-    GameState.keys = keyChars.map((char, idx) => ({ id: idx, char: char, used: false }));
-    
+    GameState.keys = keyChars.map((c, i) => ({ id: i, char: c, used: false }));
     const kbArea = document.getElementById('keyboard');
     kbArea.innerHTML = '';
     
     GameState.keys.forEach(k => {
-        const keyEl = document.createElement('button');
-        keyEl.className = 'key bounce-in';
-        keyEl.id = `key-${k.id}`;
-        keyEl.textContent = k.char;
-        keyEl.style.animationDelay = `${Math.random() * 0.2}s`;
-        keyEl.addEventListener('click', () => handleKeyClick(k.id));
-        kbArea.appendChild(keyEl);
+        const btn = document.createElement('button');
+        btn.className = 'key pop-in';
+        btn.id = `key-${k.id}`;
+        btn.textContent = k.char;
+        btn.style.animationDelay = `${Math.random() * 0.15}s`;
+        btn.addEventListener('click', () => handleKeyClick(k.id));
+        kbArea.appendChild(btn);
     });
 
     GameState.startTime = Date.now();
-    updateUI();
+    updateGameUI();
 }
 
-function updateUI() {
-    // Update Score
-    document.getElementById('ui-score').textContent = GameState.score;
-
-    // Update Slots
+function updateGameUI() {
+    document.getElementById('game-score').textContent = GameState.globalScore;
     GameState.slots.forEach(s => {
         const el = document.getElementById(`slot-${s.id}`);
-        if (!el) return;
+        if(!el) return;
         el.textContent = s.filledWith;
-        if (s.filledWith !== '') el.classList.add('filled');
-        else el.classList.remove('filled');
-        
-        if (s.locked) el.classList.add('locked');
-        else el.classList.remove('locked');
+        el.className = `slot ${s.filledWith ? 'filled' : ''} ${s.locked ? 'locked' : ''}`;
     });
-
-    // Update Keyboard Keys
     GameState.keys.forEach(k => {
         const el = document.getElementById(`key-${k.id}`);
-        if (!el) return;
-        if (k.used) el.classList.add('used');
-        else el.classList.remove('used');
+        if(!el) return;
+        el.className = `key ${k.used ? 'used' : ''}`;
     });
 }
 
-/* =========================================
-   6. Interactions
-========================================= */
 function handleKeyClick(keyId) {
     const key = GameState.keys.find(k => k.id === keyId);
     if (!key || key.used) return;
+    const emptySlot = GameState.slots.find(s => s.filledWith === '');
+    if (!emptySlot) return;
 
-    const firstEmptySlot = GameState.slots.find(s => s.filledWith === '');
-    if (!firstEmptySlot) return; // All slots full
-
-    AudioEngine.click();
-    firstEmptySlot.filledWith = key.char;
-    firstEmptySlot.keyId = key.id;
+    AudioEngine.tap();
+    emptySlot.filledWith = key.char;
+    emptySlot.keyId = key.id;
     key.used = true;
-
-    updateUI();
-    checkWinCondition();
+    updateGameUI();
+    checkWin();
 }
 
 function handleSlotClick(slotId) {
     const slot = GameState.slots.find(s => s.id === slotId);
-    if (!slot || slot.filledWith === '' || slot.locked) return;
-
-    AudioEngine.slotClick();
+    if (!slot || !slot.filledWith || slot.locked) return;
+    
+    AudioEngine.pop();
     const key = GameState.keys.find(k => k.id === slot.keyId);
     if (key) key.used = false;
-
     slot.filledWith = '';
     slot.keyId = null;
-
-    updateUI();
+    updateGameUI();
 }
 
 function useHint() {
-    if (GameState.score < HINT_COST) {
-        alert("امتیاز شما برای استفاده از راهنما کافی نیست.");
-        return;
+    if (GameState.globalScore < HINT_COST) return alert("امتیاز کافی نیست!");
+    
+    const candidates = GameState.slots.filter(s => !s.locked && s.filledWith !== s.char);
+    if (candidates.length === 0) return;
+    
+    const target = candidates[Math.floor(Math.random() * candidates.length)];
+    if (target.filledWith !== '') {
+        const k = GameState.keys.find(x => x.id === target.keyId);
+        if(k) k.used = false;
+        target.filledWith = '';
     }
 
-    // Find slots that are neither locked nor correctly filled
-    const candidateSlots = GameState.slots.filter(s => !s.locked && s.filledWith !== s.char);
-    if (candidateSlots.length === 0) return;
-
-    const targetSlot = candidateSlots[Math.floor(Math.random() * candidateSlots.length)];
-
-    // Free the wrong key if slot is occupied
-    if (targetSlot.filledWith !== '') {
-        const wrongKey = GameState.keys.find(k => k.id === targetSlot.keyId);
-        if (wrongKey) wrongKey.used = false;
-        targetSlot.filledWith = '';
-        targetSlot.keyId = null;
-    }
-
-    const correctChar = targetSlot.char;
-    let validKeyIndex = GameState.keys.findIndex(k => k.char === correctChar && !k.used);
-
-    // If key not found, it means it's used in another incorrect slot
-    if (validKeyIndex === -1) {
-        const wronglyUsedSlot = GameState.slots.find(s => !s.locked && s.filledWith === correctChar && s.char !== correctChar);
-        if (wronglyUsedSlot) {
-            validKeyIndex = wronglyUsedSlot.keyId;
-            wronglyUsedSlot.filledWith = '';
-            wronglyUsedSlot.keyId = null;
-            const freedKey = GameState.keys.find(k => k.id === validKeyIndex);
-            if(freedKey) freedKey.used = false;
-        } else {
-            // Edge case fallback
-            const anyUsedSlot = GameState.slots.find(s => !s.locked && s.filledWith === correctChar);
-            if(anyUsedSlot) {
-                 validKeyIndex = anyUsedSlot.keyId;
-                 anyUsedSlot.filledWith = '';
-                 anyUsedSlot.keyId = null;
-                 const freedKey = GameState.keys.find(k => k.id === validKeyIndex);
-                 if(freedKey) freedKey.used = false;
-            }
+    let validKeyId = GameState.keys.findIndex(k => k.char === target.char && !k.used);
+    if (validKeyId === -1) {
+        // Find a slot that wrongly used this correct character
+        const wrongSlot = GameState.slots.find(s => !s.locked && s.filledWith === target.char);
+        if(wrongSlot) {
+            validKeyId = wrongSlot.keyId;
+            wrongSlot.filledWith = '';
+            const freed = GameState.keys.find(k => k.id === validKeyId);
+            if(freed) freed.used = false;
         }
     }
 
-    if (validKeyIndex !== -1) {
-        GameState.score -= HINT_COST;
-        targetSlot.filledWith = correctChar;
-        targetSlot.keyId = validKeyIndex;
-        targetSlot.locked = true;
-        GameState.keys.find(k => k.id === validKeyIndex).used = true;
-
-        AudioEngine.hint();
-        updateUI();
-        checkWinCondition();
+    if (validKeyId !== -1) {
+        GameState.globalScore -= HINT_COST;
+        target.filledWith = target.char;
+        target.keyId = validKeyId;
+        target.locked = true;
+        GameState.keys.find(k => k.id === validKeyId).used = true;
+        AudioEngine.pop();
+        updateGameUI();
+        StorageManager.save();
+        checkWin();
     }
 }
 
-function checkWinCondition() {
+function checkWin() {
     if (GameState.slots.some(s => s.filledWith === '')) return;
-
     const isCorrect = GameState.slots.every(s => s.filledWith === s.char);
+    
     if (isCorrect) {
-        handleWin();
-    } else {
-        handleWrong();
-    }
-}
-
-function handleWrong() {
-    AudioEngine.error();
-    const area = document.getElementById('answer-slots');
-    area.classList.remove('shake');
-    void area.offsetWidth; // Trigger reflow
-    area.classList.add('shake');
-}
-
-function handleWin() {
-    AudioEngine.success();
-    
-    const timeTaken = (Date.now() - GameState.startTime) / 1000;
-    const bonus = timeTaken <= FAST_TIME_LIMIT ? FAST_BONUS : 0;
-    
-    GameState.score += BASE_SCORE + bonus;
-    if (!GameState.completedLevels.includes(GameState.currentLevel)) {
-        GameState.completedLevels.push(GameState.currentLevel);
-    }
-    
-    StorageManager.save();
-
-    // Show win modal
-    document.getElementById('reward-base').textContent = `+${BASE_SCORE}`;
-    const bonusEl = document.getElementById('reward-bonus');
-    if (bonus > 0) {
-        bonusEl.classList.remove('hidden');
-        bonusEl.innerHTML = `پاداش سرعت: <strong>+${bonus}</strong>`;
-    } else {
-        bonusEl.classList.add('hidden');
-    }
-    document.getElementById('modal-success').classList.remove('hidden');
-}
-
-function nextLevel() {
-    document.getElementById('modal-success').classList.add('hidden');
-    GameState.currentLevel++;
-    StorageManager.save();
-    renderLevel();
-}
-
-/* =========================================
-   7. UI Event Listeners binding
-========================================= */
-function setupListeners() {
-    document.getElementById('btn-hint').addEventListener('click', useHint);
-    document.getElementById('btn-next-level').addEventListener('click', nextLevel);
-    
-    // Modals
-    document.getElementById('btn-settings').addEventListener('click', () => {
-        document.getElementById('modal-settings').classList.remove('hidden');
-    });
-    document.getElementById('btn-stats').addEventListener('click', () => {
-        document.getElementById('stat-user').textContent = GameState.user.first_name;
-        document.getElementById('stat-completed').textContent = GameState.completedLevels.length;
-        document.getElementById('stat-total-score').textContent = GameState.score;
-        const perc = GameState.questions.length ? Math.round((GameState.completedLevels.length / GameState.questions.length) * 100) : 0;
-        document.getElementById('stat-percentage').textContent = `${perc}%`;
-        document.getElementById('modal-stats').classList.remove('hidden');
-    });
-
-    document.querySelectorAll('.close-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const targetId = e.target.getAttribute('data-close');
-            document.getElementById(targetId).classList.add('hidden');
-        });
-    });
-
-    // Settings
-    document.getElementById('toggle-theme').addEventListener('change', (e) => {
-        GameState.settings.darkMode = e.target.checked;
-        applySettings();
-        StorageManager.save();
-    });
-    document.getElementById('toggle-sound').addEventListener('change', (e) => {
-        GameState.settings.sound = e.target.checked;
-        StorageManager.save();
-    });
-    document.getElementById('btn-reset').addEventListener('click', () => {
-        if(confirm("آیا مطمئن هستید که می‌خواهید تمام پیشرفت خود را پاک کنید؟")) {
-            GameState.currentLevel = 0;
-            GameState.score = 0;
-            GameState.completedLevels = [];
-            StorageManager.save();
-            document.getElementById('modal-settings').classList.add('hidden');
-            renderLevel();
+        AudioEngine.success();
+        const timeTaken = (Date.now() - GameState.startTime) / 1000;
+        const bonus = timeTaken <= FAST_TIME_LIMIT ? 5 : 0;
+        
+        GameState.globalScore += BASE_SCORE + bonus;
+        
+        // Save progress
+        const catId = GameState.activeCategory.id;
+        if (!GameState.progress[catId]) GameState.progress[catId] = [];
+        if (!GameState.progress[catId].includes(GameState.activeLevelIndex)) {
+            GameState.progress[catId].push(GameState.activeLevelIndex);
         }
-    });
+        
+        checkMedals();
+        StorageManager.save();
+
+        const bonusEl = document.getElementById('reward-bonus');
+        if (bonus > 0) { bonusEl.classList.remove('hidden'); bonusEl.innerHTML = `پاداش سرعت: <strong>+${bonus}</strong>`; } 
+        else { bonusEl.classList.add('hidden'); }
+        
+        document.getElementById('modal-success').classList.remove('hidden');
+    } else {
+        AudioEngine.error();
+        const area = document.getElementById('answer-slots');
+        area.classList.remove('shake');
+        void area.offsetWidth;
+        area.classList.add('shake');
+    }
 }
 
 /* =========================================
-   8. Bootstrapping
+   7. Bootstrapping & Listeners
 ========================================= */
-async function boot() {
-    initEitaa();
-    await loadQuestions();
-    
-    StorageManager.load(() => {
-        applySettings();
-        setupListeners();
+async function loadDB() {
+    try {
+        const res = await fetch('data.json');
+        if (!res.ok) throw new Error("JSON Network error");
+        DB = await res.json();
+    } catch (e) {
+        console.warn("Using fallback local data.");
+        // Fallback data if JSON fails to load
+        DB = {
+            categories: [
+                { id: "proverbs", name: "ضرب‌المثل‌ها", icon: "🎭", levels: [{ emoji: "👂🏻🚪👂🏻🥅", answer: "یه گوشش دره یه گوشش دروازه" }] },
+                { id: "movies", name: "فیلم و سریال", icon: "🎬", levels: [{ emoji: "🕷️👨🏻", answer: "مرد عنکبوتی" }] }
+            ]
+        };
+    }
+}
+
+function setupEvents() {
+    // Nav
+    document.getElementById('btn-back-home').addEventListener('click', () => { AudioEngine.tap(); renderHome(); showScreen('screen-home'); });
+    document.getElementById('btn-next-level').addEventListener('click', () => {
+        AudioEngine.tap();
+        document.getElementById('modal-success').classList.add('hidden');
+        GameState.activeLevelIndex++;
         renderLevel();
     });
+    document.getElementById('btn-hint').addEventListener('click', useHint);
+
+    // Settings
+    document.getElementById('btn-open-settings').addEventListener('click', () => { AudioEngine.tap(); document.getElementById('modal-settings').classList.remove('hidden'); });
+    document.querySelectorAll('.close-btn').forEach(b => b.addEventListener('click', (e) => { document.getElementById(e.target.dataset.close).classList.add('hidden'); }));
+    
+    document.getElementById('toggle-theme').addEventListener('change', e => { GameState.settings.darkMode = e.target.checked; applyTheme(); StorageManager.save(); });
+    document.getElementById('toggle-sound').addEventListener('change', e => { GameState.settings.sound = e.target.checked; StorageManager.save(); });
+    
+    document.getElementById('btn-reset').addEventListener('click', () => {
+        if(confirm("پیشرفت شما حذف خواهد شد. ادامه می‌دهید؟")) {
+            GameState.globalScore = 0; GameState.progress = {}; GameState.unlockedMedals = [];
+            StorageManager.save(); applyTheme(); renderHome();
+            document.getElementById('modal-settings').classList.add('hidden');
+        }
+    });
 }
 
-// Start Game
-window.addEventListener('DOMContentLoaded', boot);
+window.addEventListener('DOMContentLoaded', async () => {
+    // Init Eitaa SDK
+    if (window.Eitaa && window.Eitaa.WebApp) {
+        const app = window.Eitaa.WebApp;
+        app.ready(); app.expand();
+        if (app.initDataUnsafe?.user) GameState.user = app.initDataUnsafe.user;
+    }
+
+    await loadDB();
+    StorageManager.load(() => {
+        document.getElementById('toggle-theme').checked = GameState.settings.darkMode;
+        document.getElementById('toggle-sound').checked = GameState.settings.sound;
+        applyTheme();
+        setupEvents();
+        renderHome();
+    });
+});
