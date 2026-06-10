@@ -26,25 +26,19 @@
         </header>
 
         <main class="home-scroll">
-            <!-- Medals Section -->
             <section class="medals-section">
                 <div class="section-header">
                     <h2>افتخارات شما</h2>
                     <span class="badge" id="medals-count">0/0</span>
                 </div>
-                <div class="medals-scroll" id="medals-container">
-                    <!-- Medals will be injected here -->
-                </div>
+                <div class="medals-scroll" id="medals-container"></div>
             </section>
 
-            <!-- Categories Section -->
             <section class="categories-section">
                 <div class="section-header">
                     <h2>دسته‌بندی‌ها</h2>
                 </div>
-                <div class="categories-list" id="categories-container">
-                    <!-- Categories will be injected here -->
-                </div>
+                <div class="categories-list" id="categories-container"></div>
             </section>
         </main>
     </div>
@@ -52,7 +46,13 @@
     <!-- Screen 2: Game -->
     <div id="screen-game" class="screen">
         <header class="ios-header glass-nav">
-            <button id="btn-back-home" class="icon-btn text-btn">❮ بازگشت</button>
+            <!-- New Back Button Design -->
+            <button id="btn-back-home" class="back-btn" aria-label="بازگشت">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15 18l-6-6 6-6"/>
+                </svg>
+            </button>
+            
             <div class="nav-title" id="game-category-title">مرحله</div>
             <div class="score-pill">⭐ <span id="game-score">0</span></div>
         </header>
@@ -60,7 +60,11 @@
         <main class="game-container">
             <div class="level-indicator">مرحله <span id="ui-level">1</span></div>
             
-            <section class="emoji-area ios-card" id="emoji-display"></section>
+            <section class="emoji-area ios-card" id="emoji-display">
+                <div class="emoji-inner" id="emoji-inner-container">
+                    <!-- Apple Emojis will be rendered here -->
+                </div>
+            </section>
 
             <section class="actions-area">
                 <button id="btn-hint" class="ios-btn primary-btn">
@@ -74,7 +78,7 @@
         </main>
     </div>
 
-    <!-- Success Modal -->
+    <!-- Modals -->
     <div id="modal-success" class="modal-overlay hidden">
         <div class="ios-modal pop-in">
             <div class="modal-icon">🎉</div>
@@ -88,7 +92,6 @@
         </div>
     </div>
 
-    <!-- Settings Modal -->
     <div id="modal-settings" class="modal-overlay hidden">
         <div class="ios-modal slide-up">
             <div class="modal-header">
@@ -115,9 +118,7 @@
         </div>
     </div>
 
-    <!-- Toast Notification for Medals -->
     <div id="toast-container" class="toast-container"></div>
-
     <script src="app.js"></script>
 </body>
 </html>

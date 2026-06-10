@@ -233,3 +233,78 @@ input:checked + .slider:before { transform: translateX(20px); }
     .key { width: 36px; height: 44px; font-size: 1.2rem; }
     .emoji-area { font-size: 3.2rem; padding: 20px 10px; }
 }
+
+/* --- New Avatar Style --- */
+.avatar {
+    width: 48px;
+    height: 48px;
+    background-color: var(--ios-blue);
+    border-radius: 16px; /* Rounded square like iOS icons */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+/* --- New Back Button Design --- */
+.back-btn {
+    width: 44px;
+    height: 44px;
+    background: rgba(0, 0, 0, 0.06);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    color: var(--text-main);
+    transition: background 0.2s, transform 0.1s;
+}
+.back-btn:active {
+    transform: scale(0.9);
+    background: rgba(0, 0, 0, 0.12);
+}
+[data-theme="dark"] .back-btn {
+    background: rgba(255, 255, 255, 0.1);
+}
+[data-theme="dark"] .back-btn:active {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* --- Apple Emoji Area & Scroll Rules --- */
+.emoji-area {
+    padding: 20px;
+    min-height: 120px;
+    display: flex;
+    align-items: center;
+    /* Custom scrollbar hiding */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+.emoji-area::-webkit-scrollbar { display: none; }
+
+.emoji-inner {
+    display: flex;
+    flex-wrap: nowrap; /* Forces emojis to stay in one single line */
+    overflow-x: auto;
+    gap: 12px;
+    margin: 0 auto; /* Centers when items are few */
+    padding: 10px 0;
+    align-items: center;
+}
+
+/* Apple Emoji Image Stylings */
+.apple-emoji {
+    width: 65px;
+    height: 65px;
+    object-fit: contain;
+    flex-shrink: 0; /* Prevents emojis from shrinking when there are too many */
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+}
+
+@media (max-width: 380px) {
+    .apple-emoji { width: 55px; height: 55px; }
+    .back-btn { width: 38px; height: 38px; }
+}

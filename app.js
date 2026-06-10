@@ -1,26 +1,21 @@
 /**
  * iOS-Style Emoji Guessing Game
  * Engine: Pure Vanilla JS (ES6+)
- * Framework-less, highly optimized.
  */
 
 const PERSIAN_ALPHABET = "ابپتثجچحخدذرزژسشصضطظعغفقکگلمنوهی";
 const HINT_COST = 20;
 const BASE_SCORE = 10;
-const FAST_TIME_LIMIT = 15; // seconds
+const FAST_TIME_LIMIT = 15;
 
-/* =========================================
-   1. Database & State Definitions
-========================================= */
 let DB = { categories: [] };
 
 const GameState = {
-    user: { id: 'guest', first_name: 'کاربر مهمان' },
+    user: { id: 'guest', first_name: 'کاربر مهمان', photo_url: null },
     globalScore: 0,
-    progress: {}, // { categoryId: [0, 1, 3] } -> array of completed level indices
-    unlockedMedals: [], // array of medal IDs
+    progress: {},
+    unlockedMedals: [],
     settings: { sound: true, darkMode: false },
-    // Runtime properties (Not saved)
     activeCategory: null,
     activeLevelIndex: 0,
     startTime: 0,
@@ -28,13 +23,9 @@ const GameState = {
     keys: []
 };
 
-// Achievements System Thresholds
 const MEDALS_DB = [
     { id: 'first_blood', name: 'اولین قدم', icon: '🥉', desc: 'اولین مرحله را حل کن', check: (state) => getTotalCompleted(state) >= 1 },
     { id: 'proverbs_novice', name: 'ضرب‌المثل آموز', icon: '📜', desc: '۵ ضرب‌المثل را حل کن', check: (state) => (state.progress['proverbs']?.length || 0) >= 5 },
-    { id: 'proverbs_master', name: 'استاد کهن', icon: '👑', desc: '۱۵ ضرب‌المثل را حل کن', check: (state) => (state.progress['proverbs']?.length || 0) >= 15 },
-    { id: 'movie_buff', name: 'عشق سینما', icon: '🍿', desc: '۵ فیلم را حدس بزن', check: (state) => (state.progress['movies']?.length || 0) >= 5 },
-    { id: 'globetrotter', name: 'جهانگرد', icon: '🌍', desc: '۵ کشور را حدس بزن', check: (state) => (state.progress['countries']?.length || 0) >= 5 },
     { id: 'rich', name: 'ثروتمند', icon: '💎', desc: '۵۰۰ امتیاز کسب کن', check: (state) => state.globalScore >= 500 }
 ];
 
@@ -43,7 +34,104 @@ function getTotalCompleted(state) {
 }
 
 /* =========================================
-   2. Audio Engine (Web Audio API)
+   1. Cloud Storage & Sync Engine
+   Uses user's Eitaa ID to sync data via REST API.
+========================================= */
+// You can replace this URL with your own Free Firebase Realtime DB URL
+const CLOUD_DB_URL = "https://eitaa-emoji-game-default-rtdb.firebaseio.com/users/";
+
+const StorageManager = {
+    getKey: () => `eitaa_game_${GameState.user.id}`,
+    
+    save: async function() {
+        const payload = JSON.stringify({
+            globalScore: GameState.globalScore,
+            progress: GameState.progress,
+            unlockedMedals: GameState.unlockedMedals,
+            settings: GameState.settings
+        });
+        
+        // 1. Always save locally first (for speed and offline mode)
+        localStorage.setItem(this.getKey(), payload);
+
+        // 2. Sync cross-device based on Eitaa User ID
+        if (GameState.user.id !== 'guest') {
+            try {
+                await fetch(`${CLOUD_DB_URL}${GameState.user.id}.json`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: payload
+                });
+            } catch (e) {
+                console.warn("Cloud sync failed. Data saved securely on device.");
+            }
+        }
+    },
+    
+    load: async function(callback) {
+        let finalData = null;
+
+        // 1. Try to load from Cloud using Eitaa ID
+        if (GameState.user.id !== 'guest') {
+            try {
+                const response = await fetch(`${CLOUD_DB_URL}${GameState.user.id}.json`);
+                if (response.ok) {
+                    const cloudData = await response.json();
+                    if (cloudData) finalData = typeof cloudData === 'string' ? cloudData : JSON.stringify(cloudData);
+                }
+            } catch (e) {
+                console.warn("Could not reach cloud storage.");
+            }
+        }
+
+        // 2. Fallback to LocalStorage
+        if (!finalData) finalData = localStorage.getItem(this.getKey());
+
+        if (finalData) {
+            try {
+                const data = JSON.parse(finalData);
+                GameState.globalScore = data.globalScore || 0;
+                GameState.progress = data.progress || {};
+                GameState.unlockedMedals = data.unlockedMedals || [];
+                GameState.settings = data.settings || GameState.settings;
+            } catch(e) { console.error("Parse error."); }
+        }
+        callback();
+    }
+};
+
+/* =========================================
+   2. Apple Emoji Parser Engine
+   Converts system unicode to Apple 3D Emojis
+========================================= */
+function renderAppleEmojis(text) {
+    if (!window.Intl || !window.Intl.Segmenter) return text; 
+    const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
+    const segments = segmenter.segment(text);
+    
+    let html = '';
+    for (let {segment} of segments) {
+        if (segment.trim() === '') continue; // Skip white spaces
+        let hexCodes = [];
+        for (let i = 0; i < segment.length; i++) {
+            let code = segment.codePointAt(i);
+            hexCodes.push(code.toString(16));
+            if (code > 0xFFFF) i++; // Handle surrogate pairs
+        }
+        // Remove Variation Selectors that mess up CDN filenames
+        let cleanHex = hexCodes.filter(c => c !== 'fe0f').join('-');
+        
+        // High quality Apple Emojis CDN
+        const imgUrl = `https://unpkg.com/emoji-datasource-apple@15.0.1/img/apple/64/${cleanHex}.png`;
+        
+        // If the CDN doesn't have the image, it falls back to native unicode emoji seamlessly
+        html += `<img src="${imgUrl}" class="apple-emoji" alt="${segment}" onerror="this.outerHTML='${segment}'">`;
+    }
+    return html;
+}
+
+/* =========================================
+   3. Audio Engine
 ========================================= */
 const AudioEngine = (function() {
     let audioCtx = null;
@@ -72,65 +160,14 @@ const AudioEngine = (function() {
     };
 })();
 
-/* =========================================
-   3. Data Storage (Eitaa Cloud + Local)
-========================================= */
-const StorageManager = {
-    getKey: () => `ios_emoji_game_${GameState.user.id}`,
-    save: function() {
-        const payload = JSON.stringify({
-            globalScore: GameState.globalScore,
-            progress: GameState.progress,
-            unlockedMedals: GameState.unlockedMedals,
-            settings: GameState.settings
-        });
-        
-        if (window.Eitaa && window.Eitaa.WebApp && window.Eitaa.WebApp.CloudStorage) {
-            window.Eitaa.WebApp.CloudStorage.setItem(this.getKey(), payload, () => {});
-        }
-        localStorage.setItem(this.getKey(), payload);
-    },
-    load: function(callback) {
-        const applyData = (str) => {
-            if (str) {
-                try {
-                    const data = JSON.parse(str);
-                    GameState.globalScore = data.globalScore || 0;
-                    GameState.progress = data.progress || {};
-                    GameState.unlockedMedals = data.unlockedMedals || [];
-                    GameState.settings = data.settings || GameState.settings;
-                } catch(e) { console.error("Data parse error."); }
-            }
-            callback();
-        };
-
-        if (window.Eitaa && window.Eitaa.WebApp && window.Eitaa.WebApp.CloudStorage) {
-            window.Eitaa.WebApp.CloudStorage.getItem(this.getKey(), (err, val) => {
-                applyData((!err && val) ? val : localStorage.getItem(this.getKey()));
-            });
-        } else {
-            applyData(localStorage.getItem(this.getKey()));
-        }
-    }
-};
 
 /* =========================================
-   4. UI Management & Flow
+   4. UI Management
 ========================================= */
 function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(id).classList.add('active');
     window.scrollTo(0, 0);
-}
-
-function showToast(message, icon = '✨') {
-    const container = document.getElementById('toast-container');
-    const toast = document.createElement('div');
-    toast.className = 'toast';
-    toast.innerHTML = `<span style="font-size:1.5rem">${icon}</span> <span>${message}</span>`;
-    container.appendChild(toast);
-    AudioEngine.medal();
-    setTimeout(() => toast.remove(), 3500);
 }
 
 function applyTheme() {
@@ -144,82 +181,78 @@ function checkMedals() {
     MEDALS_DB.forEach(medal => {
         if (!GameState.unlockedMedals.includes(medal.id) && medal.check(GameState)) {
             GameState.unlockedMedals.push(medal.id);
-            showToast(`مدال جدید: ${medal.name}`, medal.icon);
+            // Toast logic
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `<span style="font-size:1.5rem">${medal.icon}</span> <span>مدال جدید: ${medal.name}</span>`;
+            container.appendChild(toast);
+            AudioEngine.medal();
+            setTimeout(() => toast.remove(), 3500);
         }
     });
 }
 
 /* =========================================
-   5. Home Screen Logic
+   5. Home Screen & Eitaa Profile Setup
 ========================================= */
 function renderHome() {
     document.getElementById('home-total-score').textContent = GameState.globalScore;
     document.getElementById('user-name').textContent = GameState.user.first_name;
 
-    // Render Medals
+    // Load Eitaa Profile Picture if exists
+    if (GameState.user.photo_url) {
+        const avatarEl = document.getElementById('user-avatar');
+        avatarEl.innerHTML = ''; // Remove default emoji
+        avatarEl.style.backgroundImage = `url('${GameState.user.photo_url}')`;
+        avatarEl.style.backgroundSize = 'cover';
+        avatarEl.style.backgroundPosition = 'center';
+    }
+
+    // Medals
     const medalsContainer = document.getElementById('medals-container');
     medalsContainer.innerHTML = '';
     MEDALS_DB.forEach(medal => {
         const isUnlocked = GameState.unlockedMedals.includes(medal.id);
         const div = document.createElement('div');
         div.className = `medal-card ${isUnlocked ? 'unlocked' : ''}`;
-        div.innerHTML = `
-            <span class="medal-icon">${medal.icon}</span>
-            <span class="medal-name">${medal.name}</span>
-        `;
+        div.innerHTML = `<span class="medal-icon">${medal.icon}</span><span class="medal-name">${medal.name}</span>`;
         medalsContainer.appendChild(div);
     });
     document.getElementById('medals-count').textContent = `${GameState.unlockedMedals.length}/${MEDALS_DB.length}`;
 
-    // Render Categories
+    // Categories
     const catContainer = document.getElementById('categories-container');
     catContainer.innerHTML = '';
-    
     DB.categories.forEach(cat => {
         const completed = GameState.progress[cat.id]?.length || 0;
         const total = cat.levels.length;
         const perc = total > 0 ? (completed / total) * 100 : 0;
-        const isComplete = completed === total && total > 0;
-
         const div = document.createElement('div');
-        div.className = `category-card ${isComplete ? 'completed' : ''}`;
+        div.className = `category-card ${completed === total && total > 0 ? 'completed' : ''}`;
         div.innerHTML = `
             <div class="cat-icon">${cat.icon}</div>
             <div class="cat-info">
                 <h3 class="cat-title">${cat.name}</h3>
                 <div class="cat-stats">${completed} از ${total} مرحله</div>
-                <div class="progress-track">
-                    <div class="progress-fill" style="width: ${perc}%"></div>
-                </div>
-            </div>
-        `;
-        div.addEventListener('click', () => {
-            AudioEngine.tap();
-            startCategory(cat);
-        });
+                <div class="progress-track"><div class="progress-fill" style="width: ${perc}%"></div></div>
+            </div>`;
+        div.addEventListener('click', () => { AudioEngine.tap(); startCategory(cat); });
         catContainer.appendChild(div);
     });
 }
 
 /* =========================================
-   6. Game Logic
+   6. Game Logic Core
 ========================================= */
-function normalizeText(text) {
-    return text.replace(/ي/g, "ی").replace(/ك/g, "ک").replace(/[\u200B-\u200D\uFEFF]/g, "").replace(/\s+/g, " ").trim();
-}
-
 function startCategory(category) {
     GameState.activeCategory = category;
     document.getElementById('game-category-title').textContent = category.name;
     
-    // Find first uncompleted level, or loop back to 0
     let completedArr = GameState.progress[category.id] || [];
     let nextIndex = 0;
     for(let i=0; i < category.levels.length; i++) {
-        if(!completedArr.includes(i)) {
-            nextIndex = i;
-            break;
-        }
+        if(!completedArr.includes(i)) { nextIndex = i; break; }
     }
     GameState.activeLevelIndex = nextIndex;
     showScreen('screen-game');
@@ -228,17 +261,17 @@ function startCategory(category) {
 
 function renderLevel() {
     const cat = GameState.activeCategory;
-    // Loop if finished all
     if (GameState.activeLevelIndex >= cat.levels.length) GameState.activeLevelIndex = 0;
 
     const levelData = cat.levels[GameState.activeLevelIndex];
-    const answer = normalizeText(levelData.answer);
+    const answer = levelData.answer.replace(/ي/g, "ی").replace(/ك/g, "ک").trim();
     
     document.getElementById('ui-level').textContent = GameState.activeLevelIndex + 1;
     document.getElementById('game-score').textContent = GameState.globalScore;
-    document.getElementById('emoji-display').textContent = levelData.emoji;
+    
+    // Inject Apple Emojis safely
+    document.getElementById('emoji-inner-container').innerHTML = renderAppleEmojis(levelData.emoji);
 
-    // Build Slots
     const answerArea = document.getElementById('answer-slots');
     answerArea.innerHTML = '';
     GameState.slots = [];
@@ -262,17 +295,11 @@ function renderLevel() {
         answerArea.appendChild(group);
     });
 
-    // Build Keyboard
     let keyChars = [...requiredChars];
-    const targetKeyCount = Math.max(24, requiredChars.length + 6);
-    while(keyChars.length < targetKeyCount) {
+    while(keyChars.length < Math.max(24, requiredChars.length + 6)) {
         keyChars.push(PERSIAN_ALPHABET[Math.floor(Math.random() * PERSIAN_ALPHABET.length)]);
     }
-    // Shuffle
-    for (let i = keyChars.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [keyChars[i], keyChars[j]] = [keyChars[j], keyChars[i]];
-    }
+    keyChars.sort(() => Math.random() - 0.5);
 
     GameState.keys = keyChars.map((c, i) => ({ id: i, char: c, used: false }));
     const kbArea = document.getElementById('keyboard');
@@ -283,7 +310,6 @@ function renderLevel() {
         btn.className = 'key pop-in';
         btn.id = `key-${k.id}`;
         btn.textContent = k.char;
-        btn.style.animationDelay = `${Math.random() * 0.15}s`;
         btn.addEventListener('click', () => handleKeyClick(k.id));
         kbArea.appendChild(btn);
     });
@@ -296,14 +322,14 @@ function updateGameUI() {
     document.getElementById('game-score').textContent = GameState.globalScore;
     GameState.slots.forEach(s => {
         const el = document.getElementById(`slot-${s.id}`);
-        if(!el) return;
-        el.textContent = s.filledWith;
-        el.className = `slot ${s.filledWith ? 'filled' : ''} ${s.locked ? 'locked' : ''}`;
+        if(el) {
+            el.textContent = s.filledWith;
+            el.className = `slot ${s.filledWith ? 'filled' : ''} ${s.locked ? 'locked' : ''}`;
+        }
     });
     GameState.keys.forEach(k => {
         const el = document.getElementById(`key-${k.id}`);
-        if(!el) return;
-        el.className = `key ${k.used ? 'used' : ''}`;
+        if(el) el.className = `key ${k.used ? 'used' : ''}`;
     });
 }
 
@@ -335,7 +361,6 @@ function handleSlotClick(slotId) {
 
 function useHint() {
     if (GameState.globalScore < HINT_COST) return alert("امتیاز کافی نیست!");
-    
     const candidates = GameState.slots.filter(s => !s.locked && s.filledWith !== s.char);
     if (candidates.length === 0) return;
     
@@ -348,7 +373,6 @@ function useHint() {
 
     let validKeyId = GameState.keys.findIndex(k => k.char === target.char && !k.used);
     if (validKeyId === -1) {
-        // Find a slot that wrongly used this correct character
         const wrongSlot = GameState.slots.find(s => !s.locked && s.filledWith === target.char);
         if(wrongSlot) {
             validKeyId = wrongSlot.keyId;
@@ -381,8 +405,6 @@ function checkWin() {
         const bonus = timeTaken <= FAST_TIME_LIMIT ? 5 : 0;
         
         GameState.globalScore += BASE_SCORE + bonus;
-        
-        // Save progress
         const catId = GameState.activeCategory.id;
         if (!GameState.progress[catId]) GameState.progress[catId] = [];
         if (!GameState.progress[catId].includes(GameState.activeLevelIndex)) {
@@ -407,27 +429,9 @@ function checkWin() {
 }
 
 /* =========================================
-   7. Bootstrapping & Listeners
+   7. Bootstrapping
 ========================================= */
-async function loadDB() {
-    try {
-        const res = await fetch('data.json');
-        if (!res.ok) throw new Error("JSON Network error");
-        DB = await res.json();
-    } catch (e) {
-        console.warn("Using fallback local data.");
-        // Fallback data if JSON fails to load
-        DB = {
-            categories: [
-                { id: "proverbs", name: "ضرب‌المثل‌ها", icon: "🎭", levels: [{ emoji: "👂🏻🚪👂🏻🥅", answer: "یه گوشش دره یه گوشش دروازه" }] },
-                { id: "movies", name: "فیلم و سریال", icon: "🎬", levels: [{ emoji: "🕷️👨🏻", answer: "مرد عنکبوتی" }] }
-            ]
-        };
-    }
-}
-
 function setupEvents() {
-    // Nav
     document.getElementById('btn-back-home').addEventListener('click', () => { AudioEngine.tap(); renderHome(); showScreen('screen-home'); });
     document.getElementById('btn-next-level').addEventListener('click', () => {
         AudioEngine.tap();
@@ -436,14 +440,10 @@ function setupEvents() {
         renderLevel();
     });
     document.getElementById('btn-hint').addEventListener('click', useHint);
-
-    // Settings
     document.getElementById('btn-open-settings').addEventListener('click', () => { AudioEngine.tap(); document.getElementById('modal-settings').classList.remove('hidden'); });
     document.querySelectorAll('.close-btn').forEach(b => b.addEventListener('click', (e) => { document.getElementById(e.target.dataset.close).classList.add('hidden'); }));
-    
     document.getElementById('toggle-theme').addEventListener('change', e => { GameState.settings.darkMode = e.target.checked; applyTheme(); StorageManager.save(); });
     document.getElementById('toggle-sound').addEventListener('change', e => { GameState.settings.sound = e.target.checked; StorageManager.save(); });
-    
     document.getElementById('btn-reset').addEventListener('click', () => {
         if(confirm("پیشرفت شما حذف خواهد شد. ادامه می‌دهید؟")) {
             GameState.globalScore = 0; GameState.progress = {}; GameState.unlockedMedals = [];
@@ -454,14 +454,21 @@ function setupEvents() {
 }
 
 window.addEventListener('DOMContentLoaded', async () => {
-    // Init Eitaa SDK
-    if (window.Eitaa && window.Eitaa.WebApp) {
-        const app = window.Eitaa.WebApp;
-        app.ready(); app.expand();
-        if (app.initDataUnsafe?.user) GameState.user = app.initDataUnsafe.user;
+    // Inject Eitaa User Data
+    if (window.Eitaa && window.Eitaa.WebApp && window.Eitaa.WebApp.initDataUnsafe?.user) {
+        GameState.user = window.Eitaa.WebApp.initDataUnsafe.user;
+        window.Eitaa.WebApp.ready();
+        window.Eitaa.WebApp.expand();
     }
 
-    await loadDB();
+    try {
+        const res = await fetch('data.json');
+        DB = await res.json();
+    } catch (e) {
+        // Fallback for tests
+        DB = { categories: [{ id: "proverbs", name: "ضرب‌المثل‌ها", icon: "🎭", levels: [{ emoji: "👂🏻🚪👂🏻🥅", answer: "یه گوشش دره یه گوشش دروازه" }] }] };
+    }
+
     StorageManager.load(() => {
         document.getElementById('toggle-theme').checked = GameState.settings.darkMode;
         document.getElementById('toggle-sound').checked = GameState.settings.sound;
