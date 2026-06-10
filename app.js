@@ -62,7 +62,7 @@ const StorageManager = {
         localStorage.setItem(this.getKey(), payload);
 
         // اگر آیدی ایتا وجود داشت و باکت تنظیم شده بود، سینک ابری انجام می‌دهیم
-        if (GameState.user.id !== 'guest' && KVDB_BUCKET_ID !== "YOUR_BUCKET_ID_HERE") {
+        if (GameState.user.id !== 'guest' && KVDB_BUCKET_ID !== "E9u1ucHEsgf9B4m277eW4f") {
             try {
                 await fetch(`https://kvdb.io/${KVDB_BUCKET_ID}/${GameState.user.id}`, {
                     method: 'PUT',
@@ -75,7 +75,7 @@ const StorageManager = {
     load: async function(callback) {
         let finalData = null;
 
-        if (GameState.user.id !== 'guest' && KVDB_BUCKET_ID !== "YOUR_BUCKET_ID_HERE") {
+        if (GameState.user.id !== 'guest' && KVDB_BUCKET_ID !== "E9u1ucHEsgf9B4m277eW4f") {
             try {
                 const response = await fetch(`https://kvdb.io/${KVDB_BUCKET_ID}/${GameState.user.id}`);
                 if (response.ok) finalData = await response.text();
