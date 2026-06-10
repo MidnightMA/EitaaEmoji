@@ -3,6 +3,17 @@
  * Engine: Pure Vanilla JS (ES6+)
  */
 
+// ==========================================
+// ⚠️ تنظیمات دیتابیس خارجی (حل مشکل ایتا)
+// ==========================================
+// برای اینکه سینک روی همه دستگاه‌ها کار کند:
+// ۱. به سایت kvdb.io بروید (نیازی به فیلترشکن و ثبت نام نیست).
+// ۲. روی دکمه مشکی Create Database کلیک کنید.
+// ۳. یک رشته تصادفی به شما می‌دهد (مثلاً: WjXyZk123EmojiGame).
+// ۴. آن رشته را در متغیر زیر قرار دهید!
+const KVDB_BUCKET_ID = "E9u1ucHEsgf9B4m277eW4f"; 
+// ==========================================
+
 const PERSIAN_ALPHABET = "ابپتثجچحخدذرزژسشصضطظعغفقکگلمنوهی";
 const HINT_COST = 20;
 const BASE_SCORE = 10;
@@ -34,12 +45,8 @@ function getTotalCompleted(state) {
 }
 
 /* =========================================
-   1. Cloud Storage & Sync Engine
-   Uses user's Eitaa ID to sync data via REST API.
+   1. Cloud Storage Sync (KVDB)
 ========================================= */
-// You can replace this URL with your own Free Firebase Realtime DB URL
-const CLOUD_DB_URL = "https://eitaa-emoji-game-default-rtdb.firebaseio.com/users/";
-
 const StorageManager = {
     getKey: () => `eitaa_game_${GameState.user.id}`,
     
@@ -51,40 +58,31 @@ const StorageManager = {
             settings: GameState.settings
         });
         
-        // 1. Always save locally first (for speed and offline mode)
+        // همواره روی لوکال استوریج ذخیره می‌کنیم (بک‌آپ)
         localStorage.setItem(this.getKey(), payload);
 
-        // 2. Sync cross-device based on Eitaa User ID
-        if (GameState.user.id !== 'guest') {
+        // اگر آیدی ایتا وجود داشت و باکت تنظیم شده بود، سینک ابری انجام می‌دهیم
+        if (GameState.user.id !== 'guest' && KVDB_BUCKET_ID !== "YOUR_BUCKET_ID_HERE") {
             try {
-                await fetch(`${CLOUD_DB_URL}${GameState.user.id}.json`, {
+                await fetch(`https://kvdb.io/${KVDB_BUCKET_ID}/${GameState.user.id}`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
                     body: payload
                 });
-            } catch (e) {
-                console.warn("Cloud sync failed. Data saved securely on device.");
-            }
+            } catch (e) { console.warn("Cloud sync failed (Network Error)."); }
         }
     },
     
     load: async function(callback) {
         let finalData = null;
 
-        // 1. Try to load from Cloud using Eitaa ID
-        if (GameState.user.id !== 'guest') {
+        if (GameState.user.id !== 'guest' && KVDB_BUCKET_ID !== "YOUR_BUCKET_ID_HERE") {
             try {
-                const response = await fetch(`${CLOUD_DB_URL}${GameState.user.id}.json`);
-                if (response.ok) {
-                    const cloudData = await response.json();
-                    if (cloudData) finalData = typeof cloudData === 'string' ? cloudData : JSON.stringify(cloudData);
-                }
-            } catch (e) {
-                console.warn("Could not reach cloud storage.");
-            }
+                const response = await fetch(`https://kvdb.io/${KVDB_BUCKET_ID}/${GameState.user.id}`);
+                if (response.ok) finalData = await response.text();
+            } catch (e) { console.warn("Could not reach cloud storage."); }
         }
 
-        // 2. Fallback to LocalStorage
+        // استفاده از اطلاعات آفلاین در صورت قطع اینترنت
         if (!finalData) finalData = localStorage.getItem(this.getKey());
 
         if (finalData) {
@@ -101,32 +99,40 @@ const StorageManager = {
 };
 
 /* =========================================
-   2. Apple Emoji Parser Engine
-   Converts system unicode to Apple 3D Emojis
+   2. Super Fast Apple Emoji Engine
 ========================================= */
+const emojiCache = {}; // کش برای سرعت ۱۰۰ برابری
+
 function renderAppleEmojis(text) {
-    if (!window.Intl || !window.Intl.Segmenter) return text; 
-    const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
-    const segments = segmenter.segment(text);
+    if (emojiCache[text]) return emojiCache[text];
     
     let html = '';
-    for (let {segment} of segments) {
-        if (segment.trim() === '') continue; // Skip white spaces
-        let hexCodes = [];
-        for (let i = 0; i < segment.length; i++) {
-            let code = segment.codePointAt(i);
-            hexCodes.push(code.toString(16));
-            if (code > 0xFFFF) i++; // Handle surrogate pairs
+    // استفاده از Intl.Segmenter در صورت پشتیبانی مرورگر
+    if (window.Intl && window.Intl.Segmenter) {
+        const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
+        for (let {segment} of segmenter.segment(text)) {
+            if (segment.trim() === '') { html += segment; continue; }
+            let hexCodes = [];
+            for (let i = 0; i < segment.length; i++) {
+                let code = segment.codePointAt(i);
+                if (code > 0xFFFF) i++;
+                hexCodes.push(code.toString(16));
+            }
+            let cleanHex = hexCodes.filter(c => c !== 'fe0f').join('-');
+            // اتصال به CDN فوق سریع
+            let imgUrl = `https://cdn.jsdelivr.net/npm/emoji-datasource-apple@15.0.1/img/apple/64/${cleanHex}.png`;
+            html += `<img src="${imgUrl}" class="apple-emoji" alt="${segment}" loading="lazy">`;
         }
-        // Remove Variation Selectors that mess up CDN filenames
-        let cleanHex = hexCodes.filter(c => c !== 'fe0f').join('-');
-        
-        // High quality Apple Emojis CDN
-        const imgUrl = `https://unpkg.com/emoji-datasource-apple@15.0.1/img/apple/64/${cleanHex}.png`;
-        
-        // If the CDN doesn't have the image, it falls back to native unicode emoji seamlessly
-        html += `<img src="${imgUrl}" class="apple-emoji" alt="${segment}" onerror="this.outerHTML='${segment}'">`;
+    } else {
+        // Fallback قدرتمند برای دستگاه‌های قدیمی اندروید
+        const emojiRegex = /([\u{1f300}-\u{1f9ff}\u{2600}-\u{26ff}\u{2700}-\u{27bf}])/gu;
+        html = text.replace(emojiRegex, match => {
+            let code = match.codePointAt(0).toString(16);
+            return `<img src="https://cdn.jsdelivr.net/npm/emoji-datasource-apple@15.0.1/img/apple/64/${code}.png" class="apple-emoji" alt="${match}">`;
+        });
     }
+
+    emojiCache[text] = html; // ذخیره در رم برای رندر آنی دفعات بعد
     return html;
 }
 
@@ -160,9 +166,8 @@ const AudioEngine = (function() {
     };
 })();
 
-
 /* =========================================
-   4. UI Management
+   4. UI Management & Eitaa Profile
 ========================================= */
 function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -177,39 +182,20 @@ function applyTheme() {
     }
 }
 
-function checkMedals() {
-    MEDALS_DB.forEach(medal => {
-        if (!GameState.unlockedMedals.includes(medal.id) && medal.check(GameState)) {
-            GameState.unlockedMedals.push(medal.id);
-            // Toast logic
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = 'toast';
-            toast.innerHTML = `<span style="font-size:1.5rem">${medal.icon}</span> <span>مدال جدید: ${medal.name}</span>`;
-            container.appendChild(toast);
-            AudioEngine.medal();
-            setTimeout(() => toast.remove(), 3500);
-        }
-    });
-}
-
-/* =========================================
-   5. Home Screen & Eitaa Profile Setup
-========================================= */
 function renderHome() {
     document.getElementById('home-total-score').textContent = GameState.globalScore;
     document.getElementById('user-name').textContent = GameState.user.first_name;
 
-    // Load Eitaa Profile Picture if exists
+    // بارگذاری دقیق عکس پروفایل ایتا
+    const avatarEl = document.getElementById('user-avatar');
     if (GameState.user.photo_url) {
-        const avatarEl = document.getElementById('user-avatar');
-        avatarEl.innerHTML = ''; // Remove default emoji
-        avatarEl.style.backgroundImage = `url('${GameState.user.photo_url}')`;
-        avatarEl.style.backgroundSize = 'cover';
-        avatarEl.style.backgroundPosition = 'center';
+        avatarEl.innerHTML = `<img src="${GameState.user.photo_url}" alt="Profile" onerror="this.style.display='none'; this.parentElement.innerText='👤';">`;
+        avatarEl.style.background = 'transparent';
+    } else {
+        avatarEl.textContent = '👤';
     }
 
-    // Medals
+    // مدال‌ها
     const medalsContainer = document.getElementById('medals-container');
     medalsContainer.innerHTML = '';
     MEDALS_DB.forEach(medal => {
@@ -221,7 +207,7 @@ function renderHome() {
     });
     document.getElementById('medals-count').textContent = `${GameState.unlockedMedals.length}/${MEDALS_DB.length}`;
 
-    // Categories
+    // دسته‌بندی‌ها
     const catContainer = document.getElementById('categories-container');
     catContainer.innerHTML = '';
     DB.categories.forEach(cat => {
@@ -242,8 +228,23 @@ function renderHome() {
     });
 }
 
+function checkMedals() {
+    MEDALS_DB.forEach(medal => {
+        if (!GameState.unlockedMedals.includes(medal.id) && medal.check(GameState)) {
+            GameState.unlockedMedals.push(medal.id);
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `<span style="font-size:1.5rem">${medal.icon}</span> <span>مدال جدید: ${medal.name}</span>`;
+            container.appendChild(toast);
+            AudioEngine.medal();
+            setTimeout(() => toast.remove(), 3500);
+        }
+    });
+}
+
 /* =========================================
-   6. Game Logic Core
+   5. Game Logic Core
 ========================================= */
 function startCategory(category) {
     GameState.activeCategory = category;
@@ -269,7 +270,7 @@ function renderLevel() {
     document.getElementById('ui-level').textContent = GameState.activeLevelIndex + 1;
     document.getElementById('game-score').textContent = GameState.globalScore;
     
-    // Inject Apple Emojis safely
+    // تزریق ایموجی‌های کش شده و سریع
     document.getElementById('emoji-inner-container').innerHTML = renderAppleEmojis(levelData.emoji);
 
     const answerArea = document.getElementById('answer-slots');
@@ -429,7 +430,7 @@ function checkWin() {
 }
 
 /* =========================================
-   7. Bootstrapping
+   6. Bootstrapping
 ========================================= */
 function setupEvents() {
     document.getElementById('btn-back-home').addEventListener('click', () => { AudioEngine.tap(); renderHome(); showScreen('screen-home'); });
@@ -465,7 +466,6 @@ window.addEventListener('DOMContentLoaded', async () => {
         const res = await fetch('data.json');
         DB = await res.json();
     } catch (e) {
-        // Fallback for tests
         DB = { categories: [{ id: "proverbs", name: "ضرب‌المثل‌ها", icon: "🎭", levels: [{ emoji: "👂🏻🚪👂🏻🥅", answer: "یه گوشش دره یه گوشش دروازه" }] }] };
     }
 
