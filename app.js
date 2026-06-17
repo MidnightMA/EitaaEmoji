@@ -35,9 +35,11 @@ const GameState = {
 };
 
 const MEDALS_DB = [
-    { id: 'first_blood', name: 'اولین قدم', icon: '🥉', desc: 'اولین مرحله را حل کن', check: (state) => getTotalCompleted(state) >= 1 },
+    { id: 'first_blood', name: 'اولین قدم', icon: '🩴', desc: 'اولین مرحله را حل کن', check: (state) => getTotalCompleted(state) >= 1 },
     { id: 'proverbs_novice', name: 'ضرب‌المثل آموز', icon: '📜', desc: '۵ ضرب‌المثل را حل کن', check: (state) => (state.progress['proverbs']?.length || 0) >= 5 },
-    { id: 'rich', name: 'ثروتمند', icon: '💎', desc: '۵۰۰ امتیاز کسب کن', check: (state) => state.globalScore >= 500 }
+    { id: 'rich', name: 'ثروتمند', icon: '💎', desc: '۵۰۰ امتیاز کسب کن', check: (state) => state.globalScore >= 500 },
+    { id: 'movie_buff', name: 'فیلم‌باز', icon: '🎬', desc: 'تمام مراحل بخش فیلم و سریال را کامل کن', check: (state) => isCategoryFullyCompleted(state, ['فیلم', 'سریال', 'movie', 'film', 'series']) },
+    { id: 'globetrotter', name: 'جهانگرد', icon: '🌍', desc: 'تمام مراحل بخش کشورها را کامل کن', check: (state) => isCategoryFullyCompleted(state, ['کشور', 'country', 'countries']) }
 ];
 
 function getTotalCompleted(state) {
