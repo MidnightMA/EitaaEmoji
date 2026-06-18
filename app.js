@@ -35,39 +35,13 @@ const GameState = {
 };
 
 const MEDALS_DB = [
-    { id: 'first_blood', name: 'اولین قدم', icon: '🩴', desc: 'اولین مرحله را حل کن', check: (state) => getTotalCompleted(state) >= 1 },
+    { id: 'first_blood', name: 'اولین قدم', icon: '🥉', desc: 'اولین مرحله را حل کن', check: (state) => getTotalCompleted(state) >= 1 },
     { id: 'proverbs_novice', name: 'ضرب‌المثل آموز', icon: '📜', desc: '۵ ضرب‌المثل را حل کن', check: (state) => (state.progress['proverbs']?.length || 0) >= 5 },
-    { id: 'rich', name: 'ثروتمند', icon: '💎', desc: '۵۰۰ امتیاز کسب کن', check: (state) => state.globalScore >= 500 },
-    { id: 'movie_buff', name: 'فیلم‌باز', icon: '🎬', desc: 'تمام مراحل بخش فیلم و سریال را کامل کن', check: (state) => isCategoryFullyCompleted(state, ['فیلم', 'سریال', 'movie', 'film', 'series']) },
-    { id: 'globetrotter', name: 'جهانگرد', icon: '🌍', desc: 'تمام مراحل بخش کشورها را کامل کن', check: (state) => isCategoryFullyCompleted(state, ['کشور', 'country', 'countries']) }
+    { id: 'rich', name: 'ثروتمند', icon: '💎', desc: '۵۰۰ امتیاز کسب کن', check: (state) => state.globalScore >= 500 }
 ];
 
 function getTotalCompleted(state) {
     return Object.values(state.progress).reduce((sum, arr) => sum + arr.length, 0);
-}
-
-// پیدا کردن دسته‌بندی‌(های)ی که id یا نام‌شان با یکی از کلیدواژه‌ها مطابقت دارد
-// و بررسی این‌که آیا کاربر تمام مراحل آن(ها) را کامل کرده است یا نه.
-// این روش وابسته به دانستن دقیق id داخل data.json نیست؛ با نام دسته هم کار می‌کند.
-function isCategoryFullyCompleted(state, keywords) {
-    if (!DB.categories || DB.categories.length === 0) return false;
-
-    const matchedCategories = DB.categories.filter(cat => {
-        const idLower = (cat.id || '').toLowerCase();
-        const nameLower = (cat.name || '').toLowerCase();
-        return keywords.some(kw => {
-            const kwLower = kw.toLowerCase();
-            return idLower.includes(kwLower) || nameLower.includes(kwLower);
-        });
-    });
-
-    if (matchedCategories.length === 0) return false;
-
-    return matchedCategories.every(cat => {
-        const completed = state.progress[cat.id]?.length || 0;
-        const total = cat.levels ? cat.levels.length : 0;
-        return total > 0 && completed >= total;
-    });
 }
 
 /* =========================================
