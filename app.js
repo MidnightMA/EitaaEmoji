@@ -37,6 +37,8 @@ const GameState = {
 const MEDALS_DB = [
     { id: 'first_blood', name: 'اولین قدم', icon: '🥉', desc: 'اولین مرحله را حل کن', check: (state) => getTotalCompleted(state) >= 1 },
     { id: 'proverbs_novice', name: 'ضرب‌المثل آموز', icon: '📜', desc: '۵ ضرب‌المثل را حل کن', check: (state) => (state.progress['proverbs']?.length || 0) >= 5 },
+    { id: 'proverbs_novice', name: 'فیلم‌باز', icon: '🎬', desc: '۵ فیلم و سریال را حل کن', check: (state) => (state.progress['movies']?.length || 0) >= 5 },
+    { id: 'proverbs_novice', name: 'جهانگرد', icon: '🌍', desc: '۵ کشور را حل کن', check: (state) => (state.progress['countries']?.length || 0) >= 5 },
     { id: 'rich', name: 'ثروتمند', icon: '💎', desc: '۵۰۰ امتیاز کسب کن', check: (state) => state.globalScore >= 500 }
 ];
 
