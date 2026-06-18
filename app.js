@@ -46,6 +46,30 @@ function getTotalCompleted(state) {
     return Object.values(state.progress).reduce((sum, arr) => sum + arr.length, 0);
 }
 
+// پیدا کردن دسته‌بندی‌(های)ی که id یا نام‌شان با یکی از کلیدواژه‌ها مطابقت دارد
+// و بررسی این‌که آیا کاربر تمام مراحل آن(ها) را کامل کرده است یا نه.
+// این روش وابسته به دانستن دقیق id داخل data.json نیست؛ با نام دسته هم کار می‌کند.
+function isCategoryFullyCompleted(state, keywords) {
+    if (!DB.categories || DB.categories.length === 0) return false;
+
+    const matchedCategories = DB.categories.filter(cat => {
+        const idLower = (cat.id || '').toLowerCase();
+        const nameLower = (cat.name || '').toLowerCase();
+        return keywords.some(kw => {
+            const kwLower = kw.toLowerCase();
+            return idLower.includes(kwLower) || nameLower.includes(kwLower);
+        });
+    });
+
+    if (matchedCategories.length === 0) return false;
+
+    return matchedCategories.every(cat => {
+        const completed = state.progress[cat.id]?.length || 0;
+        const total = cat.levels ? cat.levels.length : 0;
+        return total > 0 && completed >= total;
+    });
+}
+
 /* =========================================
    1. Cloud Storage Sync (KVDB)
 ========================================= */
