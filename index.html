@@ -46,7 +46,7 @@
     <!-- Screen 2: Game -->
     <div id="screen-game" class="screen">
         <header class="ios-header glass-nav">
-            <!-- دکمه بازگشت جدید (مربعی با پس‌زمینه مجزا) -->
+            <!-- دکمه بازگشت نرم‌افزاری -->
             <button id="btn-back-home" class="square-back-btn" aria-label="بازگشت">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M15 18l-6-6 6-6"/>
@@ -58,6 +58,9 @@
         </header>
 
         <main class="game-container">
+            <!-- هشدار عامیانه بودن ضرب‌المثل‌ها -->
+            <div id="category-notice" class="category-notice hidden"></div>
+
             <div class="level-indicator">مرحله <span id="ui-level">1</span></div>
             
             <section class="emoji-area ios-card" id="emoji-display">
@@ -66,10 +69,13 @@
                 </div>
             </section>
 
+            <!-- بخش دکمه‌ها و تبلیغات -->
             <section class="actions-area">
-                <button id="btn-hint" class="ios-btn primary-btn">
+                <button id="btn-hint" class="ios-btn primary-btn w-100">
                     💡 راهنما (۲۰- امتیاز)
                 </button>
+                <!-- جایگاه تبلیغات -->
+                <div id="adly-container" class="ad-container"></div>
             </section>
 
             <section class="answer-area" id="answer-slots"></section>
@@ -119,6 +125,21 @@
     </div>
 
     <div id="toast-container" class="toast-container"></div>
+
+    <!-- اسکریپت تبلیغات Adly -->
+    <script src="https://myadino.ir/widget/adly-widget.js"></script>
+    <script>
+        window.addEventListener('load', function() {
+            if (typeof AdlyWidget !== 'undefined') {
+                AdlyWidget.init({
+                    apiKey: '2ce718bece973eefeede5b00822735aa',
+                    containerId: 'adly-container',
+                    barnamk: 'razakplus_app',
+                    appRef: 31
+                });
+            }
+        });
+    </script>
     <script src="app.js"></script>
 </body>
 </html>

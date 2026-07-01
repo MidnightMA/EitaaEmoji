@@ -379,3 +379,70 @@ input:checked + .slider:before { transform: translateX(20px); }
     .apple-emoji { width: 50px; height: 50px; min-width: 50px; }
     .square-back-btn { width: 38px; height: 38px; }
 }   
+
+
+/* --- هشدار پیام‌های عامیانه --- */
+.category-notice {
+    background: rgba(255, 149, 0, 0.15);
+    color: var(--ios-orange);
+    padding: 10px 15px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    text-align: center;
+    margin-bottom: 5px;
+    font-weight: 600;
+    line-height: 1.5;
+}
+.category-notice.hidden {
+    display: none;
+}
+
+/* --- رفع مشکل بریدگی ایموجی‌ها --- */
+.emoji-area {
+    padding: 10px;
+    min-height: 120px;
+    display: flex;
+    align-items: center;
+}
+.emoji-inner {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 15px;
+    margin: 0 auto;
+    padding: 20px 15px; /* پدینگ بالا و پایین اضافه شد تا سایه و لبه‌های عکس بریده نشود */
+    align-items: center;
+    justify-content: flex-start;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+.emoji-inner::-webkit-scrollbar { display: none; }
+
+.apple-emoji {
+    width: 60px;
+    height: 60px;
+    min-width: 60px;
+    flex-shrink: 0;
+    object-fit: contain;
+    display: block; /* جلوگیری از ایجاد فاصله‌های عجیب زیر عکس */
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+}
+
+/* --- تنظیم چیدمان دکمه راهنما و تبلیغات --- */
+.actions-area {
+    display: flex;
+    flex-direction: column; /* چیدمان عمودی برای نمایش صحیح تبلیغ */
+    gap: 15px;
+    align-items: center;
+    width: 100%;
+}
+.ad-container {
+    width: 100%;
+    min-height: 50px; /* حداقل ارتفاع برای اینکه ساختار صفحه پیش از لود تبلیغ به هم نریزد */
+    display: flex;
+    justify-content: center;
+}
+
+@media (max-width: 380px) {
+    .apple-emoji { width: 50px; height: 50px; min-width: 50px; }
+}

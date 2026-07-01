@@ -4,13 +4,8 @@
  */
 
 // ==========================================
-// ⚠️ تنظیمات دیتابیس خارجی (حل مشکل ایتا)
-// ==========================================
-// برای اینکه سینک روی همه دستگاه‌ها کار کند:
-// ۱. به سایت kvdb.io بروید (نیازی به فیلترشکن و ثبت نام نیست).
-// ۲. روی دکمه مشکی Create Database کلیک کنید.
-// ۳. یک رشته تصادفی به شما می‌دهد (مثلاً: WjXyZk123EmojiGame).
-// ۴. آن رشته را در متغیر زیر قرار دهید!
+// ⚠️ تنظیمات دیتابیس خارجی (حل مشکل سینک)
+// آیدی باکت خود از kvdb.io را در اینجا قرار دهید
 const KVDB_BUCKET_ID = "E9u1ucHEsgf9B4m277eW4f"; 
 // ==========================================
 
@@ -51,7 +46,6 @@ function getTotalCompleted(state) {
 ========================================= */
 const StorageManager = {
     getKey: () => `eitaa_game_${GameState.user.id}`,
-    
     save: async function() {
         const payload = JSON.stringify({
             globalScore: GameState.globalScore,
@@ -59,34 +53,20 @@ const StorageManager = {
             unlockedMedals: GameState.unlockedMedals,
             settings: GameState.settings
         });
-        
-        // همواره روی لوکال استوریج ذخیره می‌کنیم (بک‌آپ)
         localStorage.setItem(this.getKey(), payload);
-
-        // اگر آیدی ایتا وجود داشت و باکت تنظیم شده بود، سینک ابری انجام می‌دهیم
-        if (GameState.user.id !== 'guest' && KVDB_BUCKET_ID !== "E9u1ucHEsgf9B4m277eW4f") {
-            try {
-                await fetch(`https://kvdb.io/${KVDB_BUCKET_ID}/${GameState.user.id}`, {
-                    method: 'PUT',
-                    body: payload
-                });
-            } catch (e) { console.warn("Cloud sync failed (Network Error)."); }
+        if (GameState.user.id !== 'guest' && KVDB_BUCKET_ID !== "YOUR_BUCKET_ID_HERE") {
+            try { await fetch(`https://kvdb.io/${KVDB_BUCKET_ID}/${GameState.user.id}`, { method: 'PUT', body: payload }); } catch (e) {}
         }
     },
-    
     load: async function(callback) {
         let finalData = null;
-
-        if (GameState.user.id !== 'guest' && KVDB_BUCKET_ID !== "E9u1ucHEsgf9B4m277eW4f") {
+        if (GameState.user.id !== 'guest' && KVDB_BUCKET_ID !== "YOUR_BUCKET_ID_HERE") {
             try {
                 const response = await fetch(`https://kvdb.io/${KVDB_BUCKET_ID}/${GameState.user.id}`);
                 if (response.ok) finalData = await response.text();
-            } catch (e) { console.warn("Could not reach cloud storage."); }
+            } catch (e) {}
         }
-
-        // استفاده از اطلاعات آفلاین در صورت قطع اینترنت
         if (!finalData) finalData = localStorage.getItem(this.getKey());
-
         if (finalData) {
             try {
                 const data = JSON.parse(finalData);
@@ -94,7 +74,7 @@ const StorageManager = {
                 GameState.progress = data.progress || {};
                 GameState.unlockedMedals = data.unlockedMedals || [];
                 GameState.settings = data.settings || GameState.settings;
-            } catch(e) { console.error("Parse error."); }
+            } catch(e) {}
         }
         callback();
     }
@@ -103,13 +83,10 @@ const StorageManager = {
 /* =========================================
    2. Super Fast Apple Emoji Engine
 ========================================= */
-const emojiCache = {}; // کش برای سرعت ۱۰۰ برابری
-
+const emojiCache = {}; 
 function renderAppleEmojis(text) {
     if (emojiCache[text]) return emojiCache[text];
-    
     let html = '';
-    // استفاده از Intl.Segmenter در صورت پشتیبانی مرورگر
     if (window.Intl && window.Intl.Segmenter) {
         const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
         for (let {segment} of segmenter.segment(text)) {
@@ -121,20 +98,17 @@ function renderAppleEmojis(text) {
                 hexCodes.push(code.toString(16));
             }
             let cleanHex = hexCodes.filter(c => c !== 'fe0f').join('-');
-            // اتصال به CDN فوق سریع
             let imgUrl = `https://cdn.jsdelivr.net/npm/emoji-datasource-apple@15.0.1/img/apple/64/${cleanHex}.png`;
             html += `<img src="${imgUrl}" class="apple-emoji" alt="${segment}" loading="lazy">`;
         }
     } else {
-        // Fallback قدرتمند برای دستگاه‌های قدیمی اندروید
         const emojiRegex = /([\u{1f300}-\u{1f9ff}\u{2600}-\u{26ff}\u{2700}-\u{27bf}])/gu;
         html = text.replace(emojiRegex, match => {
             let code = match.codePointAt(0).toString(16);
             return `<img src="https://cdn.jsdelivr.net/npm/emoji-datasource-apple@15.0.1/img/apple/64/${code}.png" class="apple-emoji" alt="${match}">`;
         });
     }
-
-    emojiCache[text] = html; // ذخیره در رم برای رندر آنی دفعات بعد
+    emojiCache[text] = html; 
     return html;
 }
 
@@ -143,33 +117,24 @@ function renderAppleEmojis(text) {
 ========================================= */
 const AudioEngine = (function() {
     let audioCtx = null;
-    function init() {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-    }
+    function init() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
     function playTone(freq, type, dur, vol = 0.05) {
         if (!GameState.settings.sound) return;
         init();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = type;
-        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        gain.gain.setValueAtTime(vol, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+        const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+        osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(vol, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
         osc.connect(gain); gain.connect(audioCtx.destination);
         osc.start(); osc.stop(audioCtx.currentTime + dur);
     }
     return {
-        tap: () => playTone(600, 'sine', 0.1, 0.02),
-        pop: () => playTone(400, 'triangle', 0.1, 0.03),
-        error: () => playTone(150, 'sawtooth', 0.3, 0.05),
-        success: () => { playTone(400, 'sine', 0.1); setTimeout(() => playTone(600, 'sine', 0.15), 100); },
-        medal: () => { playTone(500, 'sine', 0.1); setTimeout(() => playTone(800, 'sine', 0.3), 100); }
+        tap: () => playTone(600, 'sine', 0.1, 0.02), pop: () => playTone(400, 'triangle', 0.1, 0.03), error: () => playTone(150, 'sawtooth', 0.3, 0.05),
+        success: () => { playTone(400, 'sine', 0.1); setTimeout(() => playTone(600, 'sine', 0.15), 100); }, medal: () => { playTone(500, 'sine', 0.1); setTimeout(() => playTone(800, 'sine', 0.3), 100); }
     };
 })();
 
 /* =========================================
-   4. UI Management & Eitaa Profile
+   4. UI Management & Eitaa Navigation
 ========================================= */
 function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -184,11 +149,22 @@ function applyTheme() {
     }
 }
 
+// دکمه بازگشت اصلی
+function goBackToHome() {
+    AudioEngine.tap(); 
+    renderHome(); 
+    showScreen('screen-home');
+    
+    // مخفی کردن دکمه بازگشت سیستمی ایتا
+    if (window.Eitaa && window.Eitaa.WebApp && window.Eitaa.WebApp.BackButton) {
+        window.Eitaa.WebApp.BackButton.hide();
+    }
+}
+
 function renderHome() {
     document.getElementById('home-total-score').textContent = GameState.globalScore;
     document.getElementById('user-name').textContent = GameState.user.first_name;
 
-    // بارگذاری دقیق عکس پروفایل ایتا
     const avatarEl = document.getElementById('user-avatar');
     if (GameState.user.photo_url) {
         avatarEl.innerHTML = `<img src="${GameState.user.photo_url}" alt="Profile" onerror="this.style.display='none'; this.parentElement.innerText='👤';">`;
@@ -197,7 +173,6 @@ function renderHome() {
         avatarEl.textContent = '👤';
     }
 
-    // مدال‌ها
     const medalsContainer = document.getElementById('medals-container');
     medalsContainer.innerHTML = '';
     MEDALS_DB.forEach(medal => {
@@ -209,7 +184,6 @@ function renderHome() {
     });
     document.getElementById('medals-count').textContent = `${GameState.unlockedMedals.length}/${MEDALS_DB.length}`;
 
-    // دسته‌بندی‌ها
     const catContainer = document.getElementById('categories-container');
     catContainer.innerHTML = '';
     DB.categories.forEach(cat => {
@@ -230,21 +204,6 @@ function renderHome() {
     });
 }
 
-function checkMedals() {
-    MEDALS_DB.forEach(medal => {
-        if (!GameState.unlockedMedals.includes(medal.id) && medal.check(GameState)) {
-            GameState.unlockedMedals.push(medal.id);
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = 'toast';
-            toast.innerHTML = `<span style="font-size:1.5rem">${medal.icon}</span> <span>مدال جدید: ${medal.name}</span>`;
-            container.appendChild(toast);
-            AudioEngine.medal();
-            setTimeout(() => toast.remove(), 3500);
-        }
-    });
-}
-
 /* =========================================
    5. Game Logic Core
 ========================================= */
@@ -258,8 +217,23 @@ function startCategory(category) {
         if(!completedArr.includes(i)) { nextIndex = i; break; }
     }
     GameState.activeLevelIndex = nextIndex;
+    
+    // نمایش هشدار برای ضرب‌المثل‌ها
+    const noticeEl = document.getElementById('category-notice');
+    if (category.id === 'proverbs') {
+        noticeEl.innerHTML = '💡 <strong>توجه:</strong> برخی از ضرب‌المثل‌ها به زبان محاوره و عامیانه نوشته شده‌اند.';
+        noticeEl.classList.remove('hidden');
+    } else {
+        noticeEl.classList.add('hidden');
+    }
+
     showScreen('screen-game');
     renderLevel();
+
+    // فعال‌سازی دکمه بازگشت سیستمی ایتا
+    if (window.Eitaa && window.Eitaa.WebApp && window.Eitaa.WebApp.BackButton) {
+        window.Eitaa.WebApp.BackButton.show();
+    }
 }
 
 function renderLevel() {
@@ -271,8 +245,6 @@ function renderLevel() {
     
     document.getElementById('ui-level').textContent = GameState.activeLevelIndex + 1;
     document.getElementById('game-score').textContent = GameState.globalScore;
-    
-    // تزریق ایموجی‌های کش شده و سریع
     document.getElementById('emoji-inner-container').innerHTML = renderAppleEmojis(levelData.emoji);
 
     const answerArea = document.getElementById('answer-slots');
@@ -431,17 +403,39 @@ function checkWin() {
     }
 }
 
+function checkMedals() {
+    MEDALS_DB.forEach(medal => {
+        if (!GameState.unlockedMedals.includes(medal.id) && medal.check(GameState)) {
+            GameState.unlockedMedals.push(medal.id);
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `<span style="font-size:1.5rem">${medal.icon}</span> <span>مدال جدید: ${medal.name}</span>`;
+            container.appendChild(toast);
+            AudioEngine.medal();
+            setTimeout(() => toast.remove(), 3500);
+        }
+    });
+}
+
 /* =========================================
    6. Bootstrapping
 ========================================= */
 function setupEvents() {
-    document.getElementById('btn-back-home').addEventListener('click', () => { AudioEngine.tap(); renderHome(); showScreen('screen-home'); });
+    document.getElementById('btn-back-home').addEventListener('click', goBackToHome);
+    
+    // اتصال دکمه بازگشت سخت‌افزاری/سیستمی ایتا به برنامه ما
+    if (window.Eitaa && window.Eitaa.WebApp && window.Eitaa.WebApp.BackButton) {
+        window.Eitaa.WebApp.BackButton.onClick(goBackToHome);
+    }
+
     document.getElementById('btn-next-level').addEventListener('click', () => {
         AudioEngine.tap();
         document.getElementById('modal-success').classList.add('hidden');
         GameState.activeLevelIndex++;
         renderLevel();
     });
+    
     document.getElementById('btn-hint').addEventListener('click', useHint);
     document.getElementById('btn-open-settings').addEventListener('click', () => { AudioEngine.tap(); document.getElementById('modal-settings').classList.remove('hidden'); });
     document.querySelectorAll('.close-btn').forEach(b => b.addEventListener('click', (e) => { document.getElementById(e.target.dataset.close).classList.add('hidden'); }));
@@ -457,11 +451,12 @@ function setupEvents() {
 }
 
 window.addEventListener('DOMContentLoaded', async () => {
-    // Inject Eitaa User Data
-    if (window.Eitaa && window.Eitaa.WebApp && window.Eitaa.WebApp.initDataUnsafe?.user) {
-        GameState.user = window.Eitaa.WebApp.initDataUnsafe.user;
+    if (window.Eitaa && window.Eitaa.WebApp) {
         window.Eitaa.WebApp.ready();
         window.Eitaa.WebApp.expand();
+        if (window.Eitaa.WebApp.initDataUnsafe?.user) {
+            GameState.user = window.Eitaa.WebApp.initDataUnsafe.user;
+        }
     }
 
     try {
