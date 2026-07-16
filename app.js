@@ -6,7 +6,7 @@
 // ==========================================
 // ⚠️ تنظیمات دیتابیس خارجی (حل مشکل سینک)
 // آیدی باکت خود از kvdb.io را در اینجا قرار دهید
-const KVDB_BUCKET_ID = "E9u1ucHEsgf9B4m277eW4f"; 
+const KVDB_BUCKET_ID = "YOUR_BUCKET_ID_HERE"; 
 // ==========================================
 
 const PERSIAN_ALPHABET = "ابپتثجچحخدذرزژسشصضطظعغفقکگلمنوهی";
@@ -83,37 +83,99 @@ const StorageManager = {
 /* =========================================
    2. Super Fast Apple Emoji Engine
 ========================================= */
-function renderAppleEmojis(text) {
-    // اگر مرورگر از Intl.Segmenter پشتیبانی کند
-    if (typeof Intl.Segmenter !== 'undefined') {
-        const segmenter = new Intl.Segmenter('fa', { granularity: 'grapheme' });
-        const segments = [...segmenter.segment(text)];
-        let html = '';
+const emojiSegmentCache = {}; // کش گرافیم‌ها برای سرعت رندر دفعات بعد
+const EMOJI_CDN_BASE = 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple@15.0.1/img/apple/64/';
 
-        for (const seg of segments) {
-            const char = seg.segment;
-            // تشخیص ایموجی (با استفاده از regex ساده)
-            const emojiRegex = /\p{Emoji}/u;
-            if (emojiRegex.test(char)) {
-                // استخراج code point به صورت hex
-                const code = char.codePointAt(0).toString(16);
-                const imgUrl = `https://cdn.jsdelivr.net/npm/emoji-datasource-apple@15.0.1/img/apple/64/${code}.png`;
-                html += `<img src="${imgUrl}" alt="${char}" class="emoji-apple" loading="lazy" />`;
-            } else {
-                html += char;
-            }
-        }
-        return html;
+// استخراج تمام کدپوینت‌های یک گرافیم (نه فقط کدپوینت اول!) با پدینگ ۴ رقمی هگز.
+// نکته مهم: ایموجی‌های ترکیبی مثل 👂🏻 (گوش + رنگ پوست)، 🧙‍♂️ (ZWJ)
+// یا 1️⃣ (کیکپ) از چند کدپوینت تشکیل شده‌اند؛ اگر فقط کدپوینت اول گرفته شود
+// (مثل نسخه قبلی)، بخش دوم ایموجی (رنگ پوست، جنسیت، کیکپ و ...) گم می‌شود.
+function getPaddedHexCodes(segment) {
+    let hexCodes = [];
+    for (let i = 0; i < segment.length; i++) {
+        let code = segment.codePointAt(i);
+        if (code > 0xFFFF) i++; // سوروگیت پایین را رد کن
+        hexCodes.push(code.toString(16).padStart(4, '0'));
     }
-
-    // حالت fallback با regex (برای مرورگرهای قدیمی)
-    const emojiRegex = /(\p{Emoji})/gu;
-    return text.replace(emojiRegex, (match) => {
-        const code = match.codePointAt(0).toString(16);
-        const imgUrl = `https://cdn.jsdelivr.net/npm/emoji-datasource-apple@15.0.1/img/apple/64/${code}.png`;
-        return `<img src="${imgUrl}" alt="${match}" class="emoji-apple" loading="lazy" />`;
-    });
+    return hexCodes;
 }
+
+// شکستن متن به گرافیم‌ها (کاراکترهای مستقل بصری). نتیجه کش می‌شود چون
+// هر مرحله بارها رندر می‌شود ولی محاسبه‌ی گرافیم‌ها فقط لازم است یک‌بار انجام شود.
+function getGraphemeSegments(text) {
+    if (emojiSegmentCache[text]) return emojiSegmentCache[text];
+    let segments = [];
+    if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+        const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
+        for (const { segment } of segmenter.segment(text)) segments.push(segment);
+    } else {
+        // حالت fallback برای مرورگرهای قدیمی: دنباله‌های ZWJ/رنگ‌پوست/کیکپ را هم می‌گیرد
+        const emojiRegex = /([\u{1f300}-\u{1f9ff}\u{2600}-\u{26ff}\u{2700}-\u{27bf}\u{2190}-\u{21ff}\u{2300}-\u{23ff}0-9#*](?:[\u{fe0f}\u{200d}\u{1f3fb}-\u{1f3ff}\u{20e3}]|[\u{1f300}-\u{1f9ff}])*)/gu;
+        let lastIndex = 0;
+        for (const m of text.matchAll(emojiRegex)) {
+            if (m.index > lastIndex) segments.push(text.slice(lastIndex, m.index));
+            segments.push(m[0]);
+            lastIndex = m.index + m[0].length;
+        }
+        if (lastIndex < text.length) segments.push(text.slice(lastIndex));
+    }
+    emojiSegmentCache[text] = segments;
+    return segments;
+}
+
+// اگر عکس دقیق پیدا نشد، ابتدا نسخه‌ی جایگزین را امتحان کن،
+// و در نهایت خود ایموجی را به صورت متن سیستم نشان بده (به جای آیکون شکسته).
+// این تابع با addEventListener وصل می‌شود، نه با attribute «onerror=""»، چون
+// خیلی از وب‌ویوهای اپ‌های پیام‌رسان (مثل ایتا) به‌خاطر سیاست امنیتی CSP
+// اجرای event handlerهای درون-خطی (inline) را بی‌صدا مسدود می‌کنند و باعث
+// می‌شدند ایموجی‌هایی مثل ☁️ برای همیشه به شکل آیکون شکسته بمانند.
+function handleEmojiImgError(e) {
+    const img = e.target;
+    if (img.dataset.stage === 'fallback') {
+        const span = document.createElement('span');
+        span.textContent = img.dataset.native;
+        span.className = 'apple-emoji apple-emoji-native';
+        img.replaceWith(span);
+        return;
+    }
+    img.dataset.stage = 'fallback';
+    img.src = img.dataset.fallback;
+}
+
+function buildEmojiImg(segment) {
+    const hex = getPaddedHexCodes(segment);
+    // برای اکثریت ایموجی‌های این بازی (نماد ساده + FE0F مثل ☁️، ⛰️، 🌧️)
+    // نام فایل CDN بدون fe0f است، پس همان را اول امتحان می‌کنیم.
+    // فقط دنباله‌های خاص مثل کیکپ‌ها (0031-fe0f-20e3.png) fe0f را نگه می‌دارند
+    // که به عنوان حالت دوم امتحان می‌شود.
+    const withoutFe0f = hex.filter(c => c !== 'fe0f').join('-');
+    const withFe0f = hex.join('-');
+
+    const img = document.createElement('img');
+    img.src = `${EMOJI_CDN_BASE}${withoutFe0f}.png`;
+    img.dataset.fallback = `${EMOJI_CDN_BASE}${withFe0f}.png`;
+    img.dataset.native = segment;
+    img.alt = segment;
+    img.loading = 'lazy';
+    img.className = 'apple-emoji';
+    img.addEventListener('error', handleEmojiImgError);
+    return img;
+}
+
+// container: عنصر DOM که ایموجی‌ها داخلش رندر می‌شوند. text: رشته‌ی ایموجی مرحله.
+function renderAppleEmojis(container, text) {
+    container.innerHTML = '';
+    const frag = document.createDocumentFragment();
+    getGraphemeSegments(text).forEach(segment => {
+        if (segment.trim() === '') {
+            frag.appendChild(document.createTextNode(segment));
+            return;
+        }
+        frag.appendChild(buildEmojiImg(segment));
+    });
+    container.appendChild(frag);
+}
+
 
 /* =========================================
    3. Audio Engine
@@ -170,7 +232,16 @@ function renderHome() {
 
     const avatarEl = document.getElementById('user-avatar');
     if (GameState.user.photo_url) {
-        avatarEl.innerHTML = `<img src="${GameState.user.photo_url}" alt="Profile" onerror="this.style.display='none'; this.parentElement.innerText='👤';">`;
+        avatarEl.innerHTML = '';
+        const img = document.createElement('img');
+        img.src = GameState.user.photo_url;
+        img.alt = 'Profile';
+        img.addEventListener('error', () => {
+            img.style.display = 'none';
+            avatarEl.textContent = '👤';
+            avatarEl.style.background = '';
+        });
+        avatarEl.appendChild(img);
         avatarEl.style.background = 'transparent';
     } else {
         avatarEl.textContent = '👤';
@@ -248,7 +319,7 @@ function renderLevel() {
     
     document.getElementById('ui-level').textContent = GameState.activeLevelIndex + 1;
     document.getElementById('game-score').textContent = GameState.globalScore;
-    document.getElementById('emoji-inner-container').innerHTML = renderAppleEmojis(levelData.emoji);
+    renderAppleEmojis(document.getElementById('emoji-inner-container'), levelData.emoji);
 
     const answerArea = document.getElementById('answer-slots');
     answerArea.innerHTML = '';

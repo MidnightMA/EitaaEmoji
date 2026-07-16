@@ -428,6 +428,17 @@ input:checked + .slider:before { transform: translateX(20px); }
     filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
 }
 
+/* حالت جایگزین: وقتی هیچ فایلی روی CDN برای ایموجی پیدا نشد،
+   خود ایموجی به صورت متن (فونت سیستم) نمایش داده می‌شود، نه یک آیکون شکسته */
+.apple-emoji-native {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 44px;
+    line-height: 1;
+    filter: none;
+}
+
 /* --- تنظیم چیدمان دکمه راهنما و تبلیغات --- */
 .actions-area {
     display: flex;
@@ -439,13 +450,5 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 @media (max-width: 380px) {
     .apple-emoji { width: 50px; height: 50px; min-width: 50px; }
-}
-
-/* تصاویر ایموجی اپل */
-.emoji-apple {
-    width: 64px;
-    height: 64px;
-    vertical-align: middle;
-    object-fit: contain;
-    display: inline-block;
+    .apple-emoji-native { font-size: 36px; }
 }
