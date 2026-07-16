@@ -83,9 +83,7 @@ const StorageManager = {
 /* =========================================
    2. Super Fast Apple Emoji Engine
 ========================================= */
-function renderAppleEmojis(text) {
-    if (emojiCache[text]) return emojiCache[text];
-    
+function renderAppleEmojis(text) {    
     let html = '';
     const segmenter = window.Intl?.Segmenter ? new Intl.Segmenter('en', { granularity: 'grapheme' }) : null;
     
@@ -121,7 +119,6 @@ function renderAppleEmojis(text) {
         });
     }
     
-    emojiCache[text] = html;
     return html;
 }
 
