@@ -83,33 +83,36 @@ const StorageManager = {
 /* =========================================
    2. Super Fast Apple Emoji Engine
 ========================================= */
-const emojiCache = {}; 
 function renderAppleEmojis(text) {
-    if (emojiCache[text]) return emojiCache[text];
-    let html = '';
-    if (window.Intl && window.Intl.Segmenter) {
-        const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
-        for (let {segment} of segmenter.segment(text)) {
-            if (segment.trim() === '') { html += segment; continue; }
-            let hexCodes = [];
-            for (let i = 0; i < segment.length; i++) {
-                let code = segment.codePointAt(i);
-                if (code > 0xFFFF) i++;
-                hexCodes.push(code.toString(16));
+    // اگر مرورگر از Intl.Segmenter پشتیبانی کند
+    if (typeof Intl.Segmenter !== 'undefined') {
+        const segmenter = new Intl.Segmenter('fa', { granularity: 'grapheme' });
+        const segments = [...segmenter.segment(text)];
+        let html = '';
+
+        for (const seg of segments) {
+            const char = seg.segment;
+            // تشخیص ایموجی (با استفاده از regex ساده)
+            const emojiRegex = /\p{Emoji}/u;
+            if (emojiRegex.test(char)) {
+                // استخراج code point به صورت hex
+                const code = char.codePointAt(0).toString(16);
+                const imgUrl = `https://cdn.jsdelivr.net/npm/emoji-datasource-apple@15.0.1/img/apple/64/${code}.png`;
+                html += `<img src="${imgUrl}" alt="${char}" class="emoji-apple" loading="lazy" />`;
+            } else {
+                html += char;
             }
-            let cleanHex = hexCodes.filter(c => c !== 'fe0f').join('-');
-            let imgUrl = `https://cdn.jsdelivr.net/npm/emoji-datasource-apple@15.0.1/img/apple/64/${cleanHex}.png`;
-            html += `<img src="${imgUrl}" class="apple-emoji" alt="${segment}" loading="lazy">`;
         }
-    } else {
-        const emojiRegex = /([\u{1f300}-\u{1f9ff}\u{2600}-\u{26ff}\u{2700}-\u{27bf}])/gu;
-        html = text.replace(emojiRegex, match => {
-            let code = match.codePointAt(0).toString(16);
-            return `<img src="https://cdn.jsdelivr.net/npm/emoji-datasource-apple@15.0.1/img/apple/64/${code}.png" class="apple-emoji" alt="${match}">`;
-        });
+        return html;
     }
-    emojiCache[text] = html; 
-    return html;
+
+    // حالت fallback با regex (برای مرورگرهای قدیمی)
+    const emojiRegex = /(\p{Emoji})/gu;
+    return text.replace(emojiRegex, (match) => {
+        const code = match.codePointAt(0).toString(16);
+        const imgUrl = `https://cdn.jsdelivr.net/npm/emoji-datasource-apple@15.0.1/img/apple/64/${code}.png`;
+        return `<img src="${imgUrl}" alt="${match}" class="emoji-apple" loading="lazy" />`;
+    });
 }
 
 /* =========================================

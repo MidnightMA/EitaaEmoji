@@ -440,3 +440,12 @@ input:checked + .slider:before { transform: translateX(20px); }
 @media (max-width: 380px) {
     .apple-emoji { width: 50px; height: 50px; min-width: 50px; }
 }
+
+/* تصاویر ایموجی اپل */
+.emoji-apple {
+    width: 64px;
+    height: 64px;
+    vertical-align: middle;
+    object-fit: contain;
+    display: inline-block;
+}
