@@ -441,9 +441,21 @@ input:checked + .slider:before { transform: translateX(20px); }
     filter: none;
 }
 
-/* --- بخش تبلیغ کانال --- */
+/* --- بخش تبلیغ کانال‌ها (نمای کشویی) --- */
 .channel-promo-section { margin-top: 8px; }
+.channel-promo-scroll {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+}
+.channel-promo-scroll::-webkit-scrollbar { display: none; }
 .channel-promo-card {
+    flex: 0 0 100%;
+    scroll-snap-align: start;
     display: flex;
     align-items: center;
     gap: 16px;
@@ -472,10 +484,18 @@ input:checked + .slider:before { transform: translateX(20px); }
     color: #ffffff;
     font-size: 1.05rem;
     font-weight: 700;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+.channel-promo-handle {
+    display: inline-block;
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 0.8rem;
+    font-weight: 600;
+    direction: ltr;
+    margin-bottom: 4px;
 }
 .channel-promo-desc {
     color: rgba(255, 255, 255, 0.85);
@@ -488,6 +508,25 @@ input:checked + .slider:before { transform: translateX(20px); }
     font-weight: 700;
     flex-shrink: 0;
     opacity: 0.85;
+}
+.channel-promo-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 12px;
+}
+.channel-promo-dots.hidden { display: none; }
+.channel-promo-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--border-color);
+    transition: all 0.2s ease;
+}
+.channel-promo-dot.active {
+    width: 18px;
+    border-radius: 3px;
+    background: var(--ios-blue);
 }
 
 /* --- تنظیم چیدمان دکمه راهنما و تبلیغات --- */
