@@ -511,6 +511,21 @@ function setupEvents() {
     });
     
     document.getElementById('btn-hint').addEventListener('click', useHint);
+
+    // لینک تبلیغ کانال: وب‌ویوی داخل اپ ایتا معمولاً navigate مستقیم لینک <a>
+    // یا window.open را مسدود می‌کند، پس اگر داخل اپ ایتا هستیم از متد رسمی
+    // خود SDK (مشابه WebApp.openLink در تلگرام) برای باز کردن لینک استفاده می‌کنیم.
+    const channelLink = document.getElementById('channel-promo-link');
+    if (channelLink) {
+        channelLink.addEventListener('click', (e) => {
+            if (window.Eitaa && window.Eitaa.WebApp && typeof window.Eitaa.WebApp.openLink === 'function') {
+                e.preventDefault();
+                window.Eitaa.WebApp.openLink(channelLink.href);
+            }
+            // در مرورگر معمولی (خارج از اپ ایتا) رفتار پیش‌فرض <a> اجرا می‌شود.
+        });
+    }
+
     document.getElementById('btn-open-settings').addEventListener('click', () => { AudioEngine.tap(); document.getElementById('modal-settings').classList.remove('hidden'); });
     document.querySelectorAll('.close-btn').forEach(b => b.addEventListener('click', (e) => { document.getElementById(e.target.dataset.close).classList.add('hidden'); }));
     document.getElementById('toggle-theme').addEventListener('change', e => { GameState.settings.darkMode = e.target.checked; applyTheme(); StorageManager.save(); });
