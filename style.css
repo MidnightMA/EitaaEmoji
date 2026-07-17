@@ -5,6 +5,7 @@
     --font-ios: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Vazirmatn", system-ui, sans-serif;
     
     --bg-main: #f2f2f7;
+    --bg-main-rgb: 242, 242, 247;
     --card-bg: #ffffff;
     --text-main: #1c1c1e;
     --text-muted: #8e8e93;
@@ -21,6 +22,7 @@
 
 [data-theme="dark"] {
     --bg-main: #000000;
+    --bg-main-rgb: 0, 0, 0;
     --card-bg: #1c1c1e;
     --text-main: #f2f2f7;
     --text-muted: #98989d;
@@ -68,7 +70,7 @@ body {
     z-index: 10;
 }
 .glass-nav {
-    background: rgba(var(--bg-main), 0.8);
+    background: rgba(var(--bg-main-rgb), 0.8);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--border-color);
@@ -437,6 +439,55 @@ input:checked + .slider:before { transform: translateX(20px); }
     font-size: 44px;
     line-height: 1;
     filter: none;
+}
+
+/* --- بخش تبلیغ کانال --- */
+.channel-promo-section { margin-top: 8px; }
+.channel-promo-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: linear-gradient(135deg, #0a84ff, #34c3ff);
+    border-radius: 24px;
+    padding: 18px 20px;
+    text-decoration: none;
+    box-shadow: var(--shadow-md);
+    cursor: pointer;
+    transition: transform 0.1s ease;
+}
+.channel-promo-card:active { transform: scale(0.97); }
+.channel-promo-icon {
+    width: 52px;
+    height: 52px;
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+}
+.channel-promo-info { flex: 1; min-width: 0; }
+.channel-promo-title {
+    color: #ffffff;
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.channel-promo-desc {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.8rem;
+    line-height: 1.4;
+}
+.channel-promo-arrow {
+    color: #ffffff;
+    font-size: 1.6rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    opacity: 0.85;
 }
 
 /* --- تنظیم چیدمان دکمه راهنما و تبلیغات --- */
