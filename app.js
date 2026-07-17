@@ -37,6 +37,32 @@ const MEDALS_DB = [
     { id: 'rich', name: 'ثروتمند', icon: '💎', desc: '۵۰۰ امتیاز کسب کن', check: (state) => state.globalScore >= 500 }
 ];
 
+// نمای کشویی تبلیغ کانال‌ها: هر آبجکت یک کارت قابل سوایپ می‌سازد.
+// برای افزودن کانال دوم، فقط یک آبجکت دیگر شبیه پایین به آرایه اضافه کن.
+const CHANNEL_PROMOS = [
+    {
+        name: 'تِک نور | 𝙏𝙚𝙘𝙝 𝙣𝙤𝙪𝙧',
+        handle: '@Tech_nour',
+        desc: 'اخبار و آپدیت‌های بازی رو اینجا دنبال کن',
+        icon: '📢',
+        link: 'https://eitaa.com/Tech_nour'
+    },
+    {
+        name: 'آواي‌خـــــــــیال',
+        handle: '@avay_khiyal',
+        desc: 'کانال شعر؛ اگه دلت یه گوشه‌ی آروم برای خوندن شعر می‌خواد، بیا اینجا',
+        icon: '🕊️',
+        link: 'https://eitaa.com/avay_khiyal'
+    }
+    // ,{
+    //     name: 'اسم کانال دوم',
+    //     handle: '@your_second_channel',
+    //     desc: 'توضیح کوتاه درباره کانال دوم',
+    //     icon: '🚀',
+    //     link: 'https://eitaa.com/your_second_channel'
+    // }
+];
+
 function getTotalCompleted(state) {
     return Object.values(state.progress).reduce((sum, arr) => sum + arr.length, 0);
 }
@@ -226,6 +252,18 @@ function goBackToHome() {
     }
 }
 
+// وب‌ویوی داخل اپ ایتا معمولاً ناوبری مستقیم <a> یا window.open را مسدود
+// می‌کند، پس اگر داخل اپ ایتا هستیم از متد رسمی خود SDK (مشابه
+// WebApp.openLink در تلگرام) برای باز کردن لینک استفاده می‌کنیم؛ در غیر
+// این صورت (مرورگر معمولی) با window.open در تب جدید باز می‌شود.
+function openExternalLink(url) {
+    if (window.Eitaa && window.Eitaa.WebApp && typeof window.Eitaa.WebApp.openLink === 'function') {
+        window.Eitaa.WebApp.openLink(url);
+    } else {
+        window.open(url, '_blank', 'noopener');
+    }
+}
+
 function renderHome() {
     document.getElementById('home-total-score').textContent = GameState.globalScore;
     document.getElementById('user-name').textContent = GameState.user.first_name;
@@ -276,6 +314,51 @@ function renderHome() {
         div.addEventListener('click', () => { AudioEngine.tap(); startCategory(cat); });
         catContainer.appendChild(div);
     });
+
+    renderChannelPromos();
+}
+
+// نمای کشویی تبلیغ کانال‌ها: از روی آرایه CHANNEL_PROMOS کارت می‌سازد،
+// امکان سوایپ افقی می‌دهد و نقطه‌های پایین را با اسکرول همگام می‌کند.
+function renderChannelPromos() {
+    const container = document.getElementById('channel-promo-container');
+    const dotsContainer = document.getElementById('channel-promo-dots');
+    if (!container || !dotsContainer) return;
+
+    container.innerHTML = '';
+    dotsContainer.innerHTML = '';
+
+    CHANNEL_PROMOS.forEach((promo, index) => {
+        const card = document.createElement('div');
+        card.className = 'channel-promo-card';
+        card.innerHTML = `
+            <div class="channel-promo-icon">${promo.icon}</div>
+            <div class="channel-promo-info">
+                <h3 class="channel-promo-title">${promo.name}</h3>
+                <span class="channel-promo-handle">${promo.handle}</span>
+                <p class="channel-promo-desc">${promo.desc}</p>
+            </div>
+            <div class="channel-promo-arrow">‹</div>`;
+        card.addEventListener('click', () => { AudioEngine.tap(); openExternalLink(promo.link); });
+        container.appendChild(card);
+
+        const dot = document.createElement('span');
+        dot.className = `channel-promo-dot ${index === 0 ? 'active' : ''}`;
+        dotsContainer.appendChild(dot);
+    });
+
+    // فقط وقتی بیش از یک کانال هست نقطه‌ها را نشان بده
+    dotsContainer.classList.toggle('hidden', CHANNEL_PROMOS.length <= 1);
+
+    if (CHANNEL_PROMOS.length > 1) {
+        container.addEventListener('scroll', () => {
+            const cardWidth = container.firstElementChild ? container.firstElementChild.offsetWidth + 12 : 1;
+            const activeIndex = Math.round(Math.abs(container.scrollLeft) / cardWidth);
+            dotsContainer.querySelectorAll('.channel-promo-dot').forEach((dot, i) => {
+                dot.classList.toggle('active', i === activeIndex);
+            });
+        });
+    }
 }
 
 /* =========================================
@@ -511,20 +594,6 @@ function setupEvents() {
     });
     
     document.getElementById('btn-hint').addEventListener('click', useHint);
-
-    // لینک تبلیغ کانال: وب‌ویوی داخل اپ ایتا معمولاً navigate مستقیم لینک <a>
-    // یا window.open را مسدود می‌کند، پس اگر داخل اپ ایتا هستیم از متد رسمی
-    // خود SDK (مشابه WebApp.openLink در تلگرام) برای باز کردن لینک استفاده می‌کنیم.
-    const channelLink = document.getElementById('channel-promo-link');
-    if (channelLink) {
-        channelLink.addEventListener('click', (e) => {
-            if (window.Eitaa && window.Eitaa.WebApp && typeof window.Eitaa.WebApp.openLink === 'function') {
-                e.preventDefault();
-                window.Eitaa.WebApp.openLink(channelLink.href);
-            }
-            // در مرورگر معمولی (خارج از اپ ایتا) رفتار پیش‌فرض <a> اجرا می‌شود.
-        });
-    }
 
     document.getElementById('btn-open-settings').addEventListener('click', () => { AudioEngine.tap(); document.getElementById('modal-settings').classList.remove('hidden'); });
     document.querySelectorAll('.close-btn').forEach(b => b.addEventListener('click', (e) => { document.getElementById(e.target.dataset.close).classList.add('hidden'); }));
