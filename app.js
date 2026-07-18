@@ -329,8 +329,11 @@ function renderChannelPromos() {
     dotsContainer.innerHTML = '';
 
     CHANNEL_PROMOS.forEach((promo, index) => {
-        const card = document.createElement('div');
+        const card = document.createElement('a');
         card.className = 'channel-promo-card';
+        card.href = promo.link;
+        card.target = '_blank';
+        card.rel = 'noopener noreferrer';
         card.innerHTML = `
             <div class="channel-promo-icon">${promo.icon}</div>
             <div class="channel-promo-info">
@@ -339,7 +342,15 @@ function renderChannelPromos() {
                 <p class="channel-promo-desc">${promo.desc}</p>
             </div>
             <div class="channel-promo-arrow">‹</div>`;
-        card.addEventListener('click', () => { AudioEngine.tap(); openExternalLink(promo.link); });
+        card.addEventListener('click', (e) => {
+            AudioEngine.tap();
+            if (window.Eitaa && window.Eitaa.WebApp && typeof window.Eitaa.WebApp.openLink === 'function') {
+                e.preventDefault();
+                window.Eitaa.WebApp.openLink(promo.link);
+            }
+            // در مرورگر معمولی (خارج از اپ ایتا) رفتار پیش‌فرض <a> اجرا می‌شود
+            // و لینک مستقیماً باز می‌شود.
+        });
         container.appendChild(card);
 
         const dot = document.createElement('span');
