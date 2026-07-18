@@ -253,12 +253,19 @@ function goBackToHome() {
 }
 
 // وب‌ویوی داخل اپ ایتا معمولاً ناوبری مستقیم <a> یا window.open را مسدود
-// می‌کند، پس اگر داخل اپ ایتا هستیم از متد رسمی خود SDK (مشابه
-// WebApp.openLink در تلگرام) برای باز کردن لینک استفاده می‌کنیم؛ در غیر
-// این صورت (مرورگر معمولی) با window.open در تب جدید باز می‌شود.
+// می‌کند، پس باید از متدهای رسمی خود SDK استفاده کنیم:
+//   1) openEitaaLink → مخصوص لینک‌های خود ایتا (eitaa.com/...)، دقیقاً مثل
+//      openTelegramLink در تلگرام؛ کاربر را بدون خروج از اپ مستقیم می‌برد
+//      روی صفحه کانال برای جوین شدن.
+//   2) openLink → بازکننده عمومی لینک (fallback، وقتی متد اول در دسترس نبود).
+//   3) window.open → فقط برای زمانی که خارج از اپ ایتا (مرورگر معمولی) تست
+//      می‌کنیم و اصلاً SDK لود نشده.
 function openExternalLink(url) {
-    if (window.Eitaa && window.Eitaa.WebApp && typeof window.Eitaa.WebApp.openLink === 'function') {
-        window.Eitaa.WebApp.openLink(url);
+    const wa = window.Eitaa && window.Eitaa.WebApp;
+    if (wa && typeof wa.openEitaaLink === 'function') {
+        wa.openEitaaLink(url);
+    } else if (wa && typeof wa.openLink === 'function') {
+        wa.openLink(url);
     } else {
         window.open(url, '_blank', 'noopener');
     }
@@ -344,9 +351,10 @@ function renderChannelPromos() {
             <div class="channel-promo-arrow">‹</div>`;
         card.addEventListener('click', (e) => {
             AudioEngine.tap();
-            if (window.Eitaa && window.Eitaa.WebApp && typeof window.Eitaa.WebApp.openLink === 'function') {
+            const wa = window.Eitaa && window.Eitaa.WebApp;
+            if (wa && (typeof wa.openEitaaLink === 'function' || typeof wa.openLink === 'function')) {
                 e.preventDefault();
-                window.Eitaa.WebApp.openLink(promo.link);
+                openExternalLink(promo.link);
             }
             // در مرورگر معمولی (خارج از اپ ایتا) رفتار پیش‌فرض <a> اجرا می‌شود
             // و لینک مستقیماً باز می‌شود.
