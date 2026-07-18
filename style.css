@@ -496,6 +496,8 @@ input:checked + .slider:before { transform: translateX(20px); }
     font-weight: 600;
     direction: ltr;
     margin-bottom: 4px;
+    text-decoration: underline;
+    text-underline-offset: 2px;
 }
 .channel-promo-desc {
     color: rgba(255, 255, 255, 0.85);
