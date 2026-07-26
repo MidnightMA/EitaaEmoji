@@ -120,7 +120,7 @@ const CHANNEL_PROMOS = [
     {
         name: 'تِک نور | 𝙏𝙚𝙘𝙝 𝙣𝙤𝙪𝙧',
         handle: '@Tech_nour',
-        desc: 'اخبار و آپدیت‌های بازی رو اینجا دنبال کن',
+        desc: 'اخبار هوش مصنوعی و آپدیت‌های بازی رو اینجا دنبال کن',
         icon: '📢',
         link: 'https://eitaa.com/Tech_nour',
         theme: 'tech'
@@ -133,14 +133,14 @@ const CHANNEL_PROMOS = [
         link: 'https://eitaa.com/avay_khiyal',
         theme: 'poetry'
     }
-    // ,{
-    //     name: 'اسم کانال دوم',
-    //     handle: '@your_second_channel',
-    //     desc: 'توضیح کوتاه درباره کانال دوم',
-    //     icon: '🚀',
-    //     link: 'https://eitaa.com/your_second_channel',
-    //     theme: 'tech' // یا 'poetry' یا اصلاً ننویس برای رنگ پیش‌فرض
-    // }
+    ,{
+        name: 'Rasa Meme | رسامیم ',
+        handle: '@Rasa_Meme',
+        desc: 'یسری میم چرت و پرت',
+        icon: '😂',
+        link: 'https://eitaa.com/Rasa_Meme',
+        theme: 'tech' // یا 'poetry' یا اصلاً ننویس برای رنگ پیش‌فرض
+   }
 ];
 
 // ==========================================
@@ -152,9 +152,8 @@ const AD_BANNER = {
     active: true,
     badge: 'تبلیغ ویژه',
     icon: '🎯',
-    title: 'اینجا جای تبلیغ توئه',
-    desc: 'برای ثبت تبلیغ، همین متن رو با توضیح تبلیغت عوض کن',
-    link: 'https://eitaa.com/ferstadeh',
+    desc: 'برای رزرو کلیک کنید و به مدیر پیام بدهید!',
+    link: 'https://eitaa.com/tab_amoo',
     buttonText: 'مشاهده'
 };
 // ==========================================
