@@ -119,7 +119,6 @@ const MEDALS_DB = [
 const CHANNEL_PROMOS = [
     {
         name: 'تِک نور | 𝙏𝙚𝙘𝙝 𝙣𝙤𝙪𝙧',
-        handle: '',
         desc: 'اخبار و آپدیت‌های بازی رو اینجا دنبال کن',
         icon: '📢',
         link: 'https://eitaa.com/Tech_nour',
