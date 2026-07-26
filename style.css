@@ -455,7 +455,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 }
 .channel-promo-scroll::-webkit-scrollbar { display: none; }
 .channel-promo-card {
-    flex: 0 0 84%;
+    flex: 0 0 100%;
     scroll-snap-align: start;
     display: flex;
     align-items: center;
@@ -512,6 +512,26 @@ input:checked + .slider:before { transform: translateX(20px); }
     flex-shrink: 0;
     opacity: 0.85;
 }
+.channel-promo-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 12px;
+}
+.channel-promo-dots.hidden { display: none; }
+.channel-promo-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--border-color);
+    transition: all 0.2s ease;
+}
+.channel-promo-dot.active {
+    width: 18px;
+    border-radius: 3px;
+    background: var(--ios-blue);
+}
+
 /* --- تنظیم چیدمان دکمه راهنما و تبلیغات --- */
 .actions-area {
     display: flex;
@@ -617,6 +637,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 .changelog-group { margin-bottom: 10px; }
 .changelog-group-title { font-size: 0.85rem; font-weight: 700; margin-bottom: 6px; }
 .changelog-group-title.added { color: var(--ios-green); }
+.changelog-group-title.fixed { color: var(--ios-orange); }
 .changelog-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
 .changelog-list li {
     font-size: 0.88rem;
