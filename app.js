@@ -13,15 +13,59 @@ const PERSIAN_ALPHABET = "ابپتثجچحخدذرزژسشصضطظعغفقکگل
 const HINT_COST = 20;
 const BASE_SCORE = 10;
 const FAST_TIME_LIMIT = 15;
+const DAILY_BASE_SCORE = 15;
+
+// امتیاز پایه‌ی هر دسته؛ اگر دسته‌ای اینجا نبود از BASE_SCORE استفاده می‌شود.
+// (درخواست: امتیاز ضرب‌المثل‌ها حداقل ۲۵ باشد)
+const CATEGORY_SCORES = {
+    proverbs: 25,
+    movies: 10,
+    countries: 10
+};
+
+// نسخه فعلی برنامه + لیست تغییرات هر نسخه. هر وقت آپدیت جدیدی منتشر کردی،
+// یک آبجکت جدید بالای این آرایه اضافه کن و APP_VERSION را هم به‌روز کن؛
+// خودکار یک بار برای کاربرهایی که نسخه قبلی را دیده‌اند، پنجره «تازه‌های این
+// نسخه» نمایش داده می‌شود (و همیشه هم از تنظیمات قابل مشاهده است).
+const APP_VERSION = '1.4.0';
+const CHANGELOG_DB = [
+    {
+        version: '1.4.0',
+        added: [
+            'سوال روزانه: هر روز یک معمای تازه که درست بعد از نیمه‌شب عوض می‌شود',
+            'قاب مخصوص تبلیغات ویژه با رنگ‌بندی جداگانه',
+            'نمای کشویی کانال‌ها الان خودش هر ۵ ثانیه می‌چرخد',
+            'نمایش سطح سختی (آسان / متوسط / سخت) کنار شماره هر مرحله',
+            'صفحه تنظیمات بازطراحی شد'
+        ],
+        fixed: [
+            'امتیاز دسته ضرب‌المثل‌ها به حداقل ۲۵ افزایش پیدا کرد',
+            'مدال «ثروتمند» حالا بر اساس کل امتیازی که تا الان کسب کرده‌ای حساب می‌شود، نه موجودی فعلی',
+            'مشکل نمایش و آنلاک‌شدن اشتباه مدال‌ها برطرف شد'
+        ]
+    },
+    {
+        version: '1.3.0',
+        added: [
+            'نمای کشویی معرفی کانال‌ها به صفحه اصلی اضافه شد'
+        ],
+        fixed: [
+            'کلیک روی لینک کانال حالا داخل خود اپ ایتا باز می‌شود'
+        ]
+    }
+];
 
 let DB = { categories: [] };
 
 const GameState = {
     user: { id: 'guest', first_name: 'کاربر مهمان', photo_url: null },
     globalScore: 0,
+    totalEarned: 0, // مجموع کل امتیازی که تا الان کسب شده (برخلاف globalScore که با خرج راهنما کم می‌شود)
     progress: {},
     unlockedMedals: [],
     settings: { sound: true, darkMode: false },
+    dailyChallenge: { lastCompletedDate: null, completedCount: 0 },
+    isDailyChallenge: false,
     activeCategory: null,
     activeLevelIndex: 0,
     startTime: 0,
@@ -30,38 +74,82 @@ const GameState = {
 };
 
 const MEDALS_DB = [
-    { id: 'first_blood', name: 'اولین قدم', icon: '🩴', desc: 'اولین مرحله را حل کن', check: (state) => getTotalCompleted(state) >= 1 },
-    { id: 'proverbs_novice', name: 'ضرب‌المثل آموز', icon: '📜', desc: '۵ ضرب‌المثل را حل کن', check: (state) => (state.progress['proverbs']?.length || 0) >= 5 },
-    { id: 'movies_novice', name: 'فیلم‌باز', icon: '🎬', desc: '۵ فیلم و سریال را حل کن', check: (state) => (state.progress['movies']?.length || 0) >= 5 },
-    { id: 'countries_novice', name: 'جهانگرد', icon: '🌍', desc: '۵ کشور را حل کن', check: (state) => (state.progress['countries']?.length || 0) >= 5 },
-    { id: 'rich', name: 'ثروتمند', icon: '💎', desc: '۵۰۰ امتیاز کسب کن', check: (state) => state.globalScore >= 500 }
+    { id: 'first_blood', name: 'اولین قدم', icon: '🩴', desc: 'اولین مرحله را حل کن',
+        check: (state) => getTotalCompleted(state) >= 1,
+        progress: (state) => `${Math.min(getTotalCompleted(state), 1)}/۱` },
+    { id: 'proverbs_novice', name: 'ضرب‌المثل آموز', icon: '📜', desc: '۵ ضرب‌المثل را حل کن',
+        check: (state) => (state.progress['proverbs']?.length || 0) >= 5,
+        progress: (state) => `${Math.min(state.progress['proverbs']?.length || 0, 5)}/۵` },
+    { id: 'movies_novice', name: 'فیلم‌باز', icon: '🎬', desc: '۵ فیلم و سریال را حل کن',
+        check: (state) => (state.progress['movies']?.length || 0) >= 5,
+        progress: (state) => `${Math.min(state.progress['movies']?.length || 0, 5)}/۵` },
+    { id: 'countries_novice', name: 'جهانگرد', icon: '🌍', desc: '۵ کشور را حل کن',
+        check: (state) => (state.progress['countries']?.length || 0) >= 5,
+        progress: (state) => `${Math.min(state.progress['countries']?.length || 0, 5)}/۵` },
+    // نکته: عمداً از totalEarned استفاده می‌کنیم نه globalScore، چون globalScore با
+    // خرج کردن روی راهنما کم می‌شود و ممکن بود کاربری که واقعاً ۵۰۰ امتیاز کسب
+    // کرده ولی خرج کرده، هیچ‌وقت این مدال را نگیرد.
+    { id: 'rich', name: 'ثروتمند', icon: '💎', desc: '۵۰۰ امتیاز کسب کن',
+        check: (state) => state.totalEarned >= 500,
+        progress: (state) => `${Math.min(state.totalEarned, 500)}/۵۰۰` },
+    { id: 'daily_fan', name: 'اهل چالش روزانه', icon: '🔥', desc: '۵ چالش روزانه را حل کن',
+        check: (state) => (state.dailyChallenge?.completedCount || 0) >= 5,
+        progress: (state) => `${Math.min(state.dailyChallenge?.completedCount || 0, 5)}/۵` },
+    { id: 'all_categories', name: 'استاد بازی', icon: '👑', desc: 'همه دسته‌ها را صد‌درصد کامل کن',
+        check: (state) => DB.categories.length > 0 && DB.categories.every(c => (state.progress[c.id]?.length || 0) >= c.levels.length),
+        progress: (state) => {
+            const total = DB.categories.reduce((s, c) => s + c.levels.length, 0);
+            const done = DB.categories.reduce((s, c) => s + Math.min(state.progress[c.id]?.length || 0, c.levels.length), 0);
+            return `${done}/${total}`;
+        } }
 ];
 
-// نمای کشویی تبلیغ کانال‌ها: هر آبجکت یک کارت قابل سوایپ می‌سازد.
-// برای افزودن کانال دوم، فقط یک آبجکت دیگر شبیه پایین به آرایه اضافه کن.
+// نمای کشویی تبلیغ کانال‌ها: هر آبجکت یک کارت قابل سوایپ می‌سازد (هر ۵ ثانیه
+// خودش می‌چرخد). برای افزودن کانال دوم، فقط یک آبجکت دیگر شبیه پایین اضافه کن.
+// theme: 'tech' یا 'poetry' رنگ‌بندی کارت را عوض می‌کند؛ برای کانال جدید هرکدام
+// را که حس‌وحالش نزدیک‌تره انتخاب کن (یا خالی بگذار برای رنگ آبی پیش‌فرض).
 const CHANNEL_PROMOS = [
     {
         name: 'تِک نور | 𝙏𝙚𝙘𝙝 𝙣𝙤𝙪𝙧',
         handle: '@Tech_nour',
         desc: 'اخبار و آپدیت‌های بازی رو اینجا دنبال کن',
         icon: '📢',
-        link: 'https://eitaa.com/Tech_nour'
+        link: 'https://eitaa.com/Tech_nour',
+        theme: 'tech'
     },
     {
         name: 'آواي‌خـــــــــیال',
         handle: '@avay_khiyal',
         desc: 'کانال شعر؛ اگه دلت یه گوشه‌ی آروم برای خوندن شعر می‌خواد، بیا اینجا',
         icon: '🕊️',
-        link: 'https://eitaa.com/avay_khiyal'
+        link: 'https://eitaa.com/avay_khiyal',
+        theme: 'poetry'
     }
     // ,{
     //     name: 'اسم کانال دوم',
     //     handle: '@your_second_channel',
     //     desc: 'توضیح کوتاه درباره کانال دوم',
     //     icon: '🚀',
-    //     link: 'https://eitaa.com/your_second_channel'
+    //     link: 'https://eitaa.com/your_second_channel',
+    //     theme: 'tech' // یا 'poetry' یا اصلاً ننویس برای رنگ پیش‌فرض
     // }
 ];
+
+// ==========================================
+// 📣 قاب تبلیغات ویژه (جدا از بخش کانال‌های خودمان بالا)
+// این قسمت مخصوص تبلیغ‌های موقتی/فروشیه. هر وقت یک تبلیغ تمام شد و خواستی
+// تبلیغ جدید ثبت کنی، فقط همین چند خط زیر را عوض کن — همین، نیازی به تغییر
+// جای دیگری از کد نیست. برای مخفی کردن موقت کل بخش، active را false کن.
+const AD_BANNER = {
+    active: true,
+    badge: 'تبلیغ ویژه',
+    icon: '🎯',
+    title: 'اینجا جای تبلیغ توئه',
+    desc: 'برای ثبت تبلیغ، همین متن رو با توضیح تبلیغت عوض کن',
+    link: 'https://eitaa.com/',
+    buttonText: 'مشاهده'
+};
+// ==========================================
 
 function getTotalCompleted(state) {
     return Object.values(state.progress).reduce((sum, arr) => sum + arr.length, 0);
@@ -75,9 +163,11 @@ const StorageManager = {
     save: async function() {
         const payload = JSON.stringify({
             globalScore: GameState.globalScore,
+            totalEarned: GameState.totalEarned,
             progress: GameState.progress,
             unlockedMedals: GameState.unlockedMedals,
-            settings: GameState.settings
+            settings: GameState.settings,
+            dailyChallenge: GameState.dailyChallenge
         });
         localStorage.setItem(this.getKey(), payload);
         if (GameState.user.id !== 'guest' && KVDB_BUCKET_ID !== "YOUR_BUCKET_ID_HERE") {
@@ -97,9 +187,14 @@ const StorageManager = {
             try {
                 const data = JSON.parse(finalData);
                 GameState.globalScore = data.globalScore || 0;
+                // برای کسانی که از قبل پیشرفت داشته‌اند و totalEarned ذخیره‌شده ندارند،
+                // globalScore فعلی را به‌عنوان تخمین اولیه در نظر می‌گیریم تا مدال «ثروتمند»
+                // ناگهان قفل نشود.
+                GameState.totalEarned = typeof data.totalEarned === 'number' ? data.totalEarned : (data.globalScore || 0);
                 GameState.progress = data.progress || {};
                 GameState.unlockedMedals = data.unlockedMedals || [];
                 GameState.settings = data.settings || GameState.settings;
+                GameState.dailyChallenge = data.dailyChallenge || { lastCompletedDate: null, completedCount: 0 };
             } catch(e) {}
         }
         callback();
@@ -298,7 +393,8 @@ function renderHome() {
         const isUnlocked = GameState.unlockedMedals.includes(medal.id);
         const div = document.createElement('div');
         div.className = `medal-card ${isUnlocked ? 'unlocked' : ''}`;
-        div.innerHTML = `<span class="medal-icon">${medal.icon}</span><span class="medal-name">${medal.name}</span>`;
+        const progressHtml = (!isUnlocked && medal.progress) ? `<span class="medal-progress">${medal.progress(GameState)}</span>` : '';
+        div.innerHTML = `<span class="medal-icon">${medal.icon}</span><span class="medal-name">${medal.name}</span>${progressHtml}`;
         medalsContainer.appendChild(div);
     });
     document.getElementById('medals-count').textContent = `${GameState.unlockedMedals.length}/${MEDALS_DB.length}`;
@@ -322,22 +418,27 @@ function renderHome() {
         catContainer.appendChild(div);
     });
 
+    renderDailyChallengeCard();
     renderChannelPromos();
+    renderAdBanner();
 }
 
+let promoRotateInterval = null;
 // نمای کشویی تبلیغ کانال‌ها: از روی آرایه CHANNEL_PROMOS کارت می‌سازد،
-// امکان سوایپ افقی می‌دهد و نقطه‌های پایین را با اسکرول همگام می‌کند.
+// امکان سوایپ افقی می‌دهد، نقطه‌های پایین را با اسکرول همگام می‌کند و هر ۵
+// ثانیه خودش به کانال بعدی می‌چرخد (با تعامل دستی کاربر موقتاً متوقف می‌شود).
 function renderChannelPromos() {
     const container = document.getElementById('channel-promo-container');
     const dotsContainer = document.getElementById('channel-promo-dots');
     if (!container || !dotsContainer) return;
 
+    clearInterval(promoRotateInterval);
     container.innerHTML = '';
     dotsContainer.innerHTML = '';
 
     CHANNEL_PROMOS.forEach((promo, index) => {
         const card = document.createElement('a');
-        card.className = 'channel-promo-card';
+        card.className = `channel-promo-card theme-${promo.theme || 'default'}`;
         card.href = promo.link;
         card.target = '_blank';
         card.rel = 'noopener noreferrer';
@@ -377,13 +478,150 @@ function renderChannelPromos() {
                 dot.classList.toggle('active', i === activeIndex);
             });
         });
+
+        // چرخش خودکار هر ۵ ثانیه. از scrollIntoView به‌جای دستکاری مستقیم
+        // scrollLeft استفاده می‌کنیم چون علامت (مثبت/منفی) scrollLeft در حالت
+        // RTL بین مرورگرها فرق می‌کند و scrollIntoView این مشکل را ندارد.
+        let rotateIndex = 0;
+        promoRotateInterval = setInterval(() => {
+            rotateIndex = (rotateIndex + 1) % CHANNEL_PROMOS.length;
+            const target = container.children[rotateIndex];
+            if (target) target.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
+        }, 5000);
+
+        // با تعامل دستی کاربر، چرخش خودکار موقتاً متوقف و بعد از چند ثانیه از سر گرفته می‌شود
+        let resumeTimeout = null;
+        container.addEventListener('pointerdown', () => {
+            clearInterval(promoRotateInterval);
+            clearTimeout(resumeTimeout);
+            resumeTimeout = setTimeout(() => {
+                promoRotateInterval = setInterval(() => {
+                    rotateIndex = (rotateIndex + 1) % CHANNEL_PROMOS.length;
+                    const target = container.children[rotateIndex];
+                    if (target) target.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
+                }, 5000);
+            }, 6000);
+        });
     }
+}
+
+// قاب تبلیغات ویژه (جدا از کانال‌های خودمان): برای ثبت تبلیغ جدید فقط آبجکت
+// AD_BANNER بالای فایل را عوض کن، این تابع خودش رندرش می‌کند.
+function renderAdBanner() {
+    const section = document.getElementById('ad-banner-section');
+    if (!section) return;
+    if (!AD_BANNER || !AD_BANNER.active) {
+        section.classList.add('hidden');
+        section.innerHTML = '';
+        return;
+    }
+    section.classList.remove('hidden');
+    section.innerHTML = `
+        <a href="${AD_BANNER.link}" class="ad-banner-card" target="_blank" rel="noopener noreferrer">
+            <span class="ad-banner-badge">${AD_BANNER.badge}</span>
+            <div class="ad-banner-icon">${AD_BANNER.icon}</div>
+            <div class="ad-banner-info">
+                <h3 class="ad-banner-title">${AD_BANNER.title}</h3>
+                <p class="ad-banner-desc">${AD_BANNER.desc}</p>
+            </div>
+            <div class="ad-banner-cta">${AD_BANNER.buttonText || 'مشاهده'}</div>
+        </a>`;
+    const card = section.querySelector('.ad-banner-card');
+    card.addEventListener('click', (e) => {
+        AudioEngine.tap();
+        const wa = window.Eitaa && window.Eitaa.WebApp;
+        if (wa && (typeof wa.openEitaaLink === 'function' || typeof wa.openLink === 'function')) {
+            e.preventDefault();
+            openExternalLink(AD_BANNER.link);
+        }
+    });
 }
 
 /* =========================================
    5. Game Logic Core
 ========================================= */
+
+// --- سوال روزانه ---
+// کلید امروز بر اساس ساعت محلی گوشی ساخته می‌شود، پس دقیقاً «بعد از نیمه‌شب
+// محلی» عوض می‌شود، نه یک منطقه زمانی ثابت جهانی.
+function getTodayKey() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function hashStringToInt(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) { hash = (hash * 31 + str.charCodeAt(i)) >>> 0; }
+    return hash;
+}
+
+// یک مرحله را بر اساس تاریخ امروز، به‌صورت قطعی از بین همه مراحل همه دسته‌ها
+// انتخاب می‌کند. «قطعی» یعنی همه کاربران در یک روز، سوال یکسانی می‌بینند و
+// این سوال فقط با عوض شدن تاریخ (نیمه‌شب) تغییر می‌کند.
+function getDailyChallengeLevel() {
+    const allLevels = [];
+    DB.categories.forEach(cat => {
+        cat.levels.forEach(lvl => allLevels.push({ ...lvl, categoryId: cat.id, categoryName: cat.name }));
+    });
+    if (allLevels.length === 0) return null;
+    const idx = hashStringToInt(getTodayKey()) % allLevels.length;
+    return allLevels[idx];
+}
+
+function renderDailyChallengeCard() {
+    const card = document.getElementById('daily-challenge-card');
+    if (!card) return;
+    const doneToday = GameState.dailyChallenge.lastCompletedDate === getTodayKey();
+    card.classList.toggle('done', doneToday);
+    document.getElementById('daily-badge').textContent = doneToday ? '✅ انجام‌شد' : '🔥 جدید';
+    document.getElementById('daily-status-text').textContent = doneToday
+        ? 'امروز حلش کردی! نیمه‌شب یه چالش تازه میاد 🌙'
+        : 'یه معمای ایموجی مخصوص امروز، هر روز عوض می‌شه';
+}
+
+function startDailyChallenge() {
+    AudioEngine.tap();
+    if (GameState.dailyChallenge.lastCompletedDate === getTodayKey()) {
+        showToast('🌙', 'چالش امروز رو قبلاً حل کردی! بعد از نیمه‌شب یه چالش جدید میاد.');
+        return;
+    }
+    const lvl = getDailyChallengeLevel();
+    if (!lvl) return;
+
+    GameState.isDailyChallenge = true;
+    GameState.activeCategory = { id: 'daily', name: '🔥 چالش روزانه', icon: '🔥', levels: [lvl] };
+    GameState.activeLevelIndex = 0;
+    document.getElementById('game-category-title').textContent = '🔥 چالش روزانه';
+    document.getElementById('category-notice').classList.add('hidden');
+
+    showScreen('screen-game');
+    renderLevel();
+
+    if (window.Eitaa && window.Eitaa.WebApp && window.Eitaa.WebApp.BackButton) {
+        window.Eitaa.WebApp.BackButton.show();
+    }
+}
+
+// --- سطح سختی هر مرحله ---
+// اگر خود مرحله در data.json مقدار "difficulty" داشته باشد از همان استفاده
+// می‌شود (برای سفارشی‌سازی دستی در آینده)، وگرنه بر اساس تعداد حروف پاسخ
+// به‌صورت خودکار تخمین زده می‌شود؛ راهی سبک برای سطح‌بندی ۱۵۰+ مرحله فعلی
+// بدون نیاز به ویرایش دستی تک‌تک آن‌ها در data.json.
+const DIFFICULTY_LABELS = {
+    easy: { text: 'آسان', className: 'diff-easy' },
+    medium: { text: 'متوسط', className: 'diff-medium' },
+    hard: { text: 'سخت', className: 'diff-hard' }
+};
+function computeDifficulty(levelData) {
+    if (levelData.difficulty && DIFFICULTY_LABELS[levelData.difficulty]) return levelData.difficulty;
+    const len = levelData.answer.replace(/\s/g, '').length;
+    if (len <= 6) return 'easy';
+    if (len <= 12) return 'medium';
+    return 'hard';
+}
+
 function startCategory(category) {
+    GameState.isDailyChallenge = false;
     GameState.activeCategory = category;
     document.getElementById('game-category-title').textContent = category.name;
     
@@ -421,6 +659,13 @@ function renderLevel() {
     
     document.getElementById('ui-level').textContent = GameState.activeLevelIndex + 1;
     document.getElementById('game-score').textContent = GameState.globalScore;
+
+    const diffKey = computeDifficulty(levelData);
+    const diffInfo = DIFFICULTY_LABELS[diffKey];
+    const diffEl = document.getElementById('ui-difficulty');
+    diffEl.textContent = diffInfo.text;
+    diffEl.className = `difficulty-badge ${diffInfo.className}`;
+
     renderAppleEmojis(document.getElementById('emoji-inner-container'), levelData.emoji);
 
     const answerArea = document.getElementById('answer-slots');
@@ -554,17 +799,32 @@ function checkWin() {
         AudioEngine.success();
         const timeTaken = (Date.now() - GameState.startTime) / 1000;
         const bonus = timeTaken <= FAST_TIME_LIMIT ? 5 : 0;
-        
-        GameState.globalScore += BASE_SCORE + bonus;
-        const catId = GameState.activeCategory.id;
-        if (!GameState.progress[catId]) GameState.progress[catId] = [];
-        if (!GameState.progress[catId].includes(GameState.activeLevelIndex)) {
-            GameState.progress[catId].push(GameState.activeLevelIndex);
+        let base;
+
+        if (GameState.isDailyChallenge) {
+            base = DAILY_BASE_SCORE;
+            GameState.globalScore += base + bonus;
+            GameState.totalEarned += base + bonus;
+            const todayKey = getTodayKey();
+            if (GameState.dailyChallenge.lastCompletedDate !== todayKey) {
+                GameState.dailyChallenge.completedCount = (GameState.dailyChallenge.completedCount || 0) + 1;
+            }
+            GameState.dailyChallenge.lastCompletedDate = todayKey;
+        } else {
+            const catId = GameState.activeCategory.id;
+            base = CATEGORY_SCORES[catId] ?? BASE_SCORE;
+            GameState.globalScore += base + bonus;
+            GameState.totalEarned += base + bonus;
+            if (!GameState.progress[catId]) GameState.progress[catId] = [];
+            if (!GameState.progress[catId].includes(GameState.activeLevelIndex)) {
+                GameState.progress[catId].push(GameState.activeLevelIndex);
+            }
         }
         
         checkMedals();
         StorageManager.save();
 
+        document.getElementById('reward-base-score').textContent = `+${base}`;
         const bonusEl = document.getElementById('reward-bonus');
         if (bonus > 0) { bonusEl.classList.remove('hidden'); bonusEl.innerHTML = `پاداش سرعت: <strong>+${bonus}</strong>`; } 
         else { bonusEl.classList.add('hidden'); }
@@ -579,17 +839,21 @@ function checkWin() {
     }
 }
 
+function showToast(icon, text, duration = 3500) {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerHTML = `<span style="font-size:1.5rem">${icon}</span> <span>${text}</span>`;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), duration);
+}
+
 function checkMedals() {
     MEDALS_DB.forEach(medal => {
         if (!GameState.unlockedMedals.includes(medal.id) && medal.check(GameState)) {
             GameState.unlockedMedals.push(medal.id);
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = 'toast';
-            toast.innerHTML = `<span style="font-size:1.5rem">${medal.icon}</span> <span>مدال جدید: ${medal.name}</span>`;
-            container.appendChild(toast);
+            showToast(medal.icon, `مدال جدید: ${medal.name}`);
             AudioEngine.medal();
-            setTimeout(() => toast.remove(), 3500);
         }
     });
 }
@@ -608,23 +872,80 @@ function setupEvents() {
     document.getElementById('btn-next-level').addEventListener('click', () => {
         AudioEngine.tap();
         document.getElementById('modal-success').classList.add('hidden');
+        if (GameState.isDailyChallenge) {
+            GameState.isDailyChallenge = false;
+            goBackToHome();
+            return;
+        }
         GameState.activeLevelIndex++;
         renderLevel();
     });
     
     document.getElementById('btn-hint').addEventListener('click', useHint);
 
+    document.getElementById('daily-challenge-card').addEventListener('click', startDailyChallenge);
+
     document.getElementById('btn-open-settings').addEventListener('click', () => { AudioEngine.tap(); document.getElementById('modal-settings').classList.remove('hidden'); });
+    document.getElementById('btn-open-changelog').addEventListener('click', () => {
+        AudioEngine.tap();
+        document.getElementById('modal-settings').classList.add('hidden');
+        renderChangelog(true);
+        document.getElementById('modal-changelog').classList.remove('hidden');
+    });
     document.querySelectorAll('.close-btn').forEach(b => b.addEventListener('click', (e) => { document.getElementById(e.target.dataset.close).classList.add('hidden'); }));
     document.getElementById('toggle-theme').addEventListener('change', e => { GameState.settings.darkMode = e.target.checked; applyTheme(); StorageManager.save(); });
     document.getElementById('toggle-sound').addEventListener('change', e => { GameState.settings.sound = e.target.checked; StorageManager.save(); });
     document.getElementById('btn-reset').addEventListener('click', () => {
         if(confirm("پیشرفت شما حذف خواهد شد. ادامه می‌دهید؟")) {
-            GameState.globalScore = 0; GameState.progress = {}; GameState.unlockedMedals = [];
+            GameState.globalScore = 0; GameState.totalEarned = 0; GameState.progress = {}; GameState.unlockedMedals = [];
+            GameState.dailyChallenge = { lastCompletedDate: null, completedCount: 0 };
             StorageManager.save(); applyTheme(); renderHome();
             document.getElementById('modal-settings').classList.add('hidden');
         }
     });
+}
+
+/* =========================================
+   7. تازه‌های اپ (Changelog)
+========================================= */
+// showAll=true یعنی همه نسخه‌ها (برای دکمه «تازه‌های اپ» در تنظیمات)،
+// showAll=false یعنی فقط نسخه‌هایی که کاربر هنوز ندیده (برای پاپ‌آپ خودکار).
+function renderChangelog(showAll) {
+    const body = document.getElementById('changelog-body');
+    if (!body) return;
+    const seen = localStorage.getItem('lastSeenVersion');
+    let entries = CHANGELOG_DB;
+    if (!showAll && seen) {
+        const seenIdx = CHANGELOG_DB.findIndex(e => e.version === seen);
+        entries = seenIdx === -1 ? CHANGELOG_DB.slice(0, 1) : CHANGELOG_DB.slice(0, seenIdx);
+    }
+    if (entries.length === 0) entries = CHANGELOG_DB.slice(0, 1);
+
+    body.innerHTML = entries.map(entry => `
+        <div class="changelog-entry">
+            <div class="changelog-version">نسخه ${entry.version}</div>
+            ${entry.added?.length ? `
+                <div class="changelog-group">
+                    <div class="changelog-group-title added">✨ چیزهای جدید</div>
+                    <ul class="changelog-list">${entry.added.map(t => `<li>${t}</li>`).join('')}</ul>
+                </div>` : ''}
+            ${entry.fixed?.length ? `
+                <div class="changelog-group">
+                    <div class="changelog-group-title fixed">🐞 باگ‌های رفع‌شده</div>
+                    <ul class="changelog-list">${entry.fixed.map(t => `<li>${t}</li>`).join('')}</ul>
+                </div>` : ''}
+        </div>`).join('');
+}
+
+function checkForUpdates() {
+    const seen = localStorage.getItem('lastSeenVersion');
+    localStorage.setItem('lastSeenVersion', APP_VERSION);
+    // بار اول نصب (seen خالی) پاپ‌آپ نشون داده نمی‌شود؛ فقط وقتی نسخه قبلی
+    // دیده شده و با نسخه فعلی فرق دارد (یعنی واقعاً یک آپدیت اتفاق افتاده).
+    if (seen && seen !== APP_VERSION) {
+        renderChangelog(false);
+        document.getElementById('modal-changelog').classList.remove('hidden');
+    }
 }
 
 window.addEventListener('DOMContentLoaded', async () => {
@@ -646,8 +967,10 @@ window.addEventListener('DOMContentLoaded', async () => {
     StorageManager.load(() => {
         document.getElementById('toggle-theme').checked = GameState.settings.darkMode;
         document.getElementById('toggle-sound').checked = GameState.settings.sound;
+        document.getElementById('settings-version-label').textContent = `نسخه ${APP_VERSION}`;
         applyTheme();
         setupEvents();
         renderHome();
+        checkForUpdates();
     });
 });
