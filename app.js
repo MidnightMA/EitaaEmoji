@@ -32,9 +32,9 @@ const CHANGELOG_DB = [
     {
         version: '1.5.0',
         added: [
-            'امتیاز سوال روزانه به ۵۰ امتیاز افزایش پیدا کرد',
-            'ایموجی نمایش امتیاز جذاب‌تر شد',
-            'آیکون‌های تازه و شیک‌تر جای ایموجی‌های قدیمی صفحه تنظیمات نشستن'
+            'جایزه سوال روزانه به ۵۰ سکه رسید',
+            'آیکون‌های تازه و شیک‌تر برای صفحه تنظیمات',
+            'نمای کانال‌های ما روان‌تر و بدون به‌هم‌ریختگی شد'
         ]
     },
     {
@@ -45,20 +45,12 @@ const CHANGELOG_DB = [
             'نمای کشویی کانال‌ها الان خودش هر ۵ ثانیه می‌چرخد',
             'نمایش سطح سختی (آسان / متوسط / سخت) کنار شماره هر مرحله',
             'صفحه تنظیمات بازطراحی شد'
-        ],
-        fixed: [
-            'امتیاز دسته ضرب‌المثل‌ها به حداقل ۲۵ افزایش پیدا کرد',
-            'مدال «ثروتمند» حالا بر اساس کل امتیازی که تا الان کسب کرده‌ای حساب می‌شود، نه موجودی فعلی',
-            'مشکل نمایش و آنلاک‌شدن اشتباه مدال‌ها برطرف شد'
         ]
     },
     {
         version: '1.3.0',
         added: [
             'نمای کشویی معرفی کانال‌ها به صفحه اصلی اضافه شد'
-        ],
-        fixed: [
-            'کلیک روی لینک کانال حالا داخل خود اپ ایتا باز می‌شود'
         ]
     }
 ];
@@ -433,18 +425,16 @@ function renderHome() {
 
 let promoRotateInterval = null;
 // نمای کشویی تبلیغ کانال‌ها: از روی آرایه CHANNEL_PROMOS کارت می‌سازد،
-// امکان سوایپ افقی می‌دهد، نقطه‌های پایین را با اسکرول همگام می‌کند و هر ۵
-// ثانیه خودش به کانال بعدی می‌چرخد (با تعامل دستی کاربر موقتاً متوقف می‌شود).
+// امکان سوایپ افقی می‌دهد و هر ۵ ثانیه خودش به کانال بعدی می‌چرخد
+// (با تعامل دستی کاربر موقتاً متوقف می‌شود).
 function renderChannelPromos() {
     const container = document.getElementById('channel-promo-container');
-    const dotsContainer = document.getElementById('channel-promo-dots');
-    if (!container || !dotsContainer) return;
+    if (!container) return;
 
     clearInterval(promoRotateInterval);
     container.innerHTML = '';
-    dotsContainer.innerHTML = '';
 
-    CHANNEL_PROMOS.forEach((promo, index) => {
+    CHANNEL_PROMOS.forEach((promo) => {
         const card = document.createElement('a');
         card.className = `channel-promo-card theme-${promo.theme || 'default'}`;
         card.href = promo.link;
@@ -469,46 +459,25 @@ function renderChannelPromos() {
             // و لینک مستقیماً باز می‌شود.
         });
         container.appendChild(card);
-
-        const dot = document.createElement('span');
-        dot.className = `channel-promo-dot ${index === 0 ? 'active' : ''}`;
-        dotsContainer.appendChild(dot);
     });
 
-    // فقط وقتی بیش از یک کانال هست نقطه‌ها را نشان بده
-    dotsContainer.classList.toggle('hidden', CHANNEL_PROMOS.length <= 1);
-
     if (CHANNEL_PROMOS.length > 1) {
-        container.addEventListener('scroll', () => {
-            const cardWidth = container.firstElementChild ? container.firstElementChild.offsetWidth + 12 : 1;
-            const activeIndex = Math.round(Math.abs(container.scrollLeft) / cardWidth);
-            dotsContainer.querySelectorAll('.channel-promo-dot').forEach((dot, i) => {
-                dot.classList.toggle('active', i === activeIndex);
-            });
-        });
-
-        // چرخش خودکار هر ۵ ثانیه. از scrollIntoView به‌جای دستکاری مستقیم
-        // scrollLeft استفاده می‌کنیم چون علامت (مثبت/منفی) scrollLeft در حالت
-        // RTL بین مرورگرها فرق می‌کند و scrollIntoView این مشکل را ندارد.
         let rotateIndex = 0;
-        promoRotateInterval = setInterval(() => {
-            rotateIndex = (rotateIndex + 1) % CHANNEL_PROMOS.length;
-            const target = container.children[rotateIndex];
-            if (target) target.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
-        }, 5000);
+        const startRotation = () => {
+            promoRotateInterval = setInterval(() => {
+                rotateIndex = (rotateIndex + 1) % CHANNEL_PROMOS.length;
+                const target = container.children[rotateIndex];
+                if (target) target.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
+            }, 5000);
+        };
+        startRotation();
 
         // با تعامل دستی کاربر، چرخش خودکار موقتاً متوقف و بعد از چند ثانیه از سر گرفته می‌شود
         let resumeTimeout = null;
         container.addEventListener('pointerdown', () => {
             clearInterval(promoRotateInterval);
             clearTimeout(resumeTimeout);
-            resumeTimeout = setTimeout(() => {
-                promoRotateInterval = setInterval(() => {
-                    rotateIndex = (rotateIndex + 1) % CHANNEL_PROMOS.length;
-                    const target = container.children[rotateIndex];
-                    if (target) target.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
-                }, 5000);
-            }, 6000);
+            resumeTimeout = setTimeout(startRotation, 6000);
         });
     }
 }
@@ -934,13 +903,8 @@ function renderChangelog(showAll) {
             <div class="changelog-version">نسخه ${entry.version}</div>
             ${entry.added?.length ? `
                 <div class="changelog-group">
-                    <div class="changelog-group-title added">✨ چیزهای جدید</div>
+                    <div class="changelog-group-title added">✨ ویژگی‌های جدید</div>
                     <ul class="changelog-list">${entry.added.map(t => `<li>${t}</li>`).join('')}</ul>
-                </div>` : ''}
-            ${entry.fixed?.length ? `
-                <div class="changelog-group">
-                    <div class="changelog-group-title fixed">🐞 باگ‌های رفع‌شده</div>
-                    <ul class="changelog-list">${entry.fixed.map(t => `<li>${t}</li>`).join('')}</ul>
                 </div>` : ''}
         </div>`).join('');
 }
