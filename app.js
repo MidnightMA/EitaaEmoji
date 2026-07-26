@@ -119,6 +119,7 @@ const MEDALS_DB = [
 const CHANNEL_PROMOS = [
     {
         name: 'تِک نور | 𝙏𝙚𝙘𝙝 𝙣𝙤𝙪𝙧',
+        handle: '@Tech_nour',
         desc: 'اخبار و آپدیت‌های بازی رو اینجا دنبال کن',
         icon: '📢',
         link: 'https://eitaa.com/Tech_nour',
@@ -153,7 +154,7 @@ const AD_BANNER = {
     icon: '🎯',
     title: 'اینجا جای تبلیغ توئه',
     desc: 'برای ثبت تبلیغ، همین متن رو با توضیح تبلیغت عوض کن',
-    link: 'https://eitaa.com/',
+    link: 'https://eitaa.com/ferstadeh',
     buttonText: 'مشاهده'
 };
 // ==========================================
