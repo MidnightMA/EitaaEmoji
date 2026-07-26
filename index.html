@@ -26,9 +26,23 @@
         </header>
 
         <main class="home-scroll">
+            <section class="daily-challenge-section">
+                <div class="daily-challenge-card" id="daily-challenge-card">
+                    <div class="daily-challenge-icon">🔥</div>
+                    <div class="daily-challenge-info">
+                        <div class="daily-challenge-top">
+                            <h3>سوال روزانه</h3>
+                            <span class="daily-badge" id="daily-badge">🔥 جدید</span>
+                        </div>
+                        <p id="daily-status-text">یه معمای ایموجی مخصوص امروز، هر روز عوض می‌شه</p>
+                    </div>
+                    <div class="daily-challenge-arrow">‹</div>
+                </div>
+            </section>
+
             <section class="medals-section">
                 <div class="section-header">
-                    <h2>افتخارات شما</h2>
+                    <h2>🏆 افتخارات شما</h2>
                     <span class="badge" id="medals-count">0/0</span>
                 </div>
                 <div class="medals-scroll" id="medals-container"></div>
@@ -36,18 +50,20 @@
 
             <section class="categories-section">
                 <div class="section-header">
-                    <h2>دسته‌بندی‌ها</h2>
+                    <h2>🗂️ دسته‌بندی‌ها</h2>
                 </div>
                 <div class="categories-list" id="categories-container"></div>
             </section>
 
             <section class="channel-promo-section">
                 <div class="section-header">
-                    <h2>کانال‌های ما</h2>
+                    <h2>📡 کانال‌های ما</h2>
                 </div>
                 <div class="channel-promo-scroll" id="channel-promo-container"></div>
                 <div class="channel-promo-dots" id="channel-promo-dots"></div>
             </section>
+
+            <section class="ad-banner-section hidden" id="ad-banner-section"></section>
 
         </main>
     </div>
@@ -70,7 +86,7 @@
             <!-- هشدار عامیانه بودن ضرب‌المثل‌ها -->
             <div id="category-notice" class="category-notice hidden"></div>
 
-            <div class="level-indicator">مرحله <span id="ui-level">1</span></div>
+            <div class="level-indicator">مرحله <span id="ui-level">1</span><span id="ui-difficulty" class="difficulty-badge"></span></div>
             
             <section class="emoji-area ios-card" id="emoji-display">
                 <div class="emoji-inner" id="emoji-inner-container">
@@ -96,40 +112,72 @@
     <!-- Modals -->
     <div id="modal-success" class="modal-overlay hidden">
         <div class="ios-modal pop-in">
-            <div class="modal-icon">🎉</div>
-            <h2>آفرین!</h2>
+            <div class="modal-icon success-icon">
+                <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+            </div>
+            <h2>آفرین! درست حدس زدی 🎉</h2>
             <p>پاسخ شما کاملاً درست بود.</p>
             <div class="reward-box">
-                <span class="reward-row">امتیاز مرحله: <strong>+10</strong></span>
-                <span id="reward-bonus" class="reward-row bonus-text hidden">پاداش سرعت: <strong>+5</strong></span>
+                <span class="reward-row">⭐ امتیاز مرحله: <strong id="reward-base-score">+10</strong></span>
+                <span id="reward-bonus" class="reward-row bonus-text hidden">⚡ پاداش سرعت: <strong>+5</strong></span>
             </div>
             <button id="btn-next-level" class="ios-btn success-btn w-100">ادامه بازی 🚀</button>
         </div>
     </div>
 
     <div id="modal-settings" class="modal-overlay hidden">
-        <div class="ios-modal slide-up">
+        <div class="ios-modal slide-up settings-modal">
             <div class="modal-header">
-                <h2>تنظیمات</h2>
+                <h2>⚙️ تنظیمات</h2>
                 <button class="close-btn" data-close="modal-settings">×</button>
             </div>
+
+            <div class="settings-group-title">صدا و نمایش</div>
             <div class="ios-list">
                 <div class="ios-list-item">
-                    <span>صداهای بازی</span>
+                    <div class="setting-label">
+                        <span class="setting-icon-square icon-sound">🔊</span>
+                        <span>صداهای بازی</span>
+                    </div>
                     <label class="ios-switch">
                         <input type="checkbox" id="toggle-sound" checked>
                         <span class="slider"></span>
                     </label>
                 </div>
                 <div class="ios-list-item">
-                    <span>حالت تاریک</span>
+                    <div class="setting-label">
+                        <span class="setting-icon-square icon-dark">🌙</span>
+                        <span>حالت تاریک</span>
+                    </div>
                     <label class="ios-switch">
                         <input type="checkbox" id="toggle-theme">
                         <span class="slider"></span>
                     </label>
                 </div>
             </div>
-            <button id="btn-reset" class="ios-btn danger-btn w-100 mt-20">پاک کردن پیشرفت</button>
+
+            <div class="settings-group-title">درباره برنامه</div>
+            <div class="ios-list">
+                <div class="ios-list-item clickable" id="btn-open-changelog">
+                    <div class="setting-label">
+                        <span class="setting-icon-square icon-changelog">🆕</span>
+                        <span>تازه‌های اپ</span>
+                    </div>
+                    <span class="setting-version" id="settings-version-label">نسخه ۱.۰.۰</span>
+                </div>
+            </div>
+
+            <button id="btn-reset" class="ios-btn danger-btn w-100 mt-20">🗑️ پاک کردن پیشرفت</button>
+        </div>
+    </div>
+
+    <div id="modal-changelog" class="modal-overlay hidden">
+        <div class="ios-modal slide-up changelog-modal">
+            <div class="modal-header">
+                <h2>🆕 تازه‌های اپ</h2>
+                <button class="close-btn" data-close="modal-changelog">×</button>
+            </div>
+            <div class="changelog-body" id="changelog-body"></div>
         </div>
     </div>
 
