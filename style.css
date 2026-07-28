@@ -78,7 +78,16 @@ body {
 }
 
 /* User Profile */
-.user-info { display: flex; align-items: center; gap: 12px; }
+.user-info {
+    display: flex; align-items: center; gap: 12px;
+    background: none; border: none; padding: 0; margin: 0;
+    font-family: inherit; color: inherit; text-align: right; cursor: pointer;
+}
+.user-info:active { opacity: 0.7; }
+
+/* Section header icons (used instead of plain emoji) */
+.section-header h2 { display: flex; align-items: center; gap: 8px; }
+.section-icon { color: var(--ios-blue); flex-shrink: 0; }
 .avatar { width: 44px; height: 44px; background: var(--ios-blue); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
 .user-text { display: flex; flex-direction: column; }
 .greeting { font-size: 0.8rem; color: var(--text-muted); }
@@ -455,14 +464,14 @@ input:checked + .slider:before { transform: translateX(20px); }
 }
 .channel-promo-scroll::-webkit-scrollbar { display: none; }
 .channel-promo-card {
-    flex: 0 0 100%;
+    flex: 0 0 90%;
     scroll-snap-align: start;
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 14px;
     background: linear-gradient(135deg, #0a84ff, #34c3ff);
-    border-radius: 24px;
-    padding: 18px 20px;
+    border-radius: 20px;
+    padding: 14px 16px;
     text-decoration: none;
     box-shadow: var(--shadow-md);
     cursor: pointer;
@@ -470,15 +479,15 @@ input:checked + .slider:before { transform: translateX(20px); }
 }
 .channel-promo-card:active { transform: scale(0.97); }
 .channel-promo-icon {
-    width: 52px;
-    height: 52px;
+    width: 44px;
+    height: 44px;
     flex-shrink: 0;
     background: rgba(255, 255, 255, 0.2);
-    border-radius: 16px;
+    border-radius: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.6rem;
+    font-size: 1.35rem;
 }
 .channel-promo-info { flex: 1; min-width: 0; }
 .channel-promo-title {
@@ -605,6 +614,18 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 /* --- بازطراحی صفحه تنظیمات --- */
 .settings-modal { text-align: right; }
+.settings-modal .modal-header h2 {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 1.2rem;
+}
+.modal-header-icon {
+    width: 34px; height: 34px;
+    border-radius: 11px;
+    background: linear-gradient(135deg, #5856d6, #007aff);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 10px rgba(88, 86, 214, 0.35);
+    flex-shrink: 0;
+}
 .settings-group-title {
     font-size: 0.8rem;
     font-weight: 700;
@@ -615,21 +636,27 @@ input:checked + .slider:before { transform: translateX(20px); }
 .settings-group-title:first-of-type { margin-top: 4px; }
 .setting-label { display: flex; align-items: center; gap: 12px; }
 .setting-icon-square {
-    width: 32px; height: 32px;
-    border-radius: 9px;
+    width: 34px; height: 34px;
+    border-radius: 10px;
     display: flex; align-items: center; justify-content: center;
     font-size: 1.05rem;
     flex-shrink: 0;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.12);
 }
-.setting-icon-square.icon-sound { background: var(--ios-orange); }
-.setting-icon-square.icon-dark { background: #5856d6; }
-.setting-icon-square.icon-changelog { background: var(--ios-blue); }
-.ios-list-item.clickable { cursor: pointer; transition: opacity 0.15s; }
+.setting-icon-square.icon-sound { background: linear-gradient(135deg, #ff9500, #ff5f6d); }
+.setting-icon-square.icon-dark { background: linear-gradient(135deg, #5856d6, #363795); }
+.setting-icon-square.icon-changelog { background: linear-gradient(135deg, #007aff, #34c3ff); }
+.setting-icon-square.icon-profile { background: linear-gradient(135deg, #34c759, #30b0c7); }
+.ios-list { border: 1px solid var(--border-color); }
+.ios-list-item.clickable { cursor: pointer; transition: opacity 0.15s, background-color 0.15s; }
 .ios-list-item.clickable:active { opacity: 0.6; }
 .setting-version { font-size: 0.85rem; color: var(--text-muted); font-weight: 600; }
+.setting-arrow { font-size: 1.3rem; color: var(--text-muted); font-weight: 700; }
 
-/* --- مودال تازه‌های اپ (Changelog) --- */
+/* --- مودال نسخه‌ی جدید برنامک (Changelog) --- */
 .changelog-modal { text-align: right; max-height: 80vh; display: flex; flex-direction: column; }
+.changelog-modal .modal-header h2 { display: flex; align-items: center; gap: 10px; font-size: 1.2rem; }
+.changelog-header-icon { background: linear-gradient(135deg, #ff9500, #ff5f6d); box-shadow: 0 4px 10px rgba(255, 149, 0, 0.35); }
 .changelog-body { overflow-y: auto; max-height: 60vh; padding-right: 2px; }
 .changelog-entry { margin-bottom: 20px; }
 .changelog-entry:last-child { margin-bottom: 4px; }
@@ -647,55 +674,96 @@ input:checked + .slider:before { transform: translateX(20px); }
     padding: 8px 12px;
 }
 
-/* --- قاب تبلیغات ویژه: عمداً رنگ متفاوتی (طلایی/بنفش) از کارت‌های کانال دارد --- */
-.ad-banner-section.hidden { display: none; }
-.ad-banner-card {
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 16px;
+/* --- رنگ‌بندی اختصاصی کارت‌های کانال بر اساس حال‌وهوای هرکدام --- */
+.channel-promo-card.theme-tech { background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); }
+.channel-promo-card.theme-poetry { background: linear-gradient(135deg, #6a3093, #c86dd7 55%, #d391b5); }
+.channel-promo-card.theme-fun { background: linear-gradient(135deg, #ff5f6d, #ffc371); }
+
+/* تم تبلیغ ویژه: عمداً متفاوت (طلایی/بنفش) و با نشان «تبلیغ» تا کاربر سریع
+   متوجه تبلیغ بودن کارت شود، ولی همچنان ظاهری جذاب داشته باشد. */
+.channel-promo-card.theme-ad {
     background: linear-gradient(135deg, #7b2ff7, #f0a500);
-    border-radius: 24px;
-    padding: 18px 20px;
-    text-decoration: none;
-    box-shadow: var(--shadow-md);
-    cursor: pointer;
-    transition: transform 0.1s ease;
+    position: relative;
+    border: 2px dashed rgba(255, 255, 255, 0.45);
 }
-.ad-banner-card:active { transform: scale(0.97); }
-.ad-banner-badge {
+.channel-promo-ad-badge {
     position: absolute;
-    top: 12px; left: 12px;
-    background: rgba(0,0,0,0.25);
+    top: 10px; left: 10px;
+    background: rgba(0,0,0,0.3);
     color: #fff;
-    font-size: 0.68rem;
+    font-size: 0.65rem;
     font-weight: 700;
     padding: 3px 10px;
     border-radius: 10px;
 }
-.ad-banner-icon {
-    width: 52px; height: 52px; flex-shrink: 0;
-    background: rgba(255,255,255,0.22);
-    border-radius: 16px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.6rem;
-    margin-top: 10px;
-}
-.ad-banner-info { flex: 1; min-width: 0; margin-top: 10px; }
-.ad-banner-title { color: #fff; font-size: 1.05rem; font-weight: 700; margin-bottom: 2px; }
-.ad-banner-desc { color: rgba(255,255,255,0.9); font-size: 0.8rem; line-height: 1.4; }
-.ad-banner-cta {
-    background: rgba(255,255,255,0.25);
-    color: #fff;
-    font-size: 0.8rem;
-    font-weight: 700;
-    padding: 8px 14px;
-    border-radius: 14px;
-    flex-shrink: 0;
-    margin-top: 10px;
-    white-space: nowrap;
-}
 
-/* --- رنگ‌بندی اختصاصی کارت‌های کانال بر اساس حال‌وهوای هرکدام --- */
-.channel-promo-card.theme-tech { background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); }
-.channel-promo-card.theme-poetry { background: linear-gradient(135deg, #6a3093, #c86dd7 55%, #d391b5); }
+/* --- بخش «دسته‌بندی‌ها» (به‌زودی) --- */
+.categories-soon-section { margin-top: 8px; }
+.coming-soon-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--card-bg);
+    border: 2px dashed var(--border-color);
+    border-radius: 20px;
+    padding: 16px 18px;
+    opacity: 0.85;
+}
+.coming-soon-icon {
+    width: 44px; height: 44px; flex-shrink: 0;
+    border-radius: 14px;
+    background: var(--bg-main);
+    color: var(--text-muted);
+    display: flex; align-items: center; justify-content: center;
+}
+.coming-soon-text h3 { font-size: 1rem; font-weight: 700; margin-bottom: 2px; }
+.coming-soon-text p { font-size: 0.85rem; color: var(--text-muted); font-weight: 600; }
+
+/* --- صفحه پروفایل --- */
+.profile-container { padding: 10px 20px 40px; max-width: 500px; margin: 0 auto; }
+.profile-hero { text-align: center; padding: 24px 0 8px; }
+.profile-hero-avatar {
+    width: 88px; height: 88px; margin: 0 auto 14px;
+    border-radius: 26px;
+    background: var(--ios-blue);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.6rem;
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+}
+.profile-hero-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.profile-hero h2 { font-size: 1.3rem; font-weight: 700; margin-bottom: 10px; }
+.profile-score-pill {
+    display: inline-block;
+    background: var(--card-bg);
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-weight: 700;
+    box-shadow: var(--shadow-sm);
+    color: var(--ios-orange);
+}
+.gender-select { display: flex; gap: 14px; margin-top: 4px; }
+.gender-option {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    background: var(--card-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 20px;
+    padding: 20px 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s ease;
+}
+.gender-option:active { transform: scale(0.96); }
+.gender-option.selected {
+    border-color: var(--ios-blue);
+    color: var(--ios-blue);
+    background: rgba(0, 122, 255, 0.08);
+}
+.gender-icon { display: flex; }
+.gender-label { font-size: 1rem; font-weight: 700; }
+.profile-hint { margin-top: 14px; font-size: 0.8rem; color: var(--text-muted); text-align: center; line-height: 1.6; }
