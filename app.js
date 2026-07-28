@@ -27,8 +27,21 @@ const CATEGORY_SCORES = {
 // یک آبجکت جدید بالای این آرایه اضافه کن و APP_VERSION را هم به‌روز کن؛
 // خودکار یک بار برای کاربرهایی که نسخه قبلی را دیده‌اند، پنجره «تازه‌های این
 // نسخه» نمایش داده می‌شود (و همیشه هم از تنظیمات قابل مشاهده است).
-const APP_VERSION = '1.5.0';
+const APP_VERSION = '1.6.0';
+// نکته: از این نسخه به بعد فقط قابلیت‌های جدید (added) در پنجره‌ی «نسخه‌ی جدید
+// برنامک» نمایش داده می‌شوند؛ باگ‌فیکس‌ها و تغییرات داخلی (fixed) دیگر برای
+// کاربر نمایش داده نمی‌شوند چون اهمیتی براش ندارند (برای رفرنس خودمان می‌تونیم
+// همچنان اینجا یادداشتشون کنیم، فقط رندر نمی‌شوند).
 const CHANGELOG_DB = [
+    {
+        version: '1.6.0',
+        added: [
+            'صفحه‌ی پروفایل اختصاصی با امکان انتخاب جنسیت',
+            'بخش «کانال‌های ما» با کارت‌های تازه و جمع‌وجورتر',
+            'بخش «دسته‌بندی‌ها»ی جدید برای پیش‌نمایش محتوای آینده',
+            'صفحه تنظیمات با ظاهر و آیکون‌های حرفه‌ای‌تر'
+        ]
+    },
     {
         version: '1.5.0',
         added: [
@@ -71,7 +84,7 @@ const GameState = {
     totalEarned: 0, // مجموع کل امتیازی که تا الان کسب شده (برخلاف globalScore که با خرج راهنما کم می‌شود)
     progress: {},
     unlockedMedals: [],
-    settings: { sound: true, darkMode: false },
+    settings: { sound: true, darkMode: false, gender: null }, // gender: null | 'girl' | 'boy'
     dailyChallenge: { lastCompletedDate: null, completedCount: 0 },
     isDailyChallenge: false,
     activeCategory: null,
@@ -112,19 +125,14 @@ const MEDALS_DB = [
         } }
 ];
 
-// نمای کشویی تبلیغ کانال‌ها: هر آبجکت یک کارت قابل سوایپ می‌سازد (هر ۵ ثانیه
-// خودش می‌چرخد). برای افزودن کانال دوم، فقط یک آبجکت دیگر شبیه پایین اضافه کن.
-// theme: 'tech' یا 'poetry' رنگ‌بندی کارت را عوض می‌کند؛ برای کانال جدید هرکدام
-// را که حس‌وحالش نزدیک‌تره انتخاب کن (یا خالی بگذار برای رنگ آبی پیش‌فرض).
+// نمای کشویی معرفی کانال‌ها: هر آبجکت یک کارت قابل سوایپ می‌سازد (هر ۵ ثانیه
+// خودش می‌چرخد). برای افزودن کانال جدید، فقط یک آبجکت دیگر شبیه پایین اضافه کن.
+// theme رنگ‌بندی کارت را عوض می‌کند: 'poetry'، 'tech'، 'fun' یا 'ad' (تبلیغ ویژه؛
+// این تم عمداً متفاوت و متمایز طراحی شده تا کاربر سریع بفهمد تبلیغ است).
+// isAd: true یعنی این کارت به‌جای کانال ما، یک تبلیغ ویژه است (بج «تبلیغ» نشان
+// داده می‌شود). برای ثبت تبلیغ جدید فقط همین آبجکت را عوض کن، نیازی به تغییر
+// جای دیگری از کد نیست.
 const CHANNEL_PROMOS = [
-    {
-        name: 'تِک نور | 𝙏𝙚𝙘𝙝 𝙣𝙤𝙪𝙧',
-        handle: '@Tech_nour',
-        desc: 'اخبار هوش مصنوعی و آپدیت‌های بازی رو اینجا دنبال کن',
-        icon: '📢',
-        link: 'https://eitaa.com/Tech_nour',
-        theme: 'tech'
-    },
     {
         name: 'آواي‌خـــــــــیال',
         handle: '@avay_khiyal',
@@ -132,31 +140,34 @@ const CHANNEL_PROMOS = [
         icon: '🕊️',
         link: 'https://eitaa.com/avay_khiyal',
         theme: 'poetry'
-    }
-    ,{
+    },
+    {
+        name: 'تِک نور | 𝙏𝙚𝙘𝙝 𝙣𝙤𝙪𝙧',
+        handle: '@Tech_nour',
+        desc: 'برای رزرو تبلیغ ویژه کلیک کنید و به مدیر پیام بدهید!',
+        icon: '🎯',
+        link: 'https://eitaa.com/tab_amoo',
+        theme: 'ad',
+        isAd: true,
+        badge: 'تبلیغ ویژه'
+    },
+    {
         name: 'Rasa Meme | رسامیم ',
         handle: '@Rasa_Meme',
         desc: 'یسری میم چرت و پرت',
         icon: '😂',
         link: 'https://eitaa.com/Rasa_Meme',
-        theme: 'tech' // یا 'poetry' یا اصلاً ننویس برای رنگ پیش‌فرض
-   }
+        theme: 'fun'
+    },
+    {
+        name: 'کانال چهارم',
+        handle: '@your_channel',
+        desc: 'توضیح کوتاه کانال خودتان را اینجا بنویسید',
+        icon: '📣',
+        link: 'https://eitaa.com/your_channel',
+        theme: 'tech'
+    }
 ];
-
-// ==========================================
-// 📣 قاب تبلیغات ویژه (جدا از بخش کانال‌های خودمان بالا)
-// این قسمت مخصوص تبلیغ‌های موقتی/فروشیه. هر وقت یک تبلیغ تمام شد و خواستی
-// تبلیغ جدید ثبت کنی، فقط همین چند خط زیر را عوض کن — همین، نیازی به تغییر
-// جای دیگری از کد نیست. برای مخفی کردن موقت کل بخش، active را false کن.
-const AD_BANNER = {
-    active: true,
-    badge: 'تبلیغ ویژه',
-    icon: '🎯',
-    desc: 'برای رزرو کلیک کنید و به مدیر پیام بدهید!',
-    link: 'https://eitaa.com/tab_amoo',
-    buttonText: 'مشاهده'
-};
-// ==========================================
 
 function getTotalCompleted(state) {
     return Object.values(state.progress).reduce((sum, arr) => sum + arr.length, 0);
@@ -354,6 +365,37 @@ function goBackToHome() {
     }
 }
 
+// --- صفحه پروفایل ---
+function openProfileScreen() {
+    document.getElementById('profile-name').textContent = GameState.user.first_name;
+    document.getElementById('profile-total-score').textContent = GameState.globalScore;
+
+    const avatarEl = document.getElementById('profile-avatar');
+    if (GameState.user.photo_url) {
+        avatarEl.innerHTML = '';
+        const img = document.createElement('img');
+        img.src = GameState.user.photo_url;
+        img.alt = 'Profile';
+        img.addEventListener('error', () => { avatarEl.textContent = '👤'; });
+        avatarEl.appendChild(img);
+    } else {
+        avatarEl.textContent = '👤';
+    }
+
+    updateGenderSelectionUI();
+    showScreen('screen-profile');
+
+    if (window.Eitaa && window.Eitaa.WebApp && window.Eitaa.WebApp.BackButton) {
+        window.Eitaa.WebApp.BackButton.show();
+    }
+}
+
+function updateGenderSelectionUI() {
+    document.querySelectorAll('.gender-option').forEach(btn => {
+        btn.classList.toggle('selected', GameState.settings.gender === btn.dataset.gender);
+    });
+}
+
 // وب‌ویوی داخل اپ ایتا معمولاً ناوبری مستقیم <a> یا window.open را مسدود
 // می‌کند، پس باید از متدهای رسمی خود SDK استفاده کنیم:
 //   1) openEitaaLink → مخصوص لینک‌های خود ایتا (eitaa.com/...)، دقیقاً مثل
@@ -427,7 +469,6 @@ function renderHome() {
 
     renderDailyChallengeCard();
     renderChannelPromos();
-    renderAdBanner();
 }
 
 let promoRotateInterval = null;
@@ -450,10 +491,11 @@ function renderChannelPromos() {
         card.target = '_blank';
         card.rel = 'noopener noreferrer';
         card.innerHTML = `
+            ${promo.isAd ? `<span class="channel-promo-ad-badge">${promo.badge || 'تبلیغ'}</span>` : ''}
             <div class="channel-promo-icon">${promo.icon}</div>
             <div class="channel-promo-info">
                 <h3 class="channel-promo-title">${promo.name}</h3>
-                <span class="channel-promo-handle">${promo.handle}</span>
+                ${promo.isAd ? '' : `<span class="channel-promo-handle">${promo.handle}</span>`}
                 <p class="channel-promo-desc">${promo.desc}</p>
             </div>
             <div class="channel-promo-arrow">‹</div>`;
@@ -510,38 +552,6 @@ function renderChannelPromos() {
             }, 6000);
         });
     }
-}
-
-// قاب تبلیغات ویژه (جدا از کانال‌های خودمان): برای ثبت تبلیغ جدید فقط آبجکت
-// AD_BANNER بالای فایل را عوض کن، این تابع خودش رندرش می‌کند.
-function renderAdBanner() {
-    const section = document.getElementById('ad-banner-section');
-    if (!section) return;
-    if (!AD_BANNER || !AD_BANNER.active) {
-        section.classList.add('hidden');
-        section.innerHTML = '';
-        return;
-    }
-    section.classList.remove('hidden');
-    section.innerHTML = `
-        <a href="${AD_BANNER.link}" class="ad-banner-card" target="_blank" rel="noopener noreferrer">
-            <span class="ad-banner-badge">${AD_BANNER.badge}</span>
-            <div class="ad-banner-icon">${AD_BANNER.icon}</div>
-            <div class="ad-banner-info">
-                <h3 class="ad-banner-title">${AD_BANNER.title}</h3>
-                <p class="ad-banner-desc">${AD_BANNER.desc}</p>
-            </div>
-            <div class="ad-banner-cta">${AD_BANNER.buttonText || 'مشاهده'}</div>
-        </a>`;
-    const card = section.querySelector('.ad-banner-card');
-    card.addEventListener('click', (e) => {
-        AudioEngine.tap();
-        const wa = window.Eitaa && window.Eitaa.WebApp;
-        if (wa && (typeof wa.openEitaaLink === 'function' || typeof wa.openLink === 'function')) {
-            e.preventDefault();
-            openExternalLink(AD_BANNER.link);
-        }
-    });
 }
 
 /* =========================================
@@ -902,13 +912,23 @@ function setupEvents() {
     document.querySelectorAll('.close-btn').forEach(b => b.addEventListener('click', (e) => { document.getElementById(e.target.dataset.close).classList.add('hidden'); }));
     document.getElementById('toggle-theme').addEventListener('change', e => { GameState.settings.darkMode = e.target.checked; applyTheme(); StorageManager.save(); });
     document.getElementById('toggle-sound').addEventListener('change', e => { GameState.settings.sound = e.target.checked; StorageManager.save(); });
-    document.getElementById('btn-reset').addEventListener('click', () => {
-        if(confirm("پیشرفت شما حذف خواهد شد. ادامه می‌دهید؟")) {
-            GameState.globalScore = 0; GameState.totalEarned = 0; GameState.progress = {}; GameState.unlockedMedals = [];
-            GameState.dailyChallenge = { lastCompletedDate: null, completedCount: 0 };
-            StorageManager.save(); applyTheme(); renderHome();
-            document.getElementById('modal-settings').classList.add('hidden');
-        }
+
+    // صفحه پروفایل: هم از آواتار بالای صفحه اصلی و هم از داخل تنظیمات قابل باز شدن است
+    document.getElementById('btn-open-profile').addEventListener('click', () => { AudioEngine.tap(); openProfileScreen(); });
+    document.getElementById('btn-open-profile-settings').addEventListener('click', () => {
+        AudioEngine.tap();
+        document.getElementById('modal-settings').classList.add('hidden');
+        openProfileScreen();
+    });
+    document.getElementById('btn-back-home-profile').addEventListener('click', goBackToHome);
+
+    document.querySelectorAll('.gender-option').forEach(btn => {
+        btn.addEventListener('click', () => {
+            AudioEngine.tap();
+            GameState.settings.gender = btn.dataset.gender;
+            StorageManager.save();
+            updateGenderSelectionUI();
+        });
     });
 }
 
@@ -928,6 +948,8 @@ function renderChangelog(showAll) {
     }
     if (entries.length === 0) entries = CHANGELOG_DB.slice(0, 1);
 
+    // فقط قابلیت‌های جدید (added) نمایش داده می‌شود؛ باگ‌فیکس‌ها و تغییرات
+    // داخلی (fixed) برای کاربر نهایی اهمیتی ندارند، پس رندر نمی‌شوند.
     body.innerHTML = entries.map(entry => `
         <div class="changelog-entry">
             <div class="changelog-version">نسخه ${entry.version}</div>
@@ -935,11 +957,6 @@ function renderChangelog(showAll) {
                 <div class="changelog-group">
                     <div class="changelog-group-title added">✨ چیزهای جدید</div>
                     <ul class="changelog-list">${entry.added.map(t => `<li>${t}</li>`).join('')}</ul>
-                </div>` : ''}
-            ${entry.fixed?.length ? `
-                <div class="changelog-group">
-                    <div class="changelog-group-title fixed">🐞 باگ‌های رفع‌شده</div>
-                    <ul class="changelog-list">${entry.fixed.map(t => `<li>${t}</li>`).join('')}</ul>
                 </div>` : ''}
         </div>`).join('');
 }
