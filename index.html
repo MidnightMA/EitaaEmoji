@@ -12,18 +12,16 @@
     <!-- Screen 1: Home / Categories -->
     <div id="screen-home" class="screen active">
         <header class="ios-header">
-            <button class="user-info" id="btn-open-profile" aria-label="پروفایل من">
+            <div class="user-info" id="user-info-trigger">
                 <div class="avatar" id="user-avatar">👤</div>
                 <div class="user-text">
                     <span class="greeting">سلام،</span>
                     <strong id="user-name">کاربر عزیز</strong>
                 </div>
-            </button>
+            </div>
             <div class="header-actions">
                 <div class="score-pill">🪙 <span id="home-total-score">0</span></div>
-                <button id="btn-open-settings" class="icon-btn ios-btn" aria-label="تنظیمات">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                </button>
+                <button id="btn-open-settings" class="icon-btn ios-btn" aria-label="تنظیمات">⚙️</button>
             </div>
         </header>
 
@@ -44,7 +42,7 @@
 
             <section class="medals-section">
                 <div class="section-header">
-                    <h2><svg class="section-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v4a5 5 0 0 1-10 0V4Z"/><path d="M7 5H4a1 1 0 0 0-1 1v1a4 4 0 0 0 4 4"/><path d="M17 5h3a1 1 0 0 1 1 1v1a4 4 0 0 1-4 4"/></svg> افتخارات شما</h2>
+                    <h2>🏆 افتخارات شما</h2>
                     <span class="badge" id="medals-count">0/0</span>
                 </div>
                 <div class="medals-scroll" id="medals-container"></div>
@@ -52,31 +50,32 @@
 
             <section class="categories-section">
                 <div class="section-header">
-                    <h2><svg class="section-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg> بازی کن</h2>
+                    <h2>🗂️ دسته‌بندی‌ها</h2>
                 </div>
                 <div class="categories-list" id="categories-container"></div>
             </section>
 
             <section class="channel-promo-section">
                 <div class="section-header">
-                    <h2><svg class="section-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9-9"/><path d="M4 4v7h7"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M13.5 17.5h7"/><path d="M13.5 14.5h7"/><path d="M13.5 20.5h4"/></svg> کانال‌های ما</h2>
+                    <h2>
+                        <svg class="header-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ios-blue)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1.5" fill="var(--ios-blue)" stroke="none"/></svg>
+                        کانال‌های ما
+                    </h2>
                 </div>
                 <div class="channel-promo-scroll" id="channel-promo-container"></div>
                 <div class="channel-promo-dots" id="channel-promo-dots"></div>
             </section>
 
-            <section class="categories-soon-section">
+            <section class="coming-soon-section">
                 <div class="section-header">
-                    <h2><svg class="section-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg> دسته‌بندی‌ها</h2>
+                    <h2>
+                        <svg class="header-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ios-orange)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        دسته‌بندی‌های بیشتر
+                    </h2>
                 </div>
                 <div class="coming-soon-card">
-                    <div class="coming-soon-icon">
-                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l2.5 2.5"/></svg>
-                    </div>
-                    <div class="coming-soon-text">
-                        <h3>دسته‌بندی‌های بیشتر</h3>
-                        <p>به‌زودی...</p>
-                    </div>
+                    <div class="coming-soon-icon">✨</div>
+                    <p>دسته‌بندی‌های جدید به‌زودی اضافه می‌شوند...</p>
                 </div>
             </section>
 
@@ -127,38 +126,32 @@
     <!-- Screen 3: Profile -->
     <div id="screen-profile" class="screen">
         <header class="ios-header glass-nav">
-            <button id="btn-back-home-profile" class="square-back-btn" aria-label="بازگشت">
+            <button id="btn-back-profile" class="square-back-btn" aria-label="بازگشت">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M15 18l-6-6 6-6"/>
                 </svg>
             </button>
             <div class="nav-title">پروفایل من</div>
-            <div style="width:44px"></div>
+            <div style="width:36px"></div>
         </header>
 
         <main class="profile-container">
-            <div class="profile-hero">
-                <div class="profile-hero-avatar" id="profile-avatar">👤</div>
+            <div class="profile-avatar-wrap">
+                <div class="profile-avatar" id="profile-avatar">👤</div>
                 <h2 id="profile-name">کاربر عزیز</h2>
-                <div class="profile-score-pill">🪙 <span id="profile-total-score">0</span> امتیاز</div>
             </div>
 
-            <div class="settings-group-title">جنسیت</div>
-            <div class="gender-select">
-                <button class="gender-option" id="gender-girl" data-gender="girl">
-                    <span class="gender-icon">
-                        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M12 13v8"/><path d="M9 18h6"/></svg>
-                    </span>
-                    <span class="gender-label">دختر</span>
-                </button>
-                <button class="gender-option" id="gender-boy" data-gender="boy">
-                    <span class="gender-icon">
-                        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="14" r="5"/><path d="M14 10l6-6"/><path d="M14 4h6v6"/></svg>
-                    </span>
-                    <span class="gender-label">پسر</span>
-                </button>
+            <div class="profile-section-title">جنسیت</div>
+            <div class="gender-picker">
+                <div class="gender-option" data-gender="boy">
+                    <div class="gender-icon">👦</div>
+                    <span>پسر</span>
+                </div>
+                <div class="gender-option" data-gender="girl">
+                    <div class="gender-icon">👧</div>
+                    <span>دختر</span>
+                </div>
             </div>
-            <p class="profile-hint">این مورد فقط برای شخصی‌سازی تجربه‌ی شما استفاده می‌شود.</p>
         </main>
     </div>
 
@@ -181,12 +174,7 @@
     <div id="modal-settings" class="modal-overlay hidden">
         <div class="ios-modal slide-up settings-modal">
             <div class="modal-header">
-                <h2>
-                    <span class="modal-header-icon">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                    </span>
-                    تنظیمات
-                </h2>
+                <h2>⚙️ تنظیمات</h2>
                 <button class="close-btn" data-close="modal-settings">×</button>
             </div>
 
@@ -207,7 +195,7 @@
                 <div class="ios-list-item">
                     <div class="setting-label">
                         <span class="setting-icon-square icon-dark">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/><path d="M19 3v4"/><path d="M21 5h-4"/></svg>
                         </span>
                         <span>حالت تاریک</span>
                     </div>
@@ -216,15 +204,6 @@
                         <span class="slider"></span>
                     </label>
                 </div>
-                <div class="ios-list-item clickable" id="btn-open-profile-settings">
-                    <div class="setting-label">
-                        <span class="setting-icon-square icon-profile">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                        </span>
-                        <span>پروفایل من</span>
-                    </div>
-                    <span class="setting-arrow">‹</span>
-                </div>
             </div>
 
             <div class="settings-group-title">درباره برنامه</div>
@@ -232,7 +211,7 @@
                 <div class="ios-list-item clickable" id="btn-open-changelog">
                     <div class="setting-label">
                         <span class="setting-icon-square icon-changelog">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
                         </span>
                         <span>نسخه‌ی جدید برنامک</span>
                     </div>
@@ -246,9 +225,7 @@
         <div class="ios-modal slide-up changelog-modal">
             <div class="modal-header">
                 <h2>
-                    <span class="modal-header-icon changelog-header-icon">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.9 6.6L22 9.6l-5 4.9 1.2 6.9L12 18l-6.2 3.4L7 14.5 2 9.6l7.1-1z"/></svg>
-                    </span>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--ios-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-4px; margin-left:6px;"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
                     نسخه‌ی جدید برنامک
                 </h2>
                 <button class="close-btn" data-close="modal-changelog">×</button>
