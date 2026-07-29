@@ -1,9 +1,13 @@
-@import url('https://cdn.jsdelivr.net/gh/MohamadDarvishi/Arad@latest/Fonts/Webfonts/Arad-font-face.css');
+/* TODO(فونت آراد): فایل‌های واقعی فونت (woff2/ttf) هنوز آپلود نشده‌اند — فقط
+   OFL.txt و راهنمای fontfa.com فرستاده شده. وقتی خود فایل‌های فونت رو فرستادی،
+   اینجا یک @font-face برایش اضافه می‌کنم و به ابتدای --font-ios زیر اضافه‌اش
+   می‌کنم. فعلاً وزیرمتن (که قبلاً هم استفاده می‌شد) به کار می‌رود تا چیزی خراب
+   به نظر نرسد. */
 @import url('https://cdn.jsdelivr.net/npm/vazirmatn@33.0.0/Vazirmatn-font-face.css');
 
 :root {
     /* iOS Design System Variables */
-    --font-ios: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Arad", "Vazirmatn", system-ui, sans-serif;
+    --font-ios: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Vazirmatn", system-ui, sans-serif;
     
     --bg-main: #f2f2f7;
     --bg-main-rgb: 242, 242, 247;
@@ -78,16 +82,7 @@ body {
 }
 
 /* User Profile */
-.user-info {
-    display: flex; align-items: center; gap: 12px;
-    background: none; border: none; padding: 0; margin: 0;
-    font-family: inherit; color: inherit; text-align: right; cursor: pointer;
-}
-.user-info:active { opacity: 0.7; }
-
-/* Section header icons (used instead of plain emoji) */
-.section-header h2 { display: flex; align-items: center; gap: 8px; }
-.section-icon { color: var(--ios-blue); flex-shrink: 0; }
+.user-info { display: flex; align-items: center; gap: 12px; }
 .avatar { width: 44px; height: 44px; background: var(--ios-blue); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
 .user-text { display: flex; flex-direction: column; }
 .greeting { font-size: 0.8rem; color: var(--text-muted); }
@@ -107,8 +102,11 @@ body {
 /* Sections & Typography */
 .home-scroll { padding: 0 20px 40px; }
 .section-header { display: flex; justify-content: space-between; align-items: center; margin: 24px 0 16px; }
-.section-header h2 { font-size: 1.4rem; font-weight: 700; }
+.section-header h2 { font-size: 1.4rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.header-icon { flex-shrink: 0; }
 .badge { background: var(--border-color); color: var(--text-main); padding: 4px 10px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; }
+.user-info { cursor: pointer; transition: opacity 0.15s; }
+.user-info:active { opacity: 0.65; }
 
 /* Medals Scroll */
 .medals-scroll {
@@ -464,18 +462,19 @@ input:checked + .slider:before { transform: translateX(20px); }
 }
 .channel-promo-scroll::-webkit-scrollbar { display: none; }
 .channel-promo-card {
-    flex: 0 0 90%;
+    flex: 0 0 94%;
     scroll-snap-align: start;
     display: flex;
     align-items: center;
     gap: 14px;
     background: linear-gradient(135deg, #0a84ff, #34c3ff);
-    border-radius: 20px;
+    border-radius: 22px;
     padding: 14px 16px;
     text-decoration: none;
     box-shadow: var(--shadow-md);
     cursor: pointer;
     transition: transform 0.1s ease;
+    position: relative;
 }
 .channel-promo-card:active { transform: scale(0.97); }
 .channel-promo-icon {
@@ -487,7 +486,7 @@ input:checked + .slider:before { transform: translateX(20px); }
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.35rem;
+    font-size: 1.4rem;
 }
 .channel-promo-info { flex: 1; min-width: 0; }
 .channel-promo-title {
@@ -614,18 +613,6 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 /* --- بازطراحی صفحه تنظیمات --- */
 .settings-modal { text-align: right; }
-.settings-modal .modal-header h2 {
-    display: flex; align-items: center; gap: 10px;
-    font-size: 1.2rem;
-}
-.modal-header-icon {
-    width: 34px; height: 34px;
-    border-radius: 11px;
-    background: linear-gradient(135deg, #5856d6, #007aff);
-    display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 4px 10px rgba(88, 86, 214, 0.35);
-    flex-shrink: 0;
-}
 .settings-group-title {
     font-size: 0.8rem;
     font-weight: 700;
@@ -634,29 +621,25 @@ input:checked + .slider:before { transform: translateX(20px); }
     text-transform: none;
 }
 .settings-group-title:first-of-type { margin-top: 4px; }
-.setting-label { display: flex; align-items: center; gap: 12px; }
+.setting-label { display: flex; align-items: center; gap: 14px; }
 .setting-icon-square {
-    width: 34px; height: 34px;
-    border-radius: 10px;
+    width: 36px; height: 36px;
+    border-radius: 11px;
     display: flex; align-items: center; justify-content: center;
     font-size: 1.05rem;
     flex-shrink: 0;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.12);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.18);
 }
-.setting-icon-square.icon-sound { background: linear-gradient(135deg, #ff9500, #ff5f6d); }
-.setting-icon-square.icon-dark { background: linear-gradient(135deg, #5856d6, #363795); }
-.setting-icon-square.icon-changelog { background: linear-gradient(135deg, #007aff, #34c3ff); }
-.setting-icon-square.icon-profile { background: linear-gradient(135deg, #34c759, #30b0c7); }
-.ios-list { border: 1px solid var(--border-color); }
-.ios-list-item.clickable { cursor: pointer; transition: opacity 0.15s, background-color 0.15s; }
+.setting-icon-square.icon-sound { background: linear-gradient(135deg, #ff9f0a, #ff6b00); }
+.setting-icon-square.icon-dark { background: linear-gradient(135deg, #7d7aff, #4b48d6); }
+.setting-icon-square.icon-changelog { background: linear-gradient(135deg, #0a84ff, #34c3ff); }
+.ios-list { box-shadow: var(--shadow-sm); }
+.ios-list-item.clickable { cursor: pointer; transition: opacity 0.15s; }
 .ios-list-item.clickable:active { opacity: 0.6; }
 .setting-version { font-size: 0.85rem; color: var(--text-muted); font-weight: 600; }
-.setting-arrow { font-size: 1.3rem; color: var(--text-muted); font-weight: 700; }
 
-/* --- مودال نسخه‌ی جدید برنامک (Changelog) --- */
+/* --- مودال تازه‌های اپ (Changelog) --- */
 .changelog-modal { text-align: right; max-height: 80vh; display: flex; flex-direction: column; }
-.changelog-modal .modal-header h2 { display: flex; align-items: center; gap: 10px; font-size: 1.2rem; }
-.changelog-header-icon { background: linear-gradient(135deg, #ff9500, #ff5f6d); box-shadow: 0 4px 10px rgba(255, 149, 0, 0.35); }
 .changelog-body { overflow-y: auto; max-height: 60vh; padding-right: 2px; }
 .changelog-entry { margin-bottom: 20px; }
 .changelog-entry:last-child { margin-bottom: 4px; }
@@ -677,93 +660,76 @@ input:checked + .slider:before { transform: translateX(20px); }
 /* --- رنگ‌بندی اختصاصی کارت‌های کانال بر اساس حال‌وهوای هرکدام --- */
 .channel-promo-card.theme-tech { background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); }
 .channel-promo-card.theme-poetry { background: linear-gradient(135deg, #6a3093, #c86dd7 55%, #d391b5); }
-.channel-promo-card.theme-fun { background: linear-gradient(135deg, #ff5f6d, #ffc371); }
+.channel-promo-card.theme-meme { background: linear-gradient(135deg, #f9d423, #ff4e50); }
 
-/* تم تبلیغ ویژه: عمداً متفاوت (طلایی/بنفش) و با نشان «تبلیغ» تا کاربر سریع
-   متوجه تبلیغ بودن کارت شود، ولی همچنان ظاهری جذاب داشته باشد. */
-.channel-promo-card.theme-ad {
-    background: linear-gradient(135deg, #7b2ff7, #f0a500);
-    position: relative;
-    border: 2px dashed rgba(255, 255, 255, 0.45);
-}
-.channel-promo-ad-badge {
+/* --- کارت تبلیغ ویژه (حالا داخل همون کاروسل کانال‌ها، ولی عمداً رنگ/ظاهر
+   متفاوت داره تا کاربر سریع بفهمه این یک تبلیغه) --- */
+.channel-promo-card.promo-type-ad { background: linear-gradient(135deg, #7b2ff7, #f0a500); }
+.ad-ribbon {
     position: absolute;
-    top: 10px; left: 10px;
-    background: rgba(0,0,0,0.3);
+    top: 8px; left: 8px;
+    background: rgba(0,0,0,0.28);
     color: #fff;
     font-size: 0.65rem;
     font-weight: 700;
-    padding: 3px 10px;
-    border-radius: 10px;
+    padding: 3px 9px;
+    border-radius: 9px;
+}
+.channel-promo-card.promo-type-ad .channel-promo-icon { margin-top: 10px; }
+.ad-desc { margin-top: 10px; font-weight: 600; }
+.ad-cta-btn {
+    background: rgba(255,255,255,0.25);
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 8px 14px;
+    border-radius: 14px;
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 
-/* --- بخش «دسته‌بندی‌ها» (به‌زودی) --- */
-.categories-soon-section { margin-top: 8px; }
+/* --- دسته‌بندی‌های بیشتر (به‌زودی) --- */
+.coming-soon-section { margin-top: 8px; }
 .coming-soon-card {
-    display: flex;
-    align-items: center;
-    gap: 14px;
     background: var(--card-bg);
     border: 2px dashed var(--border-color);
-    border-radius: 20px;
-    padding: 16px 18px;
-    opacity: 0.85;
-}
-.coming-soon-icon {
-    width: 44px; height: 44px; flex-shrink: 0;
-    border-radius: 14px;
-    background: var(--bg-main);
+    border-radius: 22px;
+    padding: 26px 20px;
+    text-align: center;
     color: var(--text-muted);
-    display: flex; align-items: center; justify-content: center;
 }
-.coming-soon-text h3 { font-size: 1rem; font-weight: 700; margin-bottom: 2px; }
-.coming-soon-text p { font-size: 0.85rem; color: var(--text-muted); font-weight: 600; }
+.coming-soon-icon { font-size: 2.2rem; margin-bottom: 8px; }
+.coming-soon-card p { font-size: 0.95rem; font-weight: 600; }
 
 /* --- صفحه پروفایل --- */
-.profile-container { padding: 10px 20px 40px; max-width: 500px; margin: 0 auto; }
-.profile-hero { text-align: center; padding: 24px 0 8px; }
-.profile-hero-avatar {
-    width: 88px; height: 88px; margin: 0 auto 14px;
-    border-radius: 26px;
+.profile-container { padding: 30px 20px; max-width: 500px; margin: 0 auto; }
+.profile-avatar-wrap { text-align: center; margin-bottom: 34px; }
+.profile-avatar {
+    width: 96px; height: 96px;
+    border-radius: 50%;
     background: var(--ios-blue);
     display: flex; align-items: center; justify-content: center;
-    font-size: 2.6rem;
+    font-size: 3rem;
+    margin: 0 auto 14px;
     overflow: hidden;
     box-shadow: var(--shadow-md);
 }
-.profile-hero-avatar img { width: 100%; height: 100%; object-fit: cover; }
-.profile-hero h2 { font-size: 1.3rem; font-weight: 700; margin-bottom: 10px; }
-.profile-score-pill {
-    display: inline-block;
-    background: var(--card-bg);
-    padding: 6px 16px;
-    border-radius: 20px;
-    font-weight: 700;
-    box-shadow: var(--shadow-sm);
-    color: var(--ios-orange);
-}
-.gender-select { display: flex; gap: 14px; margin-top: 4px; }
+.profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.profile-avatar-wrap h2 { font-size: 1.3rem; font-weight: 700; }
+.profile-section-title { font-size: 0.9rem; font-weight: 700; color: var(--text-muted); margin-bottom: 12px; }
+.gender-picker { display: flex; gap: 14px; }
 .gender-option {
     flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
     background: var(--card-bg);
-    border: 2px solid var(--border-color);
     border-radius: 20px;
-    padding: 20px 12px;
-    color: var(--text-muted);
+    padding: 22px 10px;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
     cursor: pointer;
-    font-family: inherit;
+    border: 2px solid transparent;
     transition: all 0.15s ease;
 }
 .gender-option:active { transform: scale(0.96); }
-.gender-option.selected {
-    border-color: var(--ios-blue);
-    color: var(--ios-blue);
-    background: rgba(0, 122, 255, 0.08);
-}
-.gender-icon { display: flex; }
-.gender-label { font-size: 1rem; font-weight: 700; }
-.profile-hint { margin-top: 14px; font-size: 0.8rem; color: var(--text-muted); text-align: center; line-height: 1.6; }
+.gender-option.selected { border-color: var(--ios-blue); background: rgba(0, 122, 255, 0.08); }
+.gender-icon { font-size: 2.4rem; margin-bottom: 8px; }
+.gender-option span { font-weight: 700; font-size: 1rem; }
