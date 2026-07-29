@@ -27,25 +27,14 @@ const CATEGORY_SCORES = {
 // یک آبجکت جدید بالای این آرایه اضافه کن و APP_VERSION را هم به‌روز کن؛
 // خودکار یک بار برای کاربرهایی که نسخه قبلی را دیده‌اند، پنجره «تازه‌های این
 // نسخه» نمایش داده می‌شود (و همیشه هم از تنظیمات قابل مشاهده است).
-const APP_VERSION = '1.6.0';
-// نکته: از این نسخه به بعد فقط قابلیت‌های جدید (added) در پنجره‌ی «نسخه‌ی جدید
-// برنامک» نمایش داده می‌شوند؛ باگ‌فیکس‌ها و تغییرات داخلی (fixed) دیگر برای
-// کاربر نمایش داده نمی‌شوند چون اهمیتی براش ندارند (برای رفرنس خودمان می‌تونیم
-// همچنان اینجا یادداشتشون کنیم، فقط رندر نمی‌شوند).
+const APP_VERSION = '1.5.0';
 const CHANGELOG_DB = [
-    {
-        version: '1.6.0',
-        added: [
-            'صفحه‌ی پروفایل اختصاصی با امکان انتخاب جنسیت',
-            'بخش «دسته‌بندی‌ها»ی جدید برای پیش‌نمایش محتوای آینده',
-            'صفحه تنظیمات با ظاهر و آیکون‌های حرفه‌ای‌تر'
-        ]
-    },
     {
         version: '1.5.0',
         added: [
             'امتیاز سوال روزانه به ۵۰ امتیاز افزایش پیدا کرد',
-            'آیکون‌های تازه و شیک‌تر جای ایموجی‌های قدیمی صفحه تنظیمات شدند'
+            'ایموجی نمایش امتیاز جذاب‌تر شد',
+            'آیکون‌های تازه و شیک‌تر جای ایموجی‌های قدیمی صفحه تنظیمات نشستن'
         ]
     },
     {
@@ -53,11 +42,22 @@ const CHANGELOG_DB = [
         added: [
             'سوال روزانه: هر روز یک معمای تازه که درست بعد از نیمه‌شب عوض می‌شود',
             'قاب مخصوص تبلیغات ویژه با رنگ‌بندی جداگانه',
+            'نمای کشویی کانال‌ها الان خودش هر ۵ ثانیه می‌چرخد',
             'نمایش سطح سختی (آسان / متوسط / سخت) کنار شماره هر مرحله',
-            'امتیاز دسته ضرب‌المثل‌ها به ۲۵ افزایش پیدا کرد'
+            'صفحه تنظیمات بازطراحی شد'
         ],
         fixed: [
-            'مشکل نمایش و آنلاک‌شدن اشتباه مدال‌ها برطرف شد',
+            'امتیاز دسته ضرب‌المثل‌ها به حداقل ۲۵ افزایش پیدا کرد',
+            'مدال «ثروتمند» حالا بر اساس کل امتیازی که تا الان کسب کرده‌ای حساب می‌شود، نه موجودی فعلی',
+            'مشکل نمایش و آنلاک‌شدن اشتباه مدال‌ها برطرف شد'
+        ]
+    },
+    {
+        version: '1.3.0',
+        added: [
+            'نمای کشویی معرفی کانال‌ها به صفحه اصلی اضافه شد'
+        ],
+        fixed: [
             'کلیک روی لینک کانال حالا داخل خود اپ ایتا باز می‌شود'
         ]
     }
@@ -71,7 +71,7 @@ const GameState = {
     totalEarned: 0, // مجموع کل امتیازی که تا الان کسب شده (برخلاف globalScore که با خرج راهنما کم می‌شود)
     progress: {},
     unlockedMedals: [],
-    settings: { sound: true, darkMode: false, gender: null }, // gender: null | 'girl' | 'boy'
+    settings: { sound: true, darkMode: false, gender: null }, // gender: null | 'boy' | 'girl'
     dailyChallenge: { lastCompletedDate: null, completedCount: 0 },
     isDailyChallenge: false,
     activeCategory: null,
@@ -112,25 +112,16 @@ const MEDALS_DB = [
         } }
 ];
 
-// نمای کشویی معرفی کانال‌ها: هر آبجکت یک کارت قابل سوایپ می‌سازد (هر ۵ ثانیه
-// خودش می‌چرخد). برای افزودن کانال جدید، فقط یک آبجکت دیگر شبیه پایین اضافه کن.
-// theme رنگ‌بندی کارت را عوض می‌کند: 'poetry'، 'tech'، 'fun' یا 'ad' (تبلیغ ویژه؛
-// این تم عمداً متفاوت و متمایز طراحی شده تا کاربر سریع بفهمد تبلیغ است).
-// isAd: true یعنی این کارت به‌جای کانال ما، یک تبلیغ ویژه است (بج «تبلیغ» نشان
-// داده می‌شود). برای ثبت تبلیغ جدید فقط همین آبجکت را عوض کن، نیازی به تغییر
-// جای دیگری از کد نیست.
+// نمای کشویی «کانال‌های ما»: هر آبجکت یک کارت قابل سوایپ می‌سازد (هر ۵ ثانیه
+// خودش می‌چرخد). دو نوع کارت پشتیبانی می‌شود:
+//   type: 'channel'  → کارت معرفی کانال (name, handle, desc, icon, link, theme)
+//   type: 'ad'       → کارت تبلیغ ویژه، ظاهر و رنگش عمداً متفاوته که کاربر
+//                      سریع بفهمه تبلیغه (badge, desc, icon, link, buttonText)
+// برای افزودن کانال جدید، فقط یک آبجکت دیگر شبیه پایین به آرایه اضافه کن.
+// theme برای کانال‌ها: 'tech' / 'poetry' / 'meme' (یا خالی برای آبی پیش‌فرض).
 const CHANNEL_PROMOS = [
     {
-        name: 'تبلیغات عمو',
-        handle: '@Tech_nour',
-        desc: 'برای رزرو تبلیغ ویژه کلیک کنید و به مدیر پیام بدهید!',
-        icon: '🎯',
-        link: 'https://eitaa.com/tab_amoo',
-        theme: 'ad',
-        isAd: true,
-        badge: 'ADS'
-    },
-    {
+        type: 'channel',
         name: 'آواي‌خـــــــــیال',
         handle: '@avay_khiyal',
         desc: 'کانال شعر؛ اگه دلت یه گوشه‌ی آروم برای خوندن شعر می‌خواد، بیا اینجا',
@@ -139,20 +130,32 @@ const CHANNEL_PROMOS = [
         theme: 'poetry'
     },
     {
+        type: 'ad',
+        badge: 'تبلیغ ویژه',
+        icon: '🎯',
+        desc: 'برای رزرو کلیک کنید و به مدیر پیام بدهید!',
+        link: 'https://eitaa.com/tab_amoo',
+        buttonText: 'مشاهده'
+        // برای ثبت تبلیغ جدید، فقط همین چند خط را عوض کن.
+        // برای مخفی کردن موقت این کارت، active: false اضافه کن.
+    },
+    {
+        type: 'channel',
         name: 'تِک نور | 𝙏𝙚𝙘𝙝 𝙣𝙤𝙪𝙧',
         handle: '@Tech_nour',
-        desc: 'اخبار و آپدیت‌های بازی رو اینجا دنبال کن',
-        icon: '📣',
+        desc: 'اخبار هوش مصنوعی و آپدیت‌های بازی رو اینجا دنبال کن',
+        icon: '📢',
         link: 'https://eitaa.com/Tech_nour',
         theme: 'tech'
     },
     {
-        name: 'Rasa Meme | رسامیم ',
+        type: 'channel',
+        name: 'Rasa Meme | رسامیم',
         handle: '@Rasa_Meme',
         desc: 'یسری میم چرت و پرت',
         icon: '😂',
         link: 'https://eitaa.com/Rasa_Meme',
-        theme: 'fun'
+        theme: 'meme'
     }
 ];
 
@@ -198,7 +201,7 @@ const StorageManager = {
                 GameState.totalEarned = typeof data.totalEarned === 'number' ? data.totalEarned : (data.globalScore || 0);
                 GameState.progress = data.progress || {};
                 GameState.unlockedMedals = data.unlockedMedals || [];
-                GameState.settings = data.settings || GameState.settings;
+                GameState.settings = { ...GameState.settings, ...(data.settings || {}) };
                 GameState.dailyChallenge = data.dailyChallenge || { lastCompletedDate: null, completedCount: 0 };
             } catch(e) {}
         }
@@ -352,37 +355,6 @@ function goBackToHome() {
     }
 }
 
-// --- صفحه پروفایل ---
-function openProfileScreen() {
-    document.getElementById('profile-name').textContent = GameState.user.first_name;
-    document.getElementById('profile-total-score').textContent = GameState.globalScore;
-
-    const avatarEl = document.getElementById('profile-avatar');
-    if (GameState.user.photo_url) {
-        avatarEl.innerHTML = '';
-        const img = document.createElement('img');
-        img.src = GameState.user.photo_url;
-        img.alt = 'Profile';
-        img.addEventListener('error', () => { avatarEl.textContent = '👤'; });
-        avatarEl.appendChild(img);
-    } else {
-        avatarEl.textContent = '👤';
-    }
-
-    updateGenderSelectionUI();
-    showScreen('screen-profile');
-
-    if (window.Eitaa && window.Eitaa.WebApp && window.Eitaa.WebApp.BackButton) {
-        window.Eitaa.WebApp.BackButton.show();
-    }
-}
-
-function updateGenderSelectionUI() {
-    document.querySelectorAll('.gender-option').forEach(btn => {
-        btn.classList.toggle('selected', GameState.settings.gender === btn.dataset.gender);
-    });
-}
-
 // وب‌ویوی داخل اپ ایتا معمولاً ناوبری مستقیم <a> یا window.open را مسدود
 // می‌کند، پس باید از متدهای رسمی خود SDK استفاده کنیم:
 //   1) openEitaaLink → مخصوص لینک‌های خود ایتا (eitaa.com/...)، دقیقاً مثل
@@ -414,13 +386,13 @@ function renderHome() {
         img.alt = 'Profile';
         img.addEventListener('error', () => {
             img.style.display = 'none';
-            avatarEl.textContent = '👤';
+            avatarEl.textContent = GameState.settings.gender === 'girl' ? '👧' : GameState.settings.gender === 'boy' ? '👦' : '👤';
             avatarEl.style.background = '';
         });
         avatarEl.appendChild(img);
         avatarEl.style.background = 'transparent';
     } else {
-        avatarEl.textContent = '👤';
+        avatarEl.textContent = GameState.settings.gender === 'girl' ? '👧' : GameState.settings.gender === 'boy' ? '👦' : '👤';
     }
 
     const medalsContainer = document.getElementById('medals-container');
@@ -459,6 +431,28 @@ function renderHome() {
 }
 
 let promoRotateInterval = null;
+
+// صفحه پروفایل: آواتار و نام کاربر را از GameState می‌خواند و کارت جنسیت
+// انتخاب‌شده را هایلایت می‌کند.
+function renderProfile() {
+    document.getElementById('profile-name').textContent = GameState.user.first_name;
+    const gender = GameState.settings.gender;
+    const avatarEl = document.getElementById('profile-avatar');
+
+    if (GameState.user.photo_url) {
+        avatarEl.innerHTML = `<img src="${GameState.user.photo_url}" alt="Profile">`;
+        avatarEl.style.background = 'transparent';
+    } else {
+        avatarEl.innerHTML = '';
+        avatarEl.textContent = gender === 'girl' ? '👧' : gender === 'boy' ? '👦' : '👤';
+        avatarEl.style.background = '';
+    }
+
+    document.querySelectorAll('.gender-option').forEach(el => {
+        el.classList.toggle('selected', el.dataset.gender === gender);
+    });
+}
+
 // نمای کشویی تبلیغ کانال‌ها: از روی آرایه CHANNEL_PROMOS کارت می‌سازد،
 // امکان سوایپ افقی می‌دهد، نقطه‌های پایین را با اسکرول همگام می‌کند و هر ۵
 // ثانیه خودش به کانال بعدی می‌چرخد (با تعامل دستی کاربر موقتاً متوقف می‌شود).
@@ -472,20 +466,36 @@ function renderChannelPromos() {
     dotsContainer.innerHTML = '';
 
     CHANNEL_PROMOS.forEach((promo, index) => {
+        if (promo.active === false) return; // برای مخفی کردن موقت یک کارت (مثلاً تبلیغ تمام‌شده)
+
         const card = document.createElement('a');
-        card.className = `channel-promo-card theme-${promo.theme || 'default'}`;
         card.href = promo.link;
         card.target = '_blank';
         card.rel = 'noopener noreferrer';
-        card.innerHTML = `
-            ${promo.isAd ? `<span class="channel-promo-ad-badge">${promo.badge || 'تبلیغ'}</span>` : ''}
-            <div class="channel-promo-icon">${promo.icon}</div>
-            <div class="channel-promo-info">
-                <h3 class="channel-promo-title">${promo.name}</h3>
-                ${promo.isAd ? '' : `<span class="channel-promo-handle">${promo.handle}</span>`}
-                <p class="channel-promo-desc">${promo.desc}</p>
-            </div>
-            <div class="channel-promo-arrow">‹</div>`;
+
+        if (promo.type === 'ad') {
+            // کارت تبلیغ ویژه: عمداً ظاهر متفاوتی دارد (رنگ + نوار «تبلیغ ویژه»)
+            // تا کاربر سریع بفهمد این یک تبلیغه، نه یک کانال خودمان.
+            card.className = 'channel-promo-card promo-type-ad';
+            card.innerHTML = `
+                <span class="ad-ribbon">${promo.badge || 'تبلیغ ویژه'}</span>
+                <div class="channel-promo-icon">${promo.icon || '🎯'}</div>
+                <div class="channel-promo-info">
+                    <p class="channel-promo-desc ad-desc">${promo.desc}</p>
+                </div>
+                <div class="ad-cta-btn">${promo.buttonText || 'مشاهده'}</div>`;
+        } else {
+            card.className = `channel-promo-card theme-${promo.theme || 'default'}`;
+            card.innerHTML = `
+                <div class="channel-promo-icon">${promo.icon}</div>
+                <div class="channel-promo-info">
+                    <h3 class="channel-promo-title">${promo.name}</h3>
+                    <span class="channel-promo-handle">${promo.handle}</span>
+                    <p class="channel-promo-desc">${promo.desc}</p>
+                </div>
+                <div class="channel-promo-arrow">‹</div>`;
+        }
+
         card.addEventListener('click', (e) => {
             AudioEngine.tap();
             const wa = window.Eitaa && window.Eitaa.WebApp;
@@ -541,6 +551,9 @@ function renderChannelPromos() {
     }
 }
 
+
+
+
 /* =========================================
    5. Game Logic Core
 ========================================= */
@@ -549,439 +562,4 @@ function renderChannelPromos() {
 // کلید امروز بر اساس ساعت محلی گوشی ساخته می‌شود، پس دقیقاً «بعد از نیمه‌شب
 // محلی» عوض می‌شود، نه یک منطقه زمانی ثابت جهانی.
 function getTodayKey() {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-function hashStringToInt(str) {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) { hash = (hash * 31 + str.charCodeAt(i)) >>> 0; }
-    return hash;
-}
-
-// یک مرحله را بر اساس تاریخ امروز، به‌صورت قطعی از بین همه مراحل همه دسته‌ها
-// انتخاب می‌کند. «قطعی» یعنی همه کاربران در یک روز، سوال یکسانی می‌بینند و
-// این سوال فقط با عوض شدن تاریخ (نیمه‌شب) تغییر می‌کند.
-function getDailyChallengeLevel() {
-    const allLevels = [];
-    DB.categories.forEach(cat => {
-        cat.levels.forEach(lvl => allLevels.push({ ...lvl, categoryId: cat.id, categoryName: cat.name }));
-    });
-    if (allLevels.length === 0) return null;
-    const idx = hashStringToInt(getTodayKey()) % allLevels.length;
-    return allLevels[idx];
-}
-
-function renderDailyChallengeCard() {
-    const card = document.getElementById('daily-challenge-card');
-    if (!card) return;
-    const doneToday = GameState.dailyChallenge.lastCompletedDate === getTodayKey();
-    card.classList.toggle('done', doneToday);
-    document.getElementById('daily-badge').textContent = doneToday ? '✅ انجام‌شد' : '🔥 جدید';
-    document.getElementById('daily-status-text').textContent = doneToday
-        ? 'امروز حلش کردی! نیمه‌شب یه چالش تازه میاد 🌙'
-        : 'یه معمای ایموجی مخصوص امروز، هر روز عوض می‌شه';
-}
-
-function startDailyChallenge() {
-    AudioEngine.tap();
-    if (GameState.dailyChallenge.lastCompletedDate === getTodayKey()) {
-        showToast('🌙', 'چالش امروز رو قبلاً حل کردی! بعد از نیمه‌شب یه چالش جدید میاد.');
-        return;
-    }
-    const lvl = getDailyChallengeLevel();
-    if (!lvl) return;
-
-    GameState.isDailyChallenge = true;
-    GameState.activeCategory = { id: 'daily', name: '🔥 چالش روزانه', icon: '🔥', levels: [lvl] };
-    GameState.activeLevelIndex = 0;
-    document.getElementById('game-category-title').textContent = '🔥 چالش روزانه';
-    document.getElementById('category-notice').classList.add('hidden');
-
-    showScreen('screen-game');
-    renderLevel();
-
-    if (window.Eitaa && window.Eitaa.WebApp && window.Eitaa.WebApp.BackButton) {
-        window.Eitaa.WebApp.BackButton.show();
-    }
-}
-
-// --- سطح سختی هر مرحله ---
-// اگر خود مرحله در data.json مقدار "difficulty" داشته باشد از همان استفاده
-// می‌شود (برای سفارشی‌سازی دستی در آینده)، وگرنه بر اساس تعداد حروف پاسخ
-// به‌صورت خودکار تخمین زده می‌شود؛ راهی سبک برای سطح‌بندی ۱۵۰+ مرحله فعلی
-// بدون نیاز به ویرایش دستی تک‌تک آن‌ها در data.json.
-const DIFFICULTY_LABELS = {
-    easy: { text: 'آسان', className: 'diff-easy' },
-    medium: { text: 'متوسط', className: 'diff-medium' },
-    hard: { text: 'سخت', className: 'diff-hard' }
-};
-function computeDifficulty(levelData) {
-    if (levelData.difficulty && DIFFICULTY_LABELS[levelData.difficulty]) return levelData.difficulty;
-    const len = levelData.answer.replace(/\s/g, '').length;
-    if (len <= 6) return 'easy';
-    if (len <= 12) return 'medium';
-    return 'hard';
-}
-
-function startCategory(category) {
-    GameState.isDailyChallenge = false;
-    GameState.activeCategory = category;
-    document.getElementById('game-category-title').textContent = category.name;
-    
-    let completedArr = GameState.progress[category.id] || [];
-    let nextIndex = 0;
-    for(let i=0; i < category.levels.length; i++) {
-        if(!completedArr.includes(i)) { nextIndex = i; break; }
-    }
-    GameState.activeLevelIndex = nextIndex;
-    
-    // نمایش هشدار برای ضرب‌المثل‌ها
-    const noticeEl = document.getElementById('category-notice');
-    if (category.id === 'proverbs') {
-        noticeEl.innerHTML = '💡 <strong>توجه:</strong> برخی از ضرب‌المثل‌ها به زبان محاوره و عامیانه نوشته شده‌اند.';
-        noticeEl.classList.remove('hidden');
-    } else {
-        noticeEl.classList.add('hidden');
-    }
-
-    showScreen('screen-game');
-    renderLevel();
-
-    // فعال‌سازی دکمه بازگشت سیستمی ایتا
-    if (window.Eitaa && window.Eitaa.WebApp && window.Eitaa.WebApp.BackButton) {
-        window.Eitaa.WebApp.BackButton.show();
-    }
-}
-
-function renderLevel() {
-    const cat = GameState.activeCategory;
-    if (GameState.activeLevelIndex >= cat.levels.length) GameState.activeLevelIndex = 0;
-
-    const levelData = cat.levels[GameState.activeLevelIndex];
-    const answer = levelData.answer.replace(/ي/g, "ی").replace(/ك/g, "ک").trim();
-    
-    document.getElementById('ui-level').textContent = GameState.activeLevelIndex + 1;
-    document.getElementById('game-score').textContent = GameState.globalScore;
-
-    const diffKey = computeDifficulty(levelData);
-    const diffInfo = DIFFICULTY_LABELS[diffKey];
-    const diffEl = document.getElementById('ui-difficulty');
-    diffEl.textContent = diffInfo.text;
-    diffEl.className = `difficulty-badge ${diffInfo.className}`;
-
-    renderAppleEmojis(document.getElementById('emoji-inner-container'), levelData.emoji);
-
-    const answerArea = document.getElementById('answer-slots');
-    answerArea.innerHTML = '';
-    GameState.slots = [];
-    let requiredChars = [];
-    let slotId = 0;
-
-    answer.split(' ').forEach(word => {
-        const group = document.createElement('div');
-        group.className = 'word-group';
-        for (let char of word) {
-            const slotObj = { id: slotId++, char: char, filledWith: '', keyId: null, locked: false };
-            GameState.slots.push(slotObj);
-            requiredChars.push(char);
-            
-            const slotEl = document.createElement('div');
-            slotEl.className = 'slot';
-            slotEl.id = `slot-${slotObj.id}`;
-            slotEl.addEventListener('click', () => handleSlotClick(slotObj.id));
-            group.appendChild(slotEl);
-        }
-        answerArea.appendChild(group);
-    });
-
-    let keyChars = [...requiredChars];
-    while(keyChars.length < Math.max(24, requiredChars.length + 6)) {
-        keyChars.push(PERSIAN_ALPHABET[Math.floor(Math.random() * PERSIAN_ALPHABET.length)]);
-    }
-    keyChars.sort(() => Math.random() - 0.5);
-
-    GameState.keys = keyChars.map((c, i) => ({ id: i, char: c, used: false }));
-    const kbArea = document.getElementById('keyboard');
-    kbArea.innerHTML = '';
-    
-    GameState.keys.forEach(k => {
-        const btn = document.createElement('button');
-        btn.className = 'key pop-in';
-        btn.id = `key-${k.id}`;
-        btn.textContent = k.char;
-        btn.addEventListener('click', () => handleKeyClick(k.id));
-        kbArea.appendChild(btn);
-    });
-
-    GameState.startTime = Date.now();
-    updateGameUI();
-}
-
-function updateGameUI() {
-    document.getElementById('game-score').textContent = GameState.globalScore;
-    GameState.slots.forEach(s => {
-        const el = document.getElementById(`slot-${s.id}`);
-        if(el) {
-            el.textContent = s.filledWith;
-            el.className = `slot ${s.filledWith ? 'filled' : ''} ${s.locked ? 'locked' : ''}`;
-        }
-    });
-    GameState.keys.forEach(k => {
-        const el = document.getElementById(`key-${k.id}`);
-        if(el) el.className = `key ${k.used ? 'used' : ''}`;
-    });
-}
-
-function handleKeyClick(keyId) {
-    const key = GameState.keys.find(k => k.id === keyId);
-    if (!key || key.used) return;
-    const emptySlot = GameState.slots.find(s => s.filledWith === '');
-    if (!emptySlot) return;
-
-    AudioEngine.tap();
-    emptySlot.filledWith = key.char;
-    emptySlot.keyId = key.id;
-    key.used = true;
-    updateGameUI();
-    checkWin();
-}
-
-function handleSlotClick(slotId) {
-    const slot = GameState.slots.find(s => s.id === slotId);
-    if (!slot || !slot.filledWith || slot.locked) return;
-    
-    AudioEngine.pop();
-    const key = GameState.keys.find(k => k.id === slot.keyId);
-    if (key) key.used = false;
-    slot.filledWith = '';
-    slot.keyId = null;
-    updateGameUI();
-}
-
-function useHint() {
-    if (GameState.globalScore < HINT_COST) return alert("امتیاز کافی نیست!");
-    const candidates = GameState.slots.filter(s => !s.locked && s.filledWith !== s.char);
-    if (candidates.length === 0) return;
-    
-    const target = candidates[Math.floor(Math.random() * candidates.length)];
-    if (target.filledWith !== '') {
-        const k = GameState.keys.find(x => x.id === target.keyId);
-        if(k) k.used = false;
-        target.filledWith = '';
-    }
-
-    let validKeyId = GameState.keys.findIndex(k => k.char === target.char && !k.used);
-    if (validKeyId === -1) {
-        const wrongSlot = GameState.slots.find(s => !s.locked && s.filledWith === target.char);
-        if(wrongSlot) {
-            validKeyId = wrongSlot.keyId;
-            wrongSlot.filledWith = '';
-            const freed = GameState.keys.find(k => k.id === validKeyId);
-            if(freed) freed.used = false;
-        }
-    }
-
-    if (validKeyId !== -1) {
-        GameState.globalScore -= HINT_COST;
-        target.filledWith = target.char;
-        target.keyId = validKeyId;
-        target.locked = true;
-        GameState.keys.find(k => k.id === validKeyId).used = true;
-        AudioEngine.pop();
-        updateGameUI();
-        StorageManager.save();
-        checkWin();
-    }
-}
-
-function checkWin() {
-    if (GameState.slots.some(s => s.filledWith === '')) return;
-    const isCorrect = GameState.slots.every(s => s.filledWith === s.char);
-    
-    if (isCorrect) {
-        AudioEngine.success();
-        const timeTaken = (Date.now() - GameState.startTime) / 1000;
-        const bonus = timeTaken <= FAST_TIME_LIMIT ? 5 : 0;
-        let base;
-
-        if (GameState.isDailyChallenge) {
-            base = DAILY_BASE_SCORE;
-            GameState.globalScore += base + bonus;
-            GameState.totalEarned += base + bonus;
-            const todayKey = getTodayKey();
-            if (GameState.dailyChallenge.lastCompletedDate !== todayKey) {
-                GameState.dailyChallenge.completedCount = (GameState.dailyChallenge.completedCount || 0) + 1;
-            }
-            GameState.dailyChallenge.lastCompletedDate = todayKey;
-        } else {
-            const catId = GameState.activeCategory.id;
-            base = CATEGORY_SCORES[catId] ?? BASE_SCORE;
-            GameState.globalScore += base + bonus;
-            GameState.totalEarned += base + bonus;
-            if (!GameState.progress[catId]) GameState.progress[catId] = [];
-            if (!GameState.progress[catId].includes(GameState.activeLevelIndex)) {
-                GameState.progress[catId].push(GameState.activeLevelIndex);
-            }
-        }
-        
-        checkMedals();
-        StorageManager.save();
-
-        document.getElementById('reward-base-score').textContent = `+${base}`;
-        const bonusEl = document.getElementById('reward-bonus');
-        if (bonus > 0) { bonusEl.classList.remove('hidden'); bonusEl.innerHTML = `پاداش سرعت: <strong>+${bonus}</strong>`; } 
-        else { bonusEl.classList.add('hidden'); }
-        
-        document.getElementById('modal-success').classList.remove('hidden');
-    } else {
-        AudioEngine.error();
-        const area = document.getElementById('answer-slots');
-        area.classList.remove('shake');
-        void area.offsetWidth;
-        area.classList.add('shake');
-    }
-}
-
-function showToast(icon, text, duration = 3500) {
-    const container = document.getElementById('toast-container');
-    const toast = document.createElement('div');
-    toast.className = 'toast';
-    toast.innerHTML = `<span style="font-size:1.5rem">${icon}</span> <span>${text}</span>`;
-    container.appendChild(toast);
-    setTimeout(() => toast.remove(), duration);
-}
-
-function checkMedals() {
-    MEDALS_DB.forEach(medal => {
-        if (!GameState.unlockedMedals.includes(medal.id) && medal.check(GameState)) {
-            GameState.unlockedMedals.push(medal.id);
-            showToast(medal.icon, `مدال جدید: ${medal.name}`);
-            AudioEngine.medal();
-        }
-    });
-}
-
-/* =========================================
-   6. Bootstrapping
-========================================= */
-function setupEvents() {
-    document.getElementById('btn-back-home').addEventListener('click', goBackToHome);
-    
-    // اتصال دکمه بازگشت سخت‌افزاری/سیستمی ایتا به برنامه ما
-    if (window.Eitaa && window.Eitaa.WebApp && window.Eitaa.WebApp.BackButton) {
-        window.Eitaa.WebApp.BackButton.onClick(goBackToHome);
-    }
-
-    document.getElementById('btn-next-level').addEventListener('click', () => {
-        AudioEngine.tap();
-        document.getElementById('modal-success').classList.add('hidden');
-        if (GameState.isDailyChallenge) {
-            GameState.isDailyChallenge = false;
-            goBackToHome();
-            return;
-        }
-        GameState.activeLevelIndex++;
-        renderLevel();
-    });
-    
-    document.getElementById('btn-hint').addEventListener('click', useHint);
-
-    document.getElementById('daily-challenge-card').addEventListener('click', startDailyChallenge);
-
-    document.getElementById('btn-open-settings').addEventListener('click', () => { AudioEngine.tap(); document.getElementById('modal-settings').classList.remove('hidden'); });
-    document.getElementById('btn-open-changelog').addEventListener('click', () => {
-        AudioEngine.tap();
-        document.getElementById('modal-settings').classList.add('hidden');
-        renderChangelog(true);
-        document.getElementById('modal-changelog').classList.remove('hidden');
-    });
-    document.querySelectorAll('.close-btn').forEach(b => b.addEventListener('click', (e) => { document.getElementById(e.target.dataset.close).classList.add('hidden'); }));
-    document.getElementById('toggle-theme').addEventListener('change', e => { GameState.settings.darkMode = e.target.checked; applyTheme(); StorageManager.save(); });
-    document.getElementById('toggle-sound').addEventListener('change', e => { GameState.settings.sound = e.target.checked; StorageManager.save(); });
-
-    // صفحه پروفایل: هم از آواتار بالای صفحه اصلی و هم از داخل تنظیمات قابل باز شدن است
-    document.getElementById('btn-open-profile').addEventListener('click', () => { AudioEngine.tap(); openProfileScreen(); });
-    document.getElementById('btn-open-profile-settings').addEventListener('click', () => {
-        AudioEngine.tap();
-        document.getElementById('modal-settings').classList.add('hidden');
-        openProfileScreen();
-    });
-    document.getElementById('btn-back-home-profile').addEventListener('click', goBackToHome);
-
-    document.querySelectorAll('.gender-option').forEach(btn => {
-        btn.addEventListener('click', () => {
-            AudioEngine.tap();
-            GameState.settings.gender = btn.dataset.gender;
-            StorageManager.save();
-            updateGenderSelectionUI();
-        });
-    });
-}
-
-/* =========================================
-   7. تازه‌های اپ (Changelog)
-========================================= */
-// showAll=true یعنی همه نسخه‌ها (برای دکمه «تازه‌های اپ» در تنظیمات)،
-// showAll=false یعنی فقط نسخه‌هایی که کاربر هنوز ندیده (برای پاپ‌آپ خودکار).
-function renderChangelog(showAll) {
-    const body = document.getElementById('changelog-body');
-    if (!body) return;
-    const seen = localStorage.getItem('lastSeenVersion');
-    let entries = CHANGELOG_DB;
-    if (!showAll && seen) {
-        const seenIdx = CHANGELOG_DB.findIndex(e => e.version === seen);
-        entries = seenIdx === -1 ? CHANGELOG_DB.slice(0, 1) : CHANGELOG_DB.slice(0, seenIdx);
-    }
-    if (entries.length === 0) entries = CHANGELOG_DB.slice(0, 1);
-
-    // فقط قابلیت‌های جدید (added) نمایش داده می‌شود؛ باگ‌فیکس‌ها و تغییرات
-    // داخلی (fixed) برای کاربر نهایی اهمیتی ندارند، پس رندر نمی‌شوند.
-    body.innerHTML = entries.map(entry => `
-        <div class="changelog-entry">
-            <div class="changelog-version">نسخه ${entry.version}</div>
-            ${entry.added?.length ? `
-                <div class="changelog-group">
-                    <div class="changelog-group-title added">✨ چیزهای جدید</div>
-                    <ul class="changelog-list">${entry.added.map(t => `<li>${t}</li>`).join('')}</ul>
-                </div>` : ''}
-        </div>`).join('');
-}
-
-function checkForUpdates() {
-    const seen = localStorage.getItem('lastSeenVersion');
-    localStorage.setItem('lastSeenVersion', APP_VERSION);
-    // بار اول نصب (seen خالی) پاپ‌آپ نشون داده نمی‌شود؛ فقط وقتی نسخه قبلی
-    // دیده شده و با نسخه فعلی فرق دارد (یعنی واقعاً یک آپدیت اتفاق افتاده).
-    if (seen && seen !== APP_VERSION) {
-        renderChangelog(false);
-        document.getElementById('modal-changelog').classList.remove('hidden');
-    }
-}
-
-window.addEventListener('DOMContentLoaded', async () => {
-    if (window.Eitaa && window.Eitaa.WebApp) {
-        window.Eitaa.WebApp.ready();
-        window.Eitaa.WebApp.expand();
-        if (window.Eitaa.WebApp.initDataUnsafe?.user) {
-            GameState.user = window.Eitaa.WebApp.initDataUnsafe.user;
-        }
-    }
-
-    try {
-        const res = await fetch('data.json');
-        DB = await res.json();
-    } catch (e) {
-        DB = { categories: [{ id: "proverbs", name: "ضرب‌المثل‌ها", icon: "🎭", levels: [{ emoji: "👂🏻🚪👂🏻🥅", answer: "یه گوشش دره یه گوشش دروازه" }] }] };
-    }
-
-    StorageManager.load(() => {
-        document.getElementById('toggle-theme').checked = GameState.settings.darkMode;
-        document.getElementById('toggle-sound').checked = GameState.settings.sound;
-        document.getElementById('settings-version-label').textContent = `نسخه ${APP_VERSION}`;
-        applyTheme();
-        setupEvents();
-        renderHome();
-        checkForUpdates();
-    });
-});
+   
