@@ -1,13 +1,16 @@
-/* TODO(فونت آراد): فایل‌های واقعی فونت (woff2/ttf) هنوز آپلود نشده‌اند — فقط
-   OFL.txt و راهنمای fontfa.com فرستاده شده. وقتی خود فایل‌های فونت رو فرستادی،
-   اینجا یک @font-face برایش اضافه می‌کنم و به ابتدای --font-ios زیر اضافه‌اش
-   می‌کنم. فعلاً وزیرمتن (که قبلاً هم استفاده می‌شد) به کار می‌رود تا چیزی خراب
-   به نظر نرسد. */
+/* فونت آراد (فونت وریابل، خودمون هاست می‌کنیم — بدون وابستگی به سرور بیرونی) */
+@font-face {
+    font-family: 'Arad';
+    src: url('fonts/AradVF.ttf') format('truetype-variations');
+    font-weight: 100 1000;
+    font-style: normal;
+    font-display: swap;
+}
 @import url('https://cdn.jsdelivr.net/npm/vazirmatn@33.0.0/Vazirmatn-font-face.css');
 
 :root {
     /* iOS Design System Variables */
-    --font-ios: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Vazirmatn", system-ui, sans-serif;
+    --font-ios: "Arad", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Vazirmatn", system-ui, sans-serif;
     
     --bg-main: #f2f2f7;
     --bg-main-rgb: 242, 242, 247;
@@ -187,6 +190,7 @@ body {
 }
 .slot.filled { border-color: var(--ios-blue); color: var(--ios-blue); transform: scale(1.05); }
 .slot.locked { border-color: var(--ios-green); color: var(--ios-green); background: rgba(52, 199, 89, 0.1); cursor: default; }
+.slot.word-slot { width: auto; min-width: 64px; height: 46px; padding: 0 14px; font-size: 1.05rem; white-space: nowrap; }
 
 /* Keyboard */
 .keyboard-area { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; direction: rtl; padding: 20px; }
@@ -198,6 +202,7 @@ body {
 }
 .key:active { transform: translateY(4px); box-shadow: 0 0px 0 var(--border-color); }
 .key.used { opacity: 0; pointer-events: none; transform: scale(0.5); }
+.key.word-key { width: auto; min-width: 64px; height: 46px; padding: 0 16px; font-size: 0.95rem; white-space: nowrap; }
 
 /* Modals & Lists */
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(5px); display: flex; justify-content: center; align-items: center; z-index: 100; transition: opacity 0.3s ease; }
@@ -241,6 +246,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 @media (max-width: 380px) {
     .slot { width: 34px; height: 42px; font-size: 1.3rem; }
     .key { width: 36px; height: 44px; font-size: 1.2rem; }
+    .slot.word-slot, .key.word-key { min-width: 52px; height: 42px; padding: 0 10px; font-size: 0.9rem; }
     .emoji-area { font-size: 3.2rem; padding: 20px 10px; }
 }
 
@@ -478,15 +484,15 @@ input:checked + .slider:before { transform: translateX(20px); }
 }
 .channel-promo-card:active { transform: scale(0.97); }
 .channel-promo-icon {
-    width: 44px;
-    height: 44px;
+    width: 50px;
+    height: 50px;
     flex-shrink: 0;
     background: rgba(255, 255, 255, 0.2);
-    border-radius: 14px;
+    border-radius: 15px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.4rem;
+    font-size: 1.7rem;
 }
 .channel-promo-info { flex: 1; min-width: 0; }
 .channel-promo-title {
@@ -623,10 +629,10 @@ input:checked + .slider:before { transform: translateX(20px); }
 .settings-group-title:first-of-type { margin-top: 4px; }
 .setting-label { display: flex; align-items: center; gap: 14px; }
 .setting-icon-square {
-    width: 36px; height: 36px;
-    border-radius: 11px;
+    width: 42px; height: 42px;
+    border-radius: 12px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 1.05rem;
+    font-size: 1.15rem;
     flex-shrink: 0;
     box-shadow: 0 3px 8px rgba(0,0,0,0.18);
 }
