@@ -10,9 +10,11 @@ const KVDB_BUCKET_ID = "YOUR_BUCKET_ID_HERE";
 // ==========================================
 
 const PERSIAN_ALPHABET = "ابپتثجچحخدذرزژسشصضطظعغفقکگلمنوهی";
-const HINT_COST = 20;
+const HINT_COST = 15;
+// لینک کانال تک‌نور؛ هم برای کارت کانال در پایین استفاده می‌شود، هم برای
+// پنجره‌ی «عضویت اجباری» قبل از بازی.
+const TECH_NOUR_LINK = 'https://eitaa.com/Tech_nour';
 const BASE_SCORE = 10;
-const FAST_TIME_LIMIT = 15;
 const DAILY_BASE_SCORE = 50;
 
 // امتیاز پایه‌ی هر دسته؛ اگر دسته‌ای اینجا نبود از BASE_SCORE استفاده می‌شود.
@@ -73,6 +75,7 @@ const GameState = {
     unlockedMedals: [],
     settings: { sound: true, darkMode: false, gender: null }, // gender: null | 'boy' | 'girl'
     dailyChallenge: { lastCompletedDate: null, completedCount: 0 },
+    hasJoinedChannel: false,
     isDailyChallenge: false,
     activeCategory: null,
     activeLevelIndex: 0,
@@ -84,25 +87,25 @@ const GameState = {
 const MEDALS_DB = [
     { id: 'first_blood', name: 'اولین قدم', icon: '🩴', desc: 'اولین مرحله را حل کن',
         check: (state) => getTotalCompleted(state) >= 1,
-        progress: (state) => `${Math.min(getTotalCompleted(state), 1)}/۱` },
-    { id: 'proverbs_novice', name: 'ضرب‌المثل آموز', icon: '📜', desc: '۵ ضرب‌المثل را حل کن',
+        progress: (state) => `${Math.min(getTotalCompleted(state), 1)}/1` },
+    { id: 'proverbs_novice', name: 'ضرب‌المثل آموز', icon: '📜', desc: '50 ضرب‌المثل را حل کن',
         check: (state) => (state.progress['proverbs']?.length || 0) >= 5,
-        progress: (state) => `${Math.min(state.progress['proverbs']?.length || 0, 5)}/۵` },
-    { id: 'movies_novice', name: 'فیلم‌باز', icon: '🎬', desc: '۵ فیلم و سریال را حل کن',
+        progress: (state) => `${Math.min(state.progress['proverbs']?.length || 0, 50)}/5` },
+    { id: 'movies_novice', name: 'فیلم‌باز', icon: '🎬', desc: '50 فیلم و سریال را حل کن',
         check: (state) => (state.progress['movies']?.length || 0) >= 5,
-        progress: (state) => `${Math.min(state.progress['movies']?.length || 0, 5)}/۵` },
-    { id: 'countries_novice', name: 'جهانگرد', icon: '🌍', desc: '۵ کشور را حل کن',
+        progress: (state) => `${Math.min(state.progress['movies']?.length || 0, 50)}/5` },
+    { id: 'countries_novice', name: 'جهانگرد', icon: '🌍', desc: '50 کشور را حل کن',
         check: (state) => (state.progress['countries']?.length || 0) >= 5,
-        progress: (state) => `${Math.min(state.progress['countries']?.length || 0, 5)}/۵` },
+        progress: (state) => `${Math.min(state.progress['countries']?.length || 0, 50)}/5` },
     // نکته: عمداً از totalEarned استفاده می‌کنیم نه globalScore، چون globalScore با
     // خرج کردن روی راهنما کم می‌شود و ممکن بود کاربری که واقعاً ۵۰۰ امتیاز کسب
     // کرده ولی خرج کرده، هیچ‌وقت این مدال را نگیرد.
-    { id: 'rich', name: 'ثروتمند', icon: '💎', desc: '۵۰۰ امتیاز کسب کن',
-        check: (state) => state.totalEarned >= 500,
-        progress: (state) => `${Math.min(state.totalEarned, 500)}/۵۰۰` },
-    { id: 'daily_fan', name: 'اهل چالش روزانه', icon: '🔥', desc: '۵ چالش روزانه را حل کن',
+    { id: 'rich', name: 'ثروتمند', icon: '💎', desc: '5000 امتیاز کسب کن',
+        check: (state) => state.totalEarned >= 5000,
+        progress: (state) => `${Math.min(state.totalEarned, 5000)}/5000` },
+    { id: 'daily_fan', name: 'اهل چالش روزانه', icon: '🔥', desc: '50 چالش روزانه را حل کن',
         check: (state) => (state.dailyChallenge?.completedCount || 0) >= 5,
-        progress: (state) => `${Math.min(state.dailyChallenge?.completedCount || 0, 5)}/۵` },
+        progress: (state) => `${Math.min(state.dailyChallenge?.completedCount || 0, 5)}/5` },
     { id: 'all_categories', name: 'استاد بازی', icon: '👑', desc: 'همه دسته‌ها را صد‌درصد کامل کن',
         check: (state) => DB.categories.length > 0 && DB.categories.every(c => (state.progress[c.id]?.length || 0) >= c.levels.length),
         progress: (state) => {
@@ -145,7 +148,7 @@ const CHANNEL_PROMOS = [
         handle: '@Tech_nour',
         desc: 'اخبار هوش مصنوعی و آپدیت‌های بازی رو اینجا دنبال کن',
         icon: '📢',
-        link: 'https://eitaa.com/Tech_nour',
+        link: TECH_NOUR_LINK,
         theme: 'tech'
     },
     {
@@ -175,7 +178,8 @@ const StorageManager = {
             progress: GameState.progress,
             unlockedMedals: GameState.unlockedMedals,
             settings: GameState.settings,
-            dailyChallenge: GameState.dailyChallenge
+            dailyChallenge: GameState.dailyChallenge,
+            hasJoinedChannel: GameState.hasJoinedChannel
         });
         localStorage.setItem(this.getKey(), payload);
         if (GameState.user.id !== 'guest' && KVDB_BUCKET_ID !== "YOUR_BUCKET_ID_HERE") {
@@ -203,6 +207,7 @@ const StorageManager = {
                 GameState.unlockedMedals = data.unlockedMedals || [];
                 GameState.settings = { ...GameState.settings, ...(data.settings || {}) };
                 GameState.dailyChallenge = data.dailyChallenge || { lastCompletedDate: null, completedCount: 0 };
+                GameState.hasJoinedChannel = !!data.hasJoinedChannel;
             } catch(e) {}
         }
         callback();
@@ -285,7 +290,10 @@ function buildEmojiImg(segment) {
     img.dataset.fallback = `${EMOJI_CDN_BASE}${withFe0f}.png`;
     img.dataset.native = segment;
     img.alt = segment;
-    img.loading = 'lazy';
+    // این تصاویر همیشه همون چیزی هستن که کاربر باید فوراً ببینه (خود معمای
+    // بازی)، پس lazy-load نباید باشن؛ برعکس، اولویت بالا می‌گیرن تا زودتر بیان.
+    img.decoding = 'async';
+    img.fetchPriority = 'high';
     img.className = 'apple-emoji';
     img.addEventListener('error', handleEmojiImgError);
     return img;
@@ -303,6 +311,25 @@ function renderAppleEmojis(container, text) {
         frag.appendChild(buildEmojiImg(segment));
     });
     container.appendChild(frag);
+}
+
+// بعد از اینکه صفحه اصلی نمایش داده شد، در پس‌زمینه (بدون کند کردن چیزی)
+// تصاویر ایموجی چند مرحله اول هر دسته را در کش مرورگر گرم می‌کنیم؛ همین باعث
+// می‌شود اولین باری که کاربر وارد یک دسته می‌شود، عکس‌ها فوراً بیایند نه اینکه
+// آن لحظه منتظر دانلود از CDN بماند.
+function preloadUpcomingEmojis() {
+    if (!DB || !DB.categories) return;
+    const PRELOAD_LEVELS_PER_CATEGORY = 3;
+    DB.categories.forEach(cat => {
+        cat.levels.slice(0, PRELOAD_LEVELS_PER_CATEGORY).forEach(lvl => {
+            getGraphemeSegments(lvl.emoji).forEach(segment => {
+                if (segment.trim() === '') return;
+                const hex = getPaddedHexCodes(segment).filter(c => c !== 'fe0f').join('-');
+                const img = new Image();
+                img.src = `${EMOJI_CDN_BASE}${hex}.png`;
+            });
+        });
+    });
 }
 
 
@@ -422,9 +449,20 @@ function renderHome() {
                 <div class="cat-stats">${completed} از ${total} مرحله</div>
                 <div class="progress-track"><div class="progress-fill" style="width: ${perc}%"></div></div>
             </div>`;
-        div.addEventListener('click', () => { AudioEngine.tap(); startCategory(cat); });
+        div.addEventListener('click', () => { AudioEngine.tap(); requireChannelJoin(() => startCategory(cat)); });
         catContainer.appendChild(div);
     });
+
+    // کارت چهارم: جای دسته‌بندی بعدی که در آینده اضافه می‌شود (غیرقابل‌کلیک)
+    const comingSoonDiv = document.createElement('div');
+    comingSoonDiv.className = 'category-card coming-soon';
+    comingSoonDiv.innerHTML = `
+        <div class="cat-icon">✨</div>
+        <div class="cat-info">
+            <h3 class="cat-title">به‌زودی...</h3>
+            <div class="cat-stats">یک دسته‌بندی جدید داره میاد</div>
+        </div>`;
+    catContainer.appendChild(comingSoonDiv);
 
     renderDailyChallengeCard();
     renderChannelPromos();
@@ -599,6 +637,17 @@ function renderDailyChallengeCard() {
         : 'یه معمای ایموجی مخصوص امروز، هر روز عوض می‌شه';
 }
 
+// --- عضویت اجباری در کانال قبل از بازی ---
+// action همان کاری است که کاربر می‌خواست انجام دهد (باز کردن یک دسته یا
+// چالش روزانه)؛ اگر قبلاً عضویت را تأیید کرده، بلافاصله اجرا می‌شود، وگرنه
+// پنجره عضویت باز می‌شود و action برای بعد از تأیید نگه داشته می‌شود.
+let pendingJoinAction = null;
+function requireChannelJoin(action) {
+    if (GameState.hasJoinedChannel) { action(); return; }
+    pendingJoinAction = action;
+    document.getElementById('modal-join-gate').classList.remove('hidden');
+}
+
 function startDailyChallenge() {
     AudioEngine.tap();
     if (GameState.dailyChallenge.lastCompletedDate === getTodayKey()) {
@@ -691,39 +740,68 @@ function renderLevel() {
     const answerArea = document.getElementById('answer-slots');
     answerArea.innerHTML = '';
     GameState.slots = [];
-    let requiredChars = [];
     let slotId = 0;
 
-    answer.split(' ').forEach(word => {
-        const group = document.createElement('div');
-        group.className = 'word-group';
-        for (let char of word) {
-            const slotObj = { id: slotId++, char: char, filledWith: '', keyId: null, locked: false };
+    // فقط دسته‌ی ضرب‌المثل‌ها به‌جای حرف، کلمه‌به‌کلمه ساخته می‌شود؛ چون
+    // ضرب‌المثل‌ها جمله‌های بلندی هستند و چیدن تک‌تک حروفشان برای کاربر
+    // خسته‌کننده بود. بقیه دسته‌ها (فیلم/کشور) دقیقاً مثل قبل حرف‌به‌حرف می‌مانند.
+    const isWordMode = cat.id === 'proverbs';
+    let requiredUnits = [];
+
+    if (isWordMode) {
+        answer.split(' ').forEach(word => {
+            const slotObj = { id: slotId++, char: word, filledWith: '', keyId: null, locked: false, isWord: true };
             GameState.slots.push(slotObj);
-            requiredChars.push(char);
-            
+            requiredUnits.push(word);
+
             const slotEl = document.createElement('div');
-            slotEl.className = 'slot';
+            slotEl.className = 'slot word-slot';
             slotEl.id = `slot-${slotObj.id}`;
             slotEl.addEventListener('click', () => handleSlotClick(slotObj.id));
-            group.appendChild(slotEl);
-        }
-        answerArea.appendChild(group);
-    });
+            answerArea.appendChild(slotEl);
+        });
+    } else {
+        answer.split(' ').forEach(word => {
+            const group = document.createElement('div');
+            group.className = 'word-group';
+            for (let char of word) {
+                const slotObj = { id: slotId++, char: char, filledWith: '', keyId: null, locked: false, isWord: false };
+                GameState.slots.push(slotObj);
+                requiredUnits.push(char);
 
-    let keyChars = [...requiredChars];
-    while(keyChars.length < Math.max(24, requiredChars.length + 6)) {
-        keyChars.push(PERSIAN_ALPHABET[Math.floor(Math.random() * PERSIAN_ALPHABET.length)]);
+                const slotEl = document.createElement('div');
+                slotEl.className = 'slot';
+                slotEl.id = `slot-${slotObj.id}`;
+                slotEl.addEventListener('click', () => handleSlotClick(slotObj.id));
+                group.appendChild(slotEl);
+            }
+            answerArea.appendChild(group);
+        });
     }
-    keyChars.sort(() => Math.random() - 0.5);
 
-    GameState.keys = keyChars.map((c, i) => ({ id: i, char: c, used: false }));
+    let keyUnits = [...requiredUnits];
+    if (isWordMode) {
+        // چند کلمه‌ی مزاحم (اشتباه ولی باورپذیر) از دیتابیس کلمات data.json اضافه
+        // می‌شود تا انتخاب کلمه‌ی درست کمی چالش داشته باشد، نه اینکه دقیقاً همان
+        // تعداد کلمه‌ی درست روی کیبورد باشد.
+        const bank = (DB.wordBank || []).filter(w => !requiredUnits.includes(w));
+        const shuffledBank = [...bank].sort(() => Math.random() - 0.5);
+        const decoyCount = Math.min(shuffledBank.length, Math.max(4, Math.min(8, requiredUnits.length + 3)));
+        keyUnits.push(...shuffledBank.slice(0, decoyCount));
+    } else {
+        while (keyUnits.length < Math.max(24, requiredUnits.length + 6)) {
+            keyUnits.push(PERSIAN_ALPHABET[Math.floor(Math.random() * PERSIAN_ALPHABET.length)]);
+        }
+    }
+    keyUnits.sort(() => Math.random() - 0.5);
+
+    GameState.keys = keyUnits.map((c, i) => ({ id: i, char: c, used: false, isWord: isWordMode }));
     const kbArea = document.getElementById('keyboard');
     kbArea.innerHTML = '';
     
     GameState.keys.forEach(k => {
         const btn = document.createElement('button');
-        btn.className = 'key pop-in';
+        btn.className = `key pop-in ${k.isWord ? 'word-key' : ''}`;
         btn.id = `key-${k.id}`;
         btn.textContent = k.char;
         btn.addEventListener('click', () => handleKeyClick(k.id));
@@ -740,12 +818,12 @@ function updateGameUI() {
         const el = document.getElementById(`slot-${s.id}`);
         if(el) {
             el.textContent = s.filledWith;
-            el.className = `slot ${s.filledWith ? 'filled' : ''} ${s.locked ? 'locked' : ''}`;
+            el.className = `slot ${s.isWord ? 'word-slot' : ''} ${s.filledWith ? 'filled' : ''} ${s.locked ? 'locked' : ''}`;
         }
     });
     GameState.keys.forEach(k => {
         const el = document.getElementById(`key-${k.id}`);
-        if(el) el.className = `key ${k.used ? 'used' : ''}`;
+        if(el) el.className = `key ${k.isWord ? 'word-key' : ''} ${k.used ? 'used' : ''}`;
     });
 }
 
@@ -817,14 +895,12 @@ function checkWin() {
     
     if (isCorrect) {
         AudioEngine.success();
-        const timeTaken = (Date.now() - GameState.startTime) / 1000;
-        const bonus = timeTaken <= FAST_TIME_LIMIT ? 5 : 0;
         let base;
 
         if (GameState.isDailyChallenge) {
             base = DAILY_BASE_SCORE;
-            GameState.globalScore += base + bonus;
-            GameState.totalEarned += base + bonus;
+            GameState.globalScore += base;
+            GameState.totalEarned += base;
             const todayKey = getTodayKey();
             if (GameState.dailyChallenge.lastCompletedDate !== todayKey) {
                 GameState.dailyChallenge.completedCount = (GameState.dailyChallenge.completedCount || 0) + 1;
@@ -833,8 +909,8 @@ function checkWin() {
         } else {
             const catId = GameState.activeCategory.id;
             base = CATEGORY_SCORES[catId] ?? BASE_SCORE;
-            GameState.globalScore += base + bonus;
-            GameState.totalEarned += base + bonus;
+            GameState.globalScore += base;
+            GameState.totalEarned += base;
             if (!GameState.progress[catId]) GameState.progress[catId] = [];
             if (!GameState.progress[catId].includes(GameState.activeLevelIndex)) {
                 GameState.progress[catId].push(GameState.activeLevelIndex);
@@ -845,9 +921,6 @@ function checkWin() {
         StorageManager.save();
 
         document.getElementById('reward-base-score').textContent = `+${base}`;
-        const bonusEl = document.getElementById('reward-bonus');
-        if (bonus > 0) { bonusEl.classList.remove('hidden'); bonusEl.innerHTML = `پاداش سرعت: <strong>+${bonus}</strong>`; } 
-        else { bonusEl.classList.add('hidden'); }
         
         document.getElementById('modal-success').classList.remove('hidden');
     } else {
@@ -903,7 +976,28 @@ function setupEvents() {
     
     document.getElementById('btn-hint').addEventListener('click', useHint);
 
-    document.getElementById('daily-challenge-card').addEventListener('click', startDailyChallenge);
+    document.getElementById('daily-challenge-card').addEventListener('click', () => requireChannelJoin(startDailyChallenge));
+
+    document.getElementById('btn-join-channel').addEventListener('click', () => {
+        AudioEngine.tap();
+        openExternalLink(TECH_NOUR_LINK);
+    });
+    document.getElementById('btn-confirm-joined').addEventListener('click', () => {
+        AudioEngine.tap();
+        GameState.hasJoinedChannel = true;
+        StorageManager.save();
+        document.getElementById('modal-join-gate').classList.add('hidden');
+        if (pendingJoinAction) {
+            const action = pendingJoinAction;
+            pendingJoinAction = null;
+            action();
+        }
+    });
+    document.getElementById('btn-join-later').addEventListener('click', () => {
+        AudioEngine.tap();
+        pendingJoinAction = null;
+        document.getElementById('modal-join-gate').classList.add('hidden');
+    });
 
     document.getElementById('btn-open-settings').addEventListener('click', () => { AudioEngine.tap(); document.getElementById('modal-settings').classList.remove('hidden'); });
     document.getElementById('btn-open-changelog').addEventListener('click', () => {
@@ -998,5 +1092,6 @@ window.addEventListener('DOMContentLoaded', async () => {
         setupEvents();
         renderHome();
         checkForUpdates();
+        preloadUpcomingEmojis();
     });
 });
