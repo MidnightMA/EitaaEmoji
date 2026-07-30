@@ -12,6 +12,7 @@
     <!-- فونت آراد از قبل روی خود سایت است (بدون وابستگی به سرور خارجی)، همین الان لود شروع شود -->
     <link rel="preload" href="fonts/AradVF.ttf" as="font" type="font/ttf" crossorigin>
 
+    <link rel="preload" href="data.json" as="fetch" crossorigin>
     <link rel="stylesheet" href="style.css">
 
     <!-- Eitaa SDK: با defer لود می‌شود تا جلوی نمایش سریع صفحه را نگیرد -->
@@ -95,6 +96,7 @@
         <main class="game-container">
             <!-- هشدار عامیانه بودن ضرب‌المثل‌ها -->
             <div id="category-notice" class="category-notice hidden"></div>
+            <div id="daily-type-badge" class="daily-type-badge hidden"></div>
 
             <div class="level-indicator">مرحله <span id="ui-level">1</span><span id="ui-difficulty" class="difficulty-badge"></span></div>
             
@@ -158,8 +160,17 @@
                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1.5" fill="white" stroke="none"/></svg>
             </div>
             <h2>قبل از بازی...</h2>
-            <p>برای اینکه از آپدیت‌های جدید بازی و مراحل تازه باخبر بشی، اول باید عضو کانال <strong>تِک نور</strong> بشی 👇</p>
-            <button id="btn-join-channel" class="ios-btn primary-btn w-100">📢 عضویت در کانال</button>
+            <p>با عضویت در کانال <strong>تِک نور</strong> از این امکانات بهره‌مند می‌شی 👇</p>
+            <ul class="join-gate-benefits">
+                <li><span class="jg-icon">🆕</span> اطلاع از آپدیت‌های جدید بازی</li>
+                <li><span class="jg-icon">🧩</span> دریافت مراحل و چالش‌های جدید</li>
+                <li><span class="jg-icon">🏆</span> اطلاع از مسابقات و رویدادها</li>
+                <li><span class="jg-icon">🎁</span> دریافت جوایز و کدهای هدیه اختصاصی</li>
+                <li><span class="jg-icon">📊</span> شرکت در نظرسنجی‌های توسعه بازی</li>
+                <li><span class="jg-icon">👀</span> مشاهده اخبار و قابلیت‌های جدید زودتر از همه</li>
+            </ul>
+            <button id="btn-join-channel" class="ios-btn primary-btn w-100">📢 عضویت در کانال تک‌نور</button>
+            <button id="btn-confirm-joined" class="ios-btn ghost-btn w-100">✅ بررسی عضویت و ادامه</button>
         </div>
     </div>
 
