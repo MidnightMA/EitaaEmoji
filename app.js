@@ -29,8 +29,20 @@ const CATEGORY_SCORES = {
 // یک آبجکت جدید بالای این آرایه اضافه کن و APP_VERSION را هم به‌روز کن؛
 // خودکار یک بار برای کاربرهایی که نسخه قبلی را دیده‌اند، پنجره «تازه‌های این
 // نسخه» نمایش داده می‌شود (و همیشه هم از تنظیمات قابل مشاهده است).
-const APP_VERSION = '1.5.0';
+const APP_VERSION = '1.6.0';
 const CHANGELOG_DB = [
+    {
+        version: '1.6.0',
+        added: [
+            'روی سوال روزانه حالا مشخص می‌شود از کدوم دسته‌بندی است (مثلاً ضرب‌المثل، فیلم یا کشور)',
+            'آیکون‌های اصلی برنامه بزرگ‌تر و خواناتر شدند'
+        ],
+        fixed: [
+            'باز نشدن صفحه تنظیمات و صفحه پروفایل برطرف شد',
+            'پیام «امتیاز کافی نیست» حالا به‌شکل یک نوتیفیکیشن ظریف نمایش داده می‌شود، نه یک پاپ‌آپ مرورگر',
+            'نمای صفحه اصلی روی صفحه‌های بزرگ (دسکتاپ/تبلت) هم‌مرکز و منظم شد'
+        ]
+    },
     {
         version: '1.5.0',
         added: [
@@ -619,7 +631,7 @@ function hashStringToInt(str) {
 function getDailyChallengeLevel() {
     const allLevels = [];
     DB.categories.forEach(cat => {
-        cat.levels.forEach(lvl => allLevels.push({ ...lvl, categoryId: cat.id, categoryName: cat.name }));
+        cat.levels.forEach(lvl => allLevels.push({ ...lvl, categoryId: cat.id, categoryName: cat.name, categoryIcon: cat.icon }));
     });
     if (allLevels.length === 0) return null;
     const idx = hashStringToInt(getTodayKey()) % allLevels.length;
@@ -663,6 +675,13 @@ function startDailyChallenge() {
     document.getElementById('game-category-title').textContent = '🔥 چالش روزانه';
     document.getElementById('category-notice').classList.add('hidden');
 
+    // نمایش دسته‌بندی (نوع) سوال روزانه، مثلاً «🎭 ضرب‌المثل‌ها»
+    const badgeEl = document.getElementById('daily-type-badge');
+    if (badgeEl) {
+        badgeEl.textContent = `${lvl.categoryIcon || ''} ${lvl.categoryName || ''}`.trim();
+        badgeEl.classList.remove('hidden');
+    }
+
     showScreen('screen-game');
     renderLevel();
 
@@ -681,8 +700,18 @@ const DIFFICULTY_LABELS = {
     medium: { text: 'متوسط', className: 'diff-medium' },
     hard: { text: 'سخت', className: 'diff-hard' }
 };
-function computeDifficulty(levelData) {
+function computeDifficulty(levelData, isWordMode) {
     if (levelData.difficulty && DIFFICULTY_LABELS[levelData.difficulty]) return levelData.difficulty;
+    if (isWordMode) {
+        // برای دسته‌های کلمه‌به‌کلمه (مثل ضرب‌المثل)، سختی واقعی که کاربر حس
+        // می‌کند به تعداد کلماتی که باید بچیند بستگی دارد، نه تعداد کل حروف
+        // جمله؛ یک ضرب‌المثل ۶ کلمه‌ای حتی اگر حروفش زیاد باشد، سخت‌تر از یک
+        // جمله ۹ کلمه‌ای با کلمات کوتاه نیست.
+        const wordCount = levelData.answer.trim().split(/\s+/).length;
+        if (wordCount <= 3) return 'easy';
+        if (wordCount <= 6) return 'medium';
+        return 'hard';
+    }
     const len = levelData.answer.replace(/\s/g, '').length;
     if (len <= 6) return 'easy';
     if (len <= 12) return 'medium';
@@ -693,6 +722,7 @@ function startCategory(category) {
     GameState.isDailyChallenge = false;
     GameState.activeCategory = category;
     document.getElementById('game-category-title').textContent = category.name;
+    document.getElementById('daily-type-badge').classList.add('hidden');
     
     let completedArr = GameState.progress[category.id] || [];
     let nextIndex = 0;
@@ -729,7 +759,9 @@ function renderLevel() {
     document.getElementById('ui-level').textContent = GameState.activeLevelIndex + 1;
     document.getElementById('game-score').textContent = GameState.globalScore;
 
-    const diffKey = computeDifficulty(levelData);
+    const isWordMode = cat.id === 'proverbs';
+
+    const diffKey = computeDifficulty(levelData, isWordMode);
     const diffInfo = DIFFICULTY_LABELS[diffKey];
     const diffEl = document.getElementById('ui-difficulty');
     diffEl.textContent = diffInfo.text;
@@ -745,7 +777,6 @@ function renderLevel() {
     // فقط دسته‌ی ضرب‌المثل‌ها به‌جای حرف، کلمه‌به‌کلمه ساخته می‌شود؛ چون
     // ضرب‌المثل‌ها جمله‌های بلندی هستند و چیدن تک‌تک حروفشان برای کاربر
     // خسته‌کننده بود. بقیه دسته‌ها (فیلم/کشور) دقیقاً مثل قبل حرف‌به‌حرف می‌مانند.
-    const isWordMode = cat.id === 'proverbs';
     let requiredUnits = [];
 
     if (isWordMode) {
@@ -854,7 +885,7 @@ function handleSlotClick(slotId) {
 }
 
 function useHint() {
-    if (GameState.globalScore < HINT_COST) return alert("امتیاز کافی نیست!");
+    if (GameState.globalScore < HINT_COST) { showToast('🪙', 'امتیاز کافی نیست!'); return; }
     const candidates = GameState.slots.filter(s => !s.locked && s.filledWith !== s.char);
     if (candidates.length === 0) return;
     
@@ -984,6 +1015,12 @@ function setupEvents() {
     });
     document.getElementById('btn-confirm-joined').addEventListener('click', () => {
         AudioEngine.tap();
+        // نکته فنی مهم: از داخل مرورگر (بدون سرور و بدون Bot API رسمی ایتا برای
+        // احراز عضویت) امکان بررسی واقعی و قطعی عضویت کاربر در کانال وجود ندارد.
+        // به همین دلیل، به‌جای شبیه‌سازی یک "تأیید" دروغین، این دکمه صادقانه به
+        // عنوان «خودم عضو شدم» عمل می‌کند (self-report) و کاربر را به بازی
+        // می‌فرستد. اگر در آینده یک بک‌اند + ربات ادمین کانال راه‌اندازی شود،
+        // می‌توان اینجا یک fetch واقعی به آن بک‌اند زد و بر اساس پاسخش تصمیم گرفت.
         GameState.hasJoinedChannel = true;
         StorageManager.save();
         document.getElementById('modal-join-gate').classList.add('hidden');
@@ -992,11 +1029,6 @@ function setupEvents() {
             pendingJoinAction = null;
             action();
         }
-    });
-    document.getElementById('btn-join-later').addEventListener('click', () => {
-        AudioEngine.tap();
-        pendingJoinAction = null;
-        document.getElementById('modal-join-gate').classList.add('hidden');
     });
 
     document.getElementById('btn-open-settings').addEventListener('click', () => { AudioEngine.tap(); document.getElementById('modal-settings').classList.remove('hidden'); });
