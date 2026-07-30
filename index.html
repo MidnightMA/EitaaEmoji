@@ -4,9 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>بازی ایموجی‌ها</title>
+
+    <!-- اتصال زودهنگام به CDN تصاویر ایموجی، تا وقتی مرحله باز می‌شود عکس‌ها سریع‌تر بیایند -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+
+    <!-- فونت آراد از قبل روی خود سایت است (بدون وابستگی به سرور خارجی)، همین الان لود شروع شود -->
+    <link rel="preload" href="fonts/AradVF.ttf" as="font" type="font/ttf" crossorigin>
+
     <link rel="stylesheet" href="style.css">
-    <!-- Eitaa SDK -->
-    <script src="https://developer.eitaa.com/eitaa-web-app.js"></script>
+
+    <!-- Eitaa SDK: با defer لود می‌شود تا جلوی نمایش سریع صفحه را نگیرد -->
+    <script src="https://developer.eitaa.com/eitaa-web-app.js" defer></script>
 </head>
 <body>
     <!-- Screen 1: Home / Categories -->
@@ -58,25 +67,12 @@
             <section class="channel-promo-section">
                 <div class="section-header">
                     <h2>
-                        <svg class="header-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ios-blue)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1.5" fill="var(--ios-blue)" stroke="none"/></svg>
+                        <svg class="header-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--ios-blue)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1.5" fill="var(--ios-blue)" stroke="none"/></svg>
                         کانال‌های ما
                     </h2>
                 </div>
                 <div class="channel-promo-scroll" id="channel-promo-container"></div>
                 <div class="channel-promo-dots" id="channel-promo-dots"></div>
-            </section>
-
-            <section class="coming-soon-section">
-                <div class="section-header">
-                    <h2>
-                        <svg class="header-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ios-orange)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                        دسته‌بندی‌های بیشتر
-                    </h2>
-                </div>
-                <div class="coming-soon-card">
-                    <div class="coming-soon-icon">✨</div>
-                    <p>دسته‌بندی‌های جدید به‌زودی اضافه می‌شوند...</p>
-                </div>
             </section>
 
         </main>
@@ -111,7 +107,7 @@
             <!-- بخش دکمه‌ها و تبلیغات -->
             <section class="actions-area">
                 <button id="btn-hint" class="ios-btn primary-btn w-100">
-                    💡 راهنما (۲۰- امتیاز)
+                    💡 راهنما (۱۵- امتیاز)
                 </button>
                 <!-- جایگاه تبلیغات -->
                 <div id="adly-container"></div>
@@ -156,6 +152,19 @@
     </div>
 
     <!-- Modals -->
+    <div id="modal-join-gate" class="modal-overlay hidden">
+        <div class="ios-modal pop-in join-gate-modal">
+            <div class="modal-icon join-gate-icon">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1.5" fill="white" stroke="none"/></svg>
+            </div>
+            <h2>قبل از بازی...</h2>
+            <p>برای اینکه از آپدیت‌های جدید بازی و مراحل تازه باخبر بشی، اول باید عضو کانال <strong>تِک نور</strong> بشی 👇</p>
+            <button id="btn-join-channel" class="ios-btn primary-btn w-100">📢 عضویت در کانال</button>
+            <button id="btn-confirm-joined" class="ios-btn success-btn w-100 mt-10">عضو شدم، بریم بازی ✅</button>
+            <button id="btn-join-later" class="text-link-btn w-100 mt-10">شاید بعداً</button>
+        </div>
+    </div>
+
     <div id="modal-success" class="modal-overlay hidden">
         <div class="ios-modal pop-in">
             <div class="modal-icon success-icon">
@@ -165,7 +174,6 @@
             <p>پاسخ شما کاملاً درست بود.</p>
             <div class="reward-box">
                 <span class="reward-row">🪙 امتیاز مرحله: <strong id="reward-base-score">+10</strong></span>
-                <span id="reward-bonus" class="reward-row bonus-text hidden">⚡ پاداش سرعت: <strong>+5</strong></span>
             </div>
             <button id="btn-next-level" class="ios-btn success-btn w-100">ادامه بازی 🚀</button>
         </div>
@@ -183,7 +191,7 @@
                 <div class="ios-list-item">
                     <div class="setting-label">
                         <span class="setting-icon-square icon-sound">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
                         </span>
                         <span>صداهای بازی</span>
                     </div>
@@ -195,7 +203,7 @@
                 <div class="ios-list-item">
                     <div class="setting-label">
                         <span class="setting-icon-square icon-dark">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/><path d="M19 3v4"/><path d="M21 5h-4"/></svg>
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/><path d="M19 3v4"/><path d="M21 5h-4"/></svg>
                         </span>
                         <span>حالت تاریک</span>
                     </div>
@@ -211,7 +219,7 @@
                 <div class="ios-list-item clickable" id="btn-open-changelog">
                     <div class="setting-label">
                         <span class="setting-icon-square icon-changelog">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
                         </span>
                         <span>نسخه‌ی جدید برنامک</span>
                     </div>
@@ -236,8 +244,8 @@
 
     <div id="toast-container" class="toast-container"></div>
 
-    <!-- اسکریپت تبلیغات Adly -->
-    <script src="https://myadino.ir/widget/adly-widget.js"></script>
+    <!-- اسکریپت تبلیغات Adly (با defer، چون خودش هم فقط بعد از رویداد load اجرا می‌شود) -->
+    <script src="https://myadino.ir/widget/adly-widget.js" defer></script>
     <script>
         window.addEventListener('load', function() {
             if (typeof AdlyWidget !== 'undefined') {
