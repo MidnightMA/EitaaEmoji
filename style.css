@@ -86,7 +86,6 @@ body {
 
 /* User Profile */
 .user-info { display: flex; align-items: center; gap: 12px; }
-.avatar { width: 44px; height: 44px; background: var(--ios-blue); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
 .user-text { display: flex; flex-direction: column; }
 .greeting { font-size: 0.8rem; color: var(--text-muted); }
 #user-name { font-size: 1.1rem; font-weight: 600; }
@@ -103,7 +102,9 @@ body {
 }
 
 /* Sections & Typography */
-.home-scroll { padding: 0 20px 40px; }
+.home-scroll { padding: 0 20px 40px; max-width: 600px; margin: 0 auto; }
+.ios-header { max-width: 600px; margin: 0 auto; width: 100%; }
+.ios-header.glass-nav { max-width: none; }
 .section-header { display: flex; justify-content: space-between; align-items: center; margin: 24px 0 16px; }
 .section-header h2 { font-size: 1.4rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
 .header-icon { flex-shrink: 0; }
@@ -133,7 +134,7 @@ body {
     transition: all 0.3s ease;
 }
 .medal-card.unlocked { opacity: 1; filter: grayscale(0); border: 2px solid var(--ios-orange); }
-.medal-icon { font-size: 2.5rem; margin-bottom: 8px; display: block; }
+.medal-icon { font-size: 3.1rem; margin-bottom: 8px; display: block; }
 .medal-name { font-size: 0.8rem; font-weight: 600; display: block; white-space: normal;}
 
 /* Category Cards */
@@ -150,7 +151,7 @@ body {
     transition: transform 0.1s ease;
 }
 .category-card:active { transform: scale(0.97); }
-.cat-icon { font-size: 3rem; }
+.cat-icon { font-size: 3.75rem; }
 .cat-info { flex: 1; }
 .cat-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 4px; }
 .cat-stats { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 10px; }
@@ -174,7 +175,8 @@ body {
 .primary-btn { background: var(--ios-blue); color: white; }
 .success-btn { background: var(--ios-green); color: white; }
 .danger-btn { background: var(--ios-red); color: white; }
-.icon-btn { width: 44px; height: 44px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; border-radius: 50%; }
+.ghost-btn { background: transparent; color: var(--ios-blue); margin-top: 10px; font-size: 1rem; padding: 10px 20px; }
+.icon-btn { width: 55px; height: 55px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; border-radius: 50%; }
 .w-100 { width: 100%; }
 .mt-20 { margin-top: 20px; }
 
@@ -208,7 +210,30 @@ body {
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(5px); display: flex; justify-content: center; align-items: center; z-index: 100; transition: opacity 0.3s ease; }
 .modal-overlay.hidden { opacity: 0; pointer-events: none; }
 .ios-modal { background: var(--bg-main); width: 90%; max-width: 360px; border-radius: 28px; padding: 24px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
-.modal-icon { font-size: 4rem; margin-bottom: 10px; }
+.modal-icon { font-size: 5rem; margin-bottom: 10px; }
+
+/* --- پنجره عضویت اجباری در کانال --- */
+.join-gate-modal p { color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; margin: 8px 0 16px; }
+.join-gate-icon {
+    width: 72px; height: 72px; margin: 0 auto 14px;
+    background: linear-gradient(135deg, #0a84ff, #34c3ff);
+    border-radius: 22px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 8px 20px rgba(10, 132, 255, 0.35);
+}
+.join-gate-benefits {
+    list-style: none;
+    text-align: right;
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 14px 16px;
+    margin-bottom: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.join-gate-benefits li { display: flex; align-items: center; gap: 10px; font-size: 0.88rem; font-weight: 500; }
+.join-gate-benefits .jg-icon { font-size: 1.1rem; flex-shrink: 0; }
 .reward-box { background: var(--card-bg); border-radius: 16px; padding: 16px; margin: 20px 0; display: flex; flex-direction: column; gap: 10px; }
 .reward-row { display: flex; justify-content: space-between; font-size: 1.1rem; }
 .bonus-text { color: var(--ios-orange); }
@@ -242,102 +267,19 @@ input:checked + .slider:before { transform: translateX(20px); }
 @keyframes toastIn { 0% { transform: translateY(-50px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
 @keyframes toastOut { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-50px); opacity: 0; } }
 
-/* Responsive adjustments */
-@media (max-width: 380px) {
-    .slot { width: 34px; height: 42px; font-size: 1.3rem; }
-    .key { width: 36px; height: 44px; font-size: 1.2rem; }
-    .slot.word-slot, .key.word-key { min-width: 52px; height: 42px; padding: 0 10px; font-size: 0.9rem; }
-    .emoji-area { font-size: 3.2rem; padding: 20px 10px; }
-}
-
-/* --- New Avatar Style --- */
-.avatar {
-    width: 48px;
-    height: 48px;
-    background-color: var(--ios-blue);
-    border-radius: 16px; /* Rounded square like iOS icons */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    overflow: hidden;
-    box-shadow: var(--shadow-sm);
-}
-
-/* --- New Back Button Design --- */
-.back-btn {
-    width: 44px;
-    height: 44px;
-    background: rgba(0, 0, 0, 0.06);
-    border-radius: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: none;
-    cursor: pointer;
-    color: var(--text-main);
-    transition: background 0.2s, transform 0.1s;
-}
-.back-btn:active {
-    transform: scale(0.9);
-    background: rgba(0, 0, 0, 0.12);
-}
-[data-theme="dark"] .back-btn {
-    background: rgba(255, 255, 255, 0.1);
-}
-[data-theme="dark"] .back-btn:active {
-    background: rgba(255, 255, 255, 0.2);
-}
-
-/* --- Apple Emoji Area & Scroll Rules --- */
-.emoji-area {
-    padding: 20px;
-    min-height: 120px;
-    display: flex;
-    align-items: center;
-    /* Custom scrollbar hiding */
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-}
-.emoji-area::-webkit-scrollbar { display: none; }
-
-.emoji-inner {
-    display: flex;
-    flex-wrap: nowrap; /* Forces emojis to stay in one single line */
-    overflow-x: auto;
-    gap: 12px;
-    margin: 0 auto; /* Centers when items are few */
-    padding: 10px 0;
-    align-items: center;
-}
-
-/* Apple Emoji Image Stylings */
-.apple-emoji {
-    width: 65px;
-    height: 65px;
-    object-fit: contain;
-    flex-shrink: 0; /* Prevents emojis from shrinking when there are too many */
-    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
-}
-
-@media (max-width: 380px) {
-    .apple-emoji { width: 55px; height: 55px; }
-    .back-btn { width: 38px; height: 38px; }
-}
-
-
 /* --- آواتار و عکس پروفایل ایتا --- */
 .avatar {
-    width: 48px;
-    height: 48px;
+    width: 60px;
+    height: 60px;
     background-color: var(--ios-blue);
-    border-radius: 14px; /* گوشه‌های گرد استاندارد آیفون */
+    border-radius: 18px; /* گوشه‌های گرد استاندارد آیفون */
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.5rem;
+    font-size: 1.9rem;
     overflow: hidden;
     box-shadow: var(--shadow-sm);
+    flex-shrink: 0;
 }
 .avatar img { width: 100%; height: 100%; object-fit: cover; }
 
@@ -360,42 +302,6 @@ input:checked + .slider:before { transform: translateX(20px); }
     transform: scale(0.9);
     opacity: 0.8;
 }
-
-/* --- تنظیمات ایموجی‌ها (یک خطی شدن و رفع مشکل سایز) --- */
-.emoji-area {
-    padding: 15px;
-    min-height: 120px;
-    display: flex;
-    align-items: center;
-}
-.emoji-inner {
-    display: flex;
-    flex-wrap: nowrap; /* ایموجی‌ها را به زور در یک خط نگه می‌دارد */
-    overflow-x: auto; /* در صورت زیاد بودن، اسکرول افقی می‌شود */
-    gap: 15px;
-    margin: 0 auto;
-    padding: 10px 5px;
-    align-items: center;
-    justify-content: flex-start;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-}
-.emoji-inner::-webkit-scrollbar { display: none; }
-
-.apple-emoji {
-    width: 60px; /* سایز کاملاً ثابت */
-    height: 60px;
-    min-width: 60px;
-    flex-shrink: 0; /* جلوگیری از فشرده شدن تصاویر */
-    object-fit: contain;
-    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
-}
-
-@media (max-width: 380px) {
-    .apple-emoji { width: 50px; height: 50px; min-width: 50px; }
-    .square-back-btn { width: 38px; height: 38px; }
-}   
-
 
 /* --- هشدار پیام‌های عامیانه --- */
 .category-notice {
@@ -484,15 +390,15 @@ input:checked + .slider:before { transform: translateX(20px); }
 }
 .channel-promo-card:active { transform: scale(0.97); }
 .channel-promo-icon {
-    width: 50px;
-    height: 50px;
+    width: 62px;
+    height: 62px;
     flex-shrink: 0;
     background: rgba(255, 255, 255, 0.2);
-    border-radius: 15px;
+    border-radius: 17px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.7rem;
+    font-size: 2.1rem;
 }
 .channel-promo-info { flex: 1; min-width: 0; }
 .channel-promo-title {
@@ -555,9 +461,17 @@ input:checked + .slider:before { transform: translateX(20px); }
     width: 100%;
 }
 
+/* Responsive adjustments (تجمیع‌شده: همه قوانین موبایل کوچک اینجا هستند) */
 @media (max-width: 380px) {
+    .slot { width: 34px; height: 42px; font-size: 1.3rem; }
+    .key { width: 36px; height: 44px; font-size: 1.2rem; }
+    .slot.word-slot, .key.word-key { min-width: 52px; height: 42px; padding: 0 10px; font-size: 0.9rem; }
     .apple-emoji { width: 50px; height: 50px; min-width: 50px; }
     .apple-emoji-native { font-size: 36px; }
+    .square-back-btn { width: 38px; height: 38px; }
+    .avatar { width: 48px; height: 48px; font-size: 1.5rem; }
+    .icon-btn { width: 44px; height: 44px; font-size: 1.4rem; }
+    .header-actions { gap: 8px; }
 }
 
 /* --- سوال روزانه (کارت شاخص بالای صفحه اصلی) --- */
@@ -577,11 +491,11 @@ input:checked + .slider:before { transform: translateX(20px); }
 .daily-challenge-card:active { transform: scale(0.97); }
 .daily-challenge-card.done { background: linear-gradient(135deg, #34c759, #30b0c7); }
 .daily-challenge-icon {
-    width: 54px; height: 54px; flex-shrink: 0;
+    width: 68px; height: 68px; flex-shrink: 0;
     background: rgba(255,255,255,0.22);
-    border-radius: 18px;
+    border-radius: 20px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 1.8rem;
+    font-size: 2.25rem;
 }
 .daily-challenge-info { flex: 1; min-width: 0; }
 .daily-challenge-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
@@ -589,6 +503,21 @@ input:checked + .slider:before { transform: translateX(20px); }
 .daily-badge { background: rgba(255,255,255,0.25); padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
 .daily-challenge-info p { font-size: 0.85rem; color: rgba(255,255,255,0.9); line-height: 1.4; }
 .daily-challenge-arrow { font-size: 1.6rem; font-weight: 700; opacity: 0.85; flex-shrink: 0; }
+
+/* --- نشان دسته‌بندی سوال روزانه --- */
+.daily-type-badge {
+    display: block;
+    text-align: center;
+    width: fit-content;
+    margin: 0 auto;
+    background: rgba(255, 149, 0, 0.15);
+    color: var(--ios-orange);
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+.daily-type-badge.hidden { display: none; }
 
 /* --- نشان سطح سختی کنار شماره مرحله --- */
 .difficulty-badge {
@@ -606,7 +535,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 /* --- آیکون دایره‌ای صحیح‌بودن پاسخ در مودال موفقیت --- */
 .success-icon {
-    width: 76px; height: 76px;
+    width: 95px; height: 95px;
     background: var(--ios-green);
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
@@ -629,10 +558,10 @@ input:checked + .slider:before { transform: translateX(20px); }
 .settings-group-title:first-of-type { margin-top: 4px; }
 .setting-label { display: flex; align-items: center; gap: 14px; }
 .setting-icon-square {
-    width: 42px; height: 42px;
-    border-radius: 12px;
+    width: 52px; height: 52px;
+    border-radius: 14px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 1.15rem;
+    font-size: 1.45rem;
     flex-shrink: 0;
     box-shadow: 0 3px 8px rgba(0,0,0,0.18);
 }
@@ -694,28 +623,25 @@ input:checked + .slider:before { transform: translateX(20px); }
     white-space: nowrap;
 }
 
-/* --- دسته‌بندی‌های بیشتر (به‌زودی) --- */
-.coming-soon-section { margin-top: 8px; }
-.coming-soon-card {
-    background: var(--card-bg);
+/* --- کارت «به‌زودی» در انتهای لیست دسته‌بندی‌ها --- */
+.category-card.coming-soon {
+    background: transparent;
     border: 2px dashed var(--border-color);
-    border-radius: 22px;
-    padding: 26px 20px;
-    text-align: center;
-    color: var(--text-muted);
+    box-shadow: none;
+    cursor: default;
+    opacity: 0.75;
 }
-.coming-soon-icon { font-size: 2.2rem; margin-bottom: 8px; }
-.coming-soon-card p { font-size: 0.95rem; font-weight: 600; }
+.category-card.coming-soon:active { transform: none; }
 
 /* --- صفحه پروفایل --- */
 .profile-container { padding: 30px 20px; max-width: 500px; margin: 0 auto; }
 .profile-avatar-wrap { text-align: center; margin-bottom: 34px; }
 .profile-avatar {
-    width: 96px; height: 96px;
+    width: 120px; height: 120px;
     border-radius: 50%;
     background: var(--ios-blue);
     display: flex; align-items: center; justify-content: center;
-    font-size: 3rem;
+    font-size: 3.75rem;
     margin: 0 auto 14px;
     overflow: hidden;
     box-shadow: var(--shadow-md);
@@ -737,5 +663,5 @@ input:checked + .slider:before { transform: translateX(20px); }
 }
 .gender-option:active { transform: scale(0.96); }
 .gender-option.selected { border-color: var(--ios-blue); background: rgba(0, 122, 255, 0.08); }
-.gender-icon { font-size: 2.4rem; margin-bottom: 8px; }
+.gender-icon { font-size: 3rem; margin-bottom: 8px; }
 .gender-option span { font-weight: 700; font-size: 1rem; }
