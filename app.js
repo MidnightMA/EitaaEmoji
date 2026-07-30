@@ -460,7 +460,7 @@ function renderHome() {
         <div class="cat-icon">✨</div>
         <div class="cat-info">
             <h3 class="cat-title">به‌زودی...</h3>
-            <div class="cat-stats">یک دسته‌بندی جدید داره میاد</div>
+            <div class="cat-stats">بازی جدیدی در راه است...</div>
         </div>`;
     catContainer.appendChild(comingSoonDiv);
 
