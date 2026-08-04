@@ -31,7 +31,22 @@
             </div>
             <div class="header-actions">
                 <div class="score-pill">🪙 <span id="home-total-score">0</span></div>
-                <button id="btn-open-settings" class="icon-btn ios-btn" aria-label="تنظیمات">⚙️</button>
+                <button id="btn-open-settings" class="icon-btn ios-btn" aria-label="تنظیمات">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <g fill="var(--text-main)">
+                            <rect x="10.8" y="0.6" width="2.4" height="4.6" rx="1"/>
+                            <rect x="10.8" y="0.6" width="2.4" height="4.6" rx="1" transform="rotate(45 12 12)"/>
+                            <rect x="10.8" y="0.6" width="2.4" height="4.6" rx="1" transform="rotate(90 12 12)"/>
+                            <rect x="10.8" y="0.6" width="2.4" height="4.6" rx="1" transform="rotate(135 12 12)"/>
+                            <rect x="10.8" y="0.6" width="2.4" height="4.6" rx="1" transform="rotate(180 12 12)"/>
+                            <rect x="10.8" y="0.6" width="2.4" height="4.6" rx="1" transform="rotate(225 12 12)"/>
+                            <rect x="10.8" y="0.6" width="2.4" height="4.6" rx="1" transform="rotate(270 12 12)"/>
+                            <rect x="10.8" y="0.6" width="2.4" height="4.6" rx="1" transform="rotate(315 12 12)"/>
+                            <circle cx="12" cy="12" r="7"/>
+                        </g>
+                        <circle cx="12" cy="12" r="2.7" fill="var(--card-bg)"/>
+                    </svg>
+                </button>
             </div>
         </header>
 
@@ -52,7 +67,7 @@
 
             <section class="medals-section">
                 <div class="section-header">
-                    <h2>🏆 افتخارات شما</h2>
+                    <h2><span class="header-icon-emoji">🏆</span> افتخارات شما</h2>
                     <span class="badge" id="medals-count">0/0</span>
                 </div>
                 <div class="medals-scroll" id="medals-container"></div>
@@ -60,7 +75,7 @@
 
             <section class="categories-section">
                 <div class="section-header">
-                    <h2>🗂️ دسته‌بندی‌ها</h2>
+                    <h2><span class="header-icon-emoji">🗂️</span> دسته‌بندی‌ها</h2>
                 </div>
                 <div class="categories-list" id="categories-container"></div>
             </section>
