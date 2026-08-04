@@ -16,6 +16,8 @@ const HINT_COST = 15;
 const TECH_NOUR_LINK = 'https://eitaa.com/Tech_nour';
 const BASE_SCORE = 10;
 const DAILY_BASE_SCORE = 50;
+// فاصله‌ی چرخش خودکار کارت‌های «کانال‌های ما»
+const PROMO_ROTATE_INTERVAL_MS = 4000;
 
 // امتیاز پایه‌ی هر دسته؛ اگر دسته‌ای اینجا نبود از BASE_SCORE استفاده می‌شود.
 // (درخواست: امتیاز ضرب‌المثل‌ها حداقل ۲۵ باشد)
@@ -29,8 +31,18 @@ const CATEGORY_SCORES = {
 // یک آبجکت جدید بالای این آرایه اضافه کن و APP_VERSION را هم به‌روز کن؛
 // خودکار یک بار برای کاربرهایی که نسخه قبلی را دیده‌اند، پنجره «تازه‌های این
 // نسخه» نمایش داده می‌شود (و همیشه هم از تنظیمات قابل مشاهده است).
-const APP_VERSION = '1.6.0';
+const APP_VERSION = '1.7.0';
 const CHANGELOG_DB = [
+    {
+        version: '1.7.0',
+        added: [
+            'آیکون‌های جدید و شیک‌تر برای پروفایل (پسر/دختر) به‌جای ایموجی',
+            'جای آماده برای انتخاب عکس پروفایل (به‌زودی فعال می‌شود)',
+            'کارت‌های «کانال‌های ما» حالا آیکون‌های طراحی‌شده دارن، بزرگ‌تر و خواناتر از قبل',
+            'نمای کشویی کانال‌ها سریع‌تر می‌چرخد (هر ۴ ثانیه)',
+            'سوال روزانه: بانک سوال‌ها بزرگ‌تر شد و دیگه سوال‌ها زودتر از موعد تکرار نمی‌شن'
+        ]
+    },
     {
         version: '1.6.0',
         added: [
@@ -85,7 +97,9 @@ const GameState = {
     totalEarned: 0, // مجموع کل امتیازی که تا الان کسب شده (برخلاف globalScore که با خرج راهنما کم می‌شود)
     progress: {},
     unlockedMedals: [],
-    settings: { sound: true, darkMode: false, gender: null }, // gender: null | 'boy' | 'girl'
+    // gender: null | 'boy' | 'girl'
+    // avatarId: رزرو شده برای انتخاب عکس پروفایل در آینده (فعلاً همیشه null)
+    settings: { sound: true, darkMode: false, gender: null, avatarId: null },
     dailyChallenge: { lastCompletedDate: null, completedCount: 0 },
     hasJoinedChannel: false,
     isDailyChallenge: false,
@@ -127,27 +141,29 @@ const MEDALS_DB = [
         } }
 ];
 
-// نمای کشویی «کانال‌های ما»: هر آبجکت یک کارت قابل سوایپ می‌سازد (هر ۵ ثانیه
-// خودش می‌چرخد). دو نوع کارت پشتیبانی می‌شود:
-//   type: 'channel'  → کارت معرفی کانال (name, handle, desc, icon, link, theme)
+// نمای کشویی «کانال‌های ما»: هر آبجکت یک کارت قابل سوایپ می‌سازد (هر
+// PROMO_ROTATE_INTERVAL_MS خودش می‌چرخد). دو نوع کارت پشتیبانی می‌شود:
+//   type: 'channel'  → کارت معرفی کانال (name, handle, desc, iconType, link, theme)
 //   type: 'ad'       → کارت تبلیغ ویژه، ظاهر و رنگش عمداً متفاوته که کاربر
-//                      سریع بفهمه تبلیغه (badge, desc, icon, link, buttonText)
+//                      سریع بفهمه تبلیغه (badge, desc, iconType, link, buttonText)
 // برای افزودن کانال جدید، فقط یک آبجکت دیگر شبیه پایین به آرایه اضافه کن.
 // theme برای کانال‌ها: 'tech' / 'poetry' / 'meme' (یا خالی برای آبی پیش‌فرض).
+// iconType باید یکی از کلیدهای PROMO_ICONS باشد (چند خط پایین‌تر همین فایل)؛
+// برای آیکون تازه فقط یک ورودی جدید به PROMO_ICONS اضافه کن.
 const CHANNEL_PROMOS = [
     {
         type: 'channel',
         name: 'آواي‌خـــــــــیال',
         handle: '@avay_khiyal',
         desc: 'کانال شعر؛ اگه دلت یه گوشه‌ی آروم برای خوندن شعر می‌خواد، بیا اینجا',
-        icon: '🕊️',
+        iconType: 'poetry',
         link: 'https://eitaa.com/avay_khiyal',
         theme: 'poetry'
     },
     {
         type: 'ad',
         badge: 'تبلیغ ویژه',
-        icon: '🎯',
+        iconType: 'ad',
         desc: 'برای رزرو کلیک کنید و به مدیر پیام بدهید!',
         link: 'https://eitaa.com/tab_amoo',
         buttonText: 'مشاهده'
@@ -159,7 +175,7 @@ const CHANNEL_PROMOS = [
         name: 'تِک نور | 𝙏𝙚𝙘𝙝 𝙣𝙤𝙪𝙧',
         handle: '@Tech_nour',
         desc: 'اخبار هوش مصنوعی و آپدیت‌های بازی رو اینجا دنبال کن',
-        icon: '📢',
+        iconType: 'tech',
         link: TECH_NOUR_LINK,
         theme: 'tech'
     },
@@ -168,11 +184,42 @@ const CHANNEL_PROMOS = [
         name: 'Rasa Meme | رسامیم',
         handle: '@Rasa_Meme',
         desc: 'یسری میم چرت و پرت',
-        icon: '😂',
+        iconType: 'meme',
         link: 'https://eitaa.com/Rasa_Meme',
         theme: 'meme'
     }
 ];
+
+// آیکون‌های خط-محور (line icons) به سبک بقیه‌ی آیکون‌های SVG همین اپ (به‌جای
+// ایموجی ساده)، برای هر «نوع» کارت کانال. عمداً فقط از شکل‌های هندسی ساده
+// (دایره/مستطیل/خط) ساخته شده‌اند تا روی هر پس‌زمینه‌ای تمیز و شارپ دیده بشن.
+const PROMO_ICONS = {
+    tech: `<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect x="18" y="55" width="14" height="27" rx="4" fill="#fff"/>
+        <rect x="43" y="38" width="14" height="44" rx="4" fill="#fff"/>
+        <rect x="68" y="20" width="14" height="62" rx="4" fill="#fff" fill-opacity="0.9"/>
+    </svg>`,
+    poetry: `<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M50 28V76" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
+        <path d="M50 32C37 24 24 25 15 30V72C24 67 37 66 50 74" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <path d="M50 32C63 24 76 25 85 30V72C76 67 63 66 50 74" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </svg>`,
+    meme: `<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="50" cy="50" r="34" fill="#fff"/>
+        <circle cx="38" cy="45" r="5.5" fill="#3a2a55"/>
+        <circle cx="62" cy="45" r="5.5" fill="#3a2a55"/>
+        <path d="M32 58C38 72 62 72 68 58" stroke="#3a2a55" stroke-width="6" stroke-linecap="round" fill="none"/>
+    </svg>`,
+    ad: `<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="50" cy="50" r="32" stroke="#fff" stroke-width="7"/>
+        <circle cx="50" cy="50" r="18" stroke="#fff" stroke-width="7"/>
+        <circle cx="50" cy="50" r="5" fill="#fff"/>
+    </svg>`
+};
+
+function getPromoIconMarkup(iconType) {
+    return PROMO_ICONS[iconType] || PROMO_ICONS.tech;
+}
 
 function getTotalCompleted(state) {
     return Object.values(state.progress).reduce((sum, arr) => sum + arr.length, 0);
@@ -413,26 +460,55 @@ function openExternalLink(url) {
     }
 }
 
-function renderHome() {
-    document.getElementById('home-total-score').textContent = GameState.globalScore;
-    document.getElementById('user-name').textContent = GameState.user.first_name;
+// --- آیکون‌های آواتار پروفایل (به‌جای ایموجی 👤/👦/👧) ---
+// طراحی عمداً ساده و هندسی است (فقط دایره/مستطیل/دو منحنی Q برای هر مدل مو)
+// تا سبک‌وزن بماند و روی هر پس‌زمینه‌ای شارپ دیده بشه. اگر بعداً خواستی
+// آواتارهای آماده/عکس دلخواه اضافه کنی (طبق درخواستی که دادی)، همینجا یک
+// کلید تازه به AVATAR_ICONS اضافه کن و در GameState.settings.avatarId مقدار
+// همون کلید را ذخیره کن؛ applyAvatarVisual خودش کارهای بعدی (نمایش/پس‌زمینه)
+// را انجام می‌دهد.
+const AVATAR_SHOULDERS = `<path d="M14 94 L24 64 L76 64 L86 94 Z" fill="#fff" fill-opacity="0.95"/><circle cx="50" cy="36" r="19" fill="#fff" fill-opacity="0.95"/>`;
+const AVATAR_TOP_HAIR = `<path d="M28 26 Q50 2 72 26 L72 34 Q50 14 28 34 Z" fill="#fff" fill-opacity="0.85"/>`;
+const AVATAR_ICONS = {
+    neutral: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${AVATAR_SHOULDERS}</svg>`,
+    boy: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${AVATAR_SHOULDERS}${AVATAR_TOP_HAIR}</svg>`,
+    girl: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect x="19" y="28" width="13" height="42" rx="6.5" fill="#fff" fill-opacity="0.85"/>
+        <rect x="68" y="28" width="13" height="42" rx="6.5" fill="#fff" fill-opacity="0.85"/>
+        ${AVATAR_SHOULDERS}${AVATAR_TOP_HAIR}
+    </svg>`
+};
 
-    const avatarEl = document.getElementById('user-avatar');
+// عنصر آواتار (هدر صفحه اصلی یا صفحه پروفایل) را بر اساس عکس ایتا (اگر بود)
+// یا آیکون جنسیت انتخابی کاربر پر می‌کند، و کلاس گرادیان پس‌زمینه متناسب با
+// جنسیت را ست می‌کند (آبی برای پسر، صورتی برای دختر، آبی خنثی پیش‌فرض).
+function applyAvatarVisual(avatarEl, gender) {
+    avatarEl.classList.remove('gender-boy', 'gender-girl');
+    if (gender === 'boy') avatarEl.classList.add('gender-boy');
+    if (gender === 'girl') avatarEl.classList.add('gender-girl');
+
     if (GameState.user.photo_url) {
         avatarEl.innerHTML = '';
         const img = document.createElement('img');
         img.src = GameState.user.photo_url;
         img.alt = 'Profile';
         img.addEventListener('error', () => {
-            img.style.display = 'none';
-            avatarEl.textContent = GameState.settings.gender === 'girl' ? '👧' : GameState.settings.gender === 'boy' ? '👦' : '👤';
+            avatarEl.innerHTML = AVATAR_ICONS[gender] || AVATAR_ICONS.neutral;
             avatarEl.style.background = '';
         });
         avatarEl.appendChild(img);
         avatarEl.style.background = 'transparent';
     } else {
-        avatarEl.textContent = GameState.settings.gender === 'girl' ? '👧' : GameState.settings.gender === 'boy' ? '👦' : '👤';
+        avatarEl.innerHTML = AVATAR_ICONS[gender] || AVATAR_ICONS.neutral;
+        avatarEl.style.background = '';
     }
+}
+
+function renderHome() {
+    document.getElementById('home-total-score').textContent = GameState.globalScore;
+    document.getElementById('user-name').textContent = GameState.user.first_name;
+
+    applyAvatarVisual(document.getElementById('user-avatar'), GameState.settings.gender);
 
     const medalsContainer = document.getElementById('medals-container');
     medalsContainer.innerHTML = '';
@@ -487,16 +563,8 @@ let promoRotateInterval = null;
 function renderProfile() {
     document.getElementById('profile-name').textContent = GameState.user.first_name;
     const gender = GameState.settings.gender;
-    const avatarEl = document.getElementById('profile-avatar');
 
-    if (GameState.user.photo_url) {
-        avatarEl.innerHTML = `<img src="${GameState.user.photo_url}" alt="Profile">`;
-        avatarEl.style.background = 'transparent';
-    } else {
-        avatarEl.innerHTML = '';
-        avatarEl.textContent = gender === 'girl' ? '👧' : gender === 'boy' ? '👦' : '👤';
-        avatarEl.style.background = '';
-    }
+    applyAvatarVisual(document.getElementById('profile-avatar'), gender);
 
     document.querySelectorAll('.gender-option').forEach(el => {
         el.classList.toggle('selected', el.dataset.gender === gender);
@@ -532,7 +600,7 @@ function renderChannelPromos() {
             card.className = 'channel-promo-card promo-type-ad';
             card.innerHTML = `
                 <span class="ad-ribbon">${promo.badge || 'تبلیغ ویژه'}</span>
-                <div class="channel-promo-icon">${promo.icon || '🎯'}</div>
+                <div class="channel-promo-icon">${getPromoIconMarkup(promo.iconType)}</div>
                 <div class="channel-promo-info">
                     <p class="channel-promo-desc ad-desc">${promo.desc}</p>
                 </div>
@@ -540,7 +608,7 @@ function renderChannelPromos() {
         } else {
             card.className = `channel-promo-card theme-${promo.theme || 'default'}`;
             card.innerHTML = `
-                <div class="channel-promo-icon">${promo.icon}</div>
+                <div class="channel-promo-icon">${getPromoIconMarkup(promo.iconType)}</div>
                 <div class="channel-promo-info">
                     <h3 class="channel-promo-title">${promo.name}</h3>
                     <span class="channel-promo-handle">${promo.handle}</span>
@@ -578,15 +646,16 @@ function renderChannelPromos() {
             });
         });
 
-        // چرخش خودکار هر ۵ ثانیه. از scrollIntoView به‌جای دستکاری مستقیم
+        // چرخش خودکار هر ۴ ثانیه. از scrollIntoView به‌جای دستکاری مستقیم
         // scrollLeft استفاده می‌کنیم چون علامت (مثبت/منفی) scrollLeft در حالت
         // RTL بین مرورگرها فرق می‌کند و scrollIntoView این مشکل را ندارد.
         let rotateIndex = 0;
-        promoRotateInterval = setInterval(() => {
+        const rotateToNext = () => {
             rotateIndex = (rotateIndex + 1) % visiblePromos.length;
             const target = container.children[rotateIndex];
             if (target) target.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
-        }, 5000);
+        };
+        promoRotateInterval = setInterval(rotateToNext, PROMO_ROTATE_INTERVAL_MS);
 
         // با تعامل دستی کاربر، چرخش خودکار موقتاً متوقف و بعد از چند ثانیه از سر گرفته می‌شود
         let resumeTimeout = null;
@@ -594,11 +663,7 @@ function renderChannelPromos() {
             clearInterval(promoRotateInterval);
             clearTimeout(resumeTimeout);
             resumeTimeout = setTimeout(() => {
-                promoRotateInterval = setInterval(() => {
-                    rotateIndex = (rotateIndex + 1) % visiblePromos.length;
-                    const target = container.children[rotateIndex];
-                    if (target) target.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
-                }, 5000);
+                promoRotateInterval = setInterval(rotateToNext, PROMO_ROTATE_INTERVAL_MS);
             }, 6000);
         });
     }
@@ -628,13 +693,60 @@ function hashStringToInt(str) {
 // یک مرحله را بر اساس تاریخ امروز، به‌صورت قطعی از بین همه مراحل همه دسته‌ها
 // انتخاب می‌کند. «قطعی» یعنی همه کاربران در یک روز، سوال یکسانی می‌بینند و
 // این سوال فقط با عوض شدن تاریخ (نیمه‌شب) تغییر می‌کند.
+//
+// نکته مهم درباره «تکرار نشدن»: قبلاً اینجا فقط hash(تاریخ) % تعداد سوال‌ها
+// حساب می‌شد؛ این روش با اینکه هر روز یک سوال «تصادفی‌نما» می‌داد، از نظر
+// آماری (masalan مسئله‌ی تولد/Birthday Paradox) احتمال زیادی داشت که خیلی
+// زودتر از تمام‌شدن کل بانک سوال‌ها، یک سوال تکراری بیفتد (با ۱۵۰ سوال،
+// به‌طور میانگین هر ~۱۲-۱۳ روز یک برخورد رخ می‌داد).
+// روش جدید: یک «چیدمان» (permutation) ثابت و قطعی از همه‌ی سوال‌ها می‌سازیم
+// (Fisher-Yates با یک seed ثابت، پس چیدمان برای همه کاربران یکسان است) و هر
+// روز فقط یک قدم روی همین چیدمان جلو می‌رویم. این یعنی تا وقتی همه‌ی سوال‌ها
+// یک‌بار دیده نشده باشند، هیچ سوالی دوباره تکرار نمی‌شود؛ فقط بعد از عبور از
+// کل بانک سوال (الان ۶۵×۳=۱۹۵ سوال یعنی حدود ۶.5 ماه)، چیدمان دوباره از اول
+// شروع می‌شود. برای طولانی‌تر کردن این چرخه، کافیست مرحله‌ی بیشتری به
+// data.json اضافه کنی؛ خودکار وارد چرخه می‌شوند.
+function seededRandom(seed) {
+    let s = seed % 2147483647;
+    if (s <= 0) s += 2147483646;
+    return function () {
+        s = (s * 16807) % 2147483647;
+        return (s - 1) / 2147483646;
+    };
+}
+
+const DAILY_PERMUTATION_SEED = 20240101; // ثابت نگه‌دار؛ عوض کردنش چیدمان را کلاً بهم می‌ریزد
+let dailyPermutationCache = null;
+let dailyPermutationForLength = 0;
+
+function getDailyPermutation(length) {
+    if (dailyPermutationCache && dailyPermutationForLength === length) return dailyPermutationCache;
+    const arr = Array.from({ length }, (_, i) => i);
+    const rand = seededRandom(DAILY_PERMUTATION_SEED);
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(rand() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    dailyPermutationCache = arr;
+    dailyPermutationForLength = length;
+    return arr;
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+// عدد ثابتی که شمارش «روز» را همیشه از یک نقطه‌ی مشخص در گذشته شروع می‌کند
+// (تا مستقل از تایم‌زون سرور/کاربر، یک عدد صحیح و پایدار برای «امروز» بدهد).
+const DAILY_EPOCH = Date.UTC(2024, 0, 1);
+
 function getDailyChallengeLevel() {
     const allLevels = [];
     DB.categories.forEach(cat => {
         cat.levels.forEach(lvl => allLevels.push({ ...lvl, categoryId: cat.id, categoryName: cat.name, categoryIcon: cat.icon }));
     });
     if (allLevels.length === 0) return null;
-    const idx = hashStringToInt(getTodayKey()) % allLevels.length;
+    const daysSinceEpoch = Math.floor((Date.now() - DAILY_EPOCH) / DAY_MS);
+    const permutation = getDailyPermutation(allLevels.length);
+    const cyclePosition = ((daysSinceEpoch % permutation.length) + permutation.length) % permutation.length;
+    const idx = permutation[cyclePosition];
     return allLevels[idx];
 }
 
@@ -1060,6 +1172,16 @@ function setupEvents() {
             renderProfile();
         });
     });
+
+    // دکمه‌ی «انتخاب عکس پروفایل» فعلاً فقط جای‌گیر است (طبق درخواست، مجموعه‌ی
+    // عکس‌ها بعداً اضافه می‌شود)؛ همین الان فقط یک پیام می‌دهد.
+    const avatarPhotoBtn = document.getElementById('btn-choose-avatar-photo');
+    if (avatarPhotoBtn) {
+        avatarPhotoBtn.addEventListener('click', () => {
+            AudioEngine.tap();
+            showToast('🖼️', 'انتخاب عکس پروفایل به‌زودی اضافه می‌شه!');
+        });
+    }
 }
 
 /* =========================================
