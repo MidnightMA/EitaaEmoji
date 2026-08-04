@@ -22,6 +22,7 @@
     --ios-green: #34c759;
     --ios-red: #ff3b30;
     --ios-orange: #ff9500;
+    --ios-pink: #ff2d78;
     
     --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
     --shadow-md: 0 8px 24px rgba(0,0,0,0.08);
@@ -282,6 +283,11 @@ input:checked + .slider:before { transform: translateX(20px); }
     flex-shrink: 0;
 }
 .avatar img { width: 100%; height: 100%; object-fit: cover; }
+.avatar svg, .profile-avatar svg { width: 68%; height: 68%; }
+/* گرادیان پس‌زمینه‌ی آواتار بر اساس جنسیت انتخابی؛ وقتی جنسیتی انتخاب نشده،
+   همون رنگ آبی پیش‌فرض بالا باقی می‌ماند. */
+.avatar.gender-boy, .profile-avatar.gender-boy { background: linear-gradient(135deg, #0a84ff, #34c3ff); }
+.avatar.gender-girl, .profile-avatar.gender-girl { background: linear-gradient(135deg, #ff2d78, #ff8fab); }
 
 /* --- دکمه بازگشت جدید (مربعی با رنگ متمایز) --- */
 .square-back-btn {
@@ -390,20 +396,20 @@ input:checked + .slider:before { transform: translateX(20px); }
 }
 .channel-promo-card:active { transform: scale(0.97); }
 .channel-promo-icon {
-    width: 62px;
-    height: 62px;
+    width: 74px;
+    height: 74px;
     flex-shrink: 0;
     background: rgba(255, 255, 255, 0.2);
-    border-radius: 17px;
+    border-radius: 19px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2.1rem;
 }
+.channel-promo-icon svg { width: 60%; height: 60%; }
 .channel-promo-info { flex: 1; min-width: 0; }
 .channel-promo-title {
     color: #ffffff;
-    font-size: 1.05rem;
+    font-size: 1rem;
     font-weight: 700;
     margin-bottom: 2px;
     white-space: nowrap;
@@ -413,7 +419,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 .channel-promo-handle {
     display: inline-block;
     color: rgba(255, 255, 255, 0.95);
-    font-size: 0.8rem;
+    font-size: 0.76rem;
     font-weight: 600;
     direction: ltr;
     margin-bottom: 4px;
@@ -422,7 +428,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 }
 .channel-promo-desc {
     color: rgba(255, 255, 255, 0.85);
-    font-size: 0.8rem;
+    font-size: 0.76rem;
     line-height: 1.4;
 }
 .channel-promo-arrow {
@@ -663,5 +669,9 @@ input:checked + .slider:before { transform: translateX(20px); }
 }
 .gender-option:active { transform: scale(0.96); }
 .gender-option.selected { border-color: var(--ios-blue); background: rgba(0, 122, 255, 0.08); }
-.gender-icon { font-size: 3rem; margin-bottom: 8px; }
+.gender-icon { margin-bottom: 8px; display: flex; justify-content: center; }
+.gender-icon svg { width: 48px; height: 48px; }
 .gender-option span { font-weight: 700; font-size: 1rem; }
+
+/* --- دکمه‌ی جای‌گیر «انتخاب عکس پروفایل» --- */
+.avatar-photo-btn { margin-top: 20px; }
