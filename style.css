@@ -108,7 +108,10 @@ body {
 .ios-header.glass-nav { max-width: none; }
 .section-header { display: flex; justify-content: space-between; align-items: center; margin: 24px 0 16px; }
 .section-header h2 { font-size: 1.4rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-.header-icon { flex-shrink: 0; }
+/* آیکون کنار عنوان هر بخش، عمداً حدود ۱.۵ برابر بزرگ‌تر از خود متنه (نسبت به
+   فونت h2) تا وزن بصری بیشتری بگیره و زودتر توجه رو جلب کنه. */
+.header-icon { flex-shrink: 0; width: 1.5em !important; height: 1.5em !important; }
+.header-icon-emoji { font-size: 1.5em; line-height: 1; display: inline-flex; }
 .badge { background: var(--border-color); color: var(--text-main); padding: 4px 10px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; }
 .user-info { cursor: pointer; transition: opacity 0.15s; }
 .user-info:active { opacity: 0.65; }
@@ -177,7 +180,8 @@ body {
 .success-btn { background: var(--ios-green); color: white; }
 .danger-btn { background: var(--ios-red); color: white; }
 .ghost-btn { background: transparent; color: var(--ios-blue); margin-top: 10px; font-size: 1rem; padding: 10px 20px; }
-.icon-btn { width: 55px; height: 55px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; border-radius: 50%; }
+.icon-btn { width: 55px; height: 55px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; border-radius: 50%; background: var(--card-bg); box-shadow: var(--shadow-sm); }
+.icon-btn svg { width: 60%; height: 60%; }
 .w-100 { width: 100%; }
 .mt-20 { margin-top: 20px; }
 
