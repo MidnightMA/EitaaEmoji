@@ -142,14 +142,36 @@
             <div class="profile-section-title">جنسیت</div>
             <div class="gender-picker">
                 <div class="gender-option" data-gender="boy">
-                    <div class="gender-icon">👦</div>
+                    <div class="gender-icon">
+                        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                            <path d="M14 94 L24 64 L76 64 L86 94 Z" fill="var(--ios-blue)"/>
+                            <circle cx="50" cy="36" r="19" fill="var(--ios-blue)"/>
+                            <path d="M28 26 Q50 2 72 26 L72 34 Q50 14 28 34 Z" fill="var(--ios-blue)" fill-opacity="0.75"/>
+                        </svg>
+                    </div>
                     <span>پسر</span>
                 </div>
                 <div class="gender-option" data-gender="girl">
-                    <div class="gender-icon">👧</div>
+                    <div class="gender-icon">
+                        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                            <rect x="19" y="28" width="13" height="42" rx="6.5" fill="var(--ios-pink)" fill-opacity="0.75"/>
+                            <rect x="68" y="28" width="13" height="42" rx="6.5" fill="var(--ios-pink)" fill-opacity="0.75"/>
+                            <path d="M14 94 L24 64 L76 64 L86 94 Z" fill="var(--ios-pink)"/>
+                            <circle cx="50" cy="36" r="19" fill="var(--ios-pink)"/>
+                            <path d="M28 26 Q50 2 72 26 L72 34 Q50 14 28 34 Z" fill="var(--ios-pink)" fill-opacity="0.75"/>
+                        </svg>
+                    </div>
                     <span>دختر</span>
                 </div>
             </div>
+
+            <!-- جای آماده برای انتخاب عکس پروفایل توسط خود کاربر (فعلاً غیرفعال).
+                 وقتی مجموعه‌ی عکس‌های آماده رو اضافه کردی، کافیه اینجا یک گرید از
+                 گزینه‌ها بسازی و انتخاب کاربر رو در GameState.settings.avatarId
+                 ذخیره کنی؛ applyAvatarVisual در app.js از قبل برای این آماده‌ست. -->
+            <button id="btn-choose-avatar-photo" class="ios-btn ghost-btn w-100 avatar-photo-btn">
+                🖼️ انتخاب عکس پروفایل (به‌زودی)
+            </button>
         </main>
     </div>
 
