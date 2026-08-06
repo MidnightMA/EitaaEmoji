@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>بازی ایموجی‌ها</title>
+    <meta name="description" content="بازی حدس ایموجی: با نگاه کردن به ترکیبی از ایموجی‌ها، ضرب‌المثل، نام فیلم یا کشور را حدس بزن. سوال روزانه، مدال‌ها و رقابت با دوستان.">
+    <meta name="theme-color" content="#007aff">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%AE%3C/text%3E%3C/svg%3E">
+    <meta property="og:title" content="بازی ایموجی‌ها">
+    <meta property="og:description" content="بازی حدس ایموجی برای ضرب‌المثل، فیلم و سریال، و کشورها.">
+    <meta property="og:type" content="website">
 
     <!-- اتصال زودهنگام به CDN تصاویر ایموجی، تا وقتی مرحله باز می‌شود عکس‌ها سریع‌تر بیایند -->
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
@@ -12,7 +18,6 @@
     <!-- فونت آراد از قبل روی خود سایت است (بدون وابستگی به سرور خارجی)، همین الان لود شروع شود -->
     <link rel="preload" href="fonts/AradVF.ttf" as="font" type="font/ttf" crossorigin>
 
-    <link rel="preload" href="data.json" as="fetch" crossorigin>
     <link rel="stylesheet" href="style.css">
 
     <!-- Eitaa SDK: با defer لود می‌شود تا جلوی نمایش سریع صفحه را نگیرد -->
@@ -31,22 +36,7 @@
             </div>
             <div class="header-actions">
                 <div class="score-pill">🪙 <span id="home-total-score">0</span></div>
-                <button id="btn-open-settings" class="icon-btn ios-btn" aria-label="تنظیمات">
-                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                        <g fill="var(--text-main)">
-                            <rect x="10.8" y="0.6" width="2.4" height="4.6" rx="1"/>
-                            <rect x="10.8" y="0.6" width="2.4" height="4.6" rx="1" transform="rotate(45 12 12)"/>
-                            <rect x="10.8" y="0.6" width="2.4" height="4.6" rx="1" transform="rotate(90 12 12)"/>
-                            <rect x="10.8" y="0.6" width="2.4" height="4.6" rx="1" transform="rotate(135 12 12)"/>
-                            <rect x="10.8" y="0.6" width="2.4" height="4.6" rx="1" transform="rotate(180 12 12)"/>
-                            <rect x="10.8" y="0.6" width="2.4" height="4.6" rx="1" transform="rotate(225 12 12)"/>
-                            <rect x="10.8" y="0.6" width="2.4" height="4.6" rx="1" transform="rotate(270 12 12)"/>
-                            <rect x="10.8" y="0.6" width="2.4" height="4.6" rx="1" transform="rotate(315 12 12)"/>
-                            <circle cx="12" cy="12" r="7"/>
-                        </g>
-                        <circle cx="12" cy="12" r="2.7" fill="var(--card-bg)"/>
-                    </svg>
-                </button>
+                <button id="btn-open-settings" class="icon-btn ios-btn" aria-label="تنظیمات">⚙️</button>
             </div>
         </header>
 
@@ -67,7 +57,7 @@
 
             <section class="medals-section">
                 <div class="section-header">
-                    <h2><span class="header-icon-emoji">🏆</span> افتخارات شما</h2>
+                    <h2>🏆 افتخارات شما</h2>
                     <span class="badge" id="medals-count">0/0</span>
                 </div>
                 <div class="medals-scroll" id="medals-container"></div>
@@ -75,7 +65,7 @@
 
             <section class="categories-section">
                 <div class="section-header">
-                    <h2><span class="header-icon-emoji">🗂️</span> دسته‌بندی‌ها</h2>
+                    <h2>🗂️ دسته‌بندی‌ها</h2>
                 </div>
                 <div class="categories-list" id="categories-container"></div>
             </section>
@@ -111,7 +101,6 @@
         <main class="game-container">
             <!-- هشدار عامیانه بودن ضرب‌المثل‌ها -->
             <div id="category-notice" class="category-notice hidden"></div>
-            <div id="daily-type-badge" class="daily-type-badge hidden"></div>
 
             <div class="level-indicator">مرحله <span id="ui-level">1</span><span id="ui-difficulty" class="difficulty-badge"></span></div>
             
@@ -157,36 +146,14 @@
             <div class="profile-section-title">جنسیت</div>
             <div class="gender-picker">
                 <div class="gender-option" data-gender="boy">
-                    <div class="gender-icon">
-                        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                            <path d="M14 94 L24 64 L76 64 L86 94 Z" fill="var(--ios-blue)"/>
-                            <circle cx="50" cy="36" r="19" fill="var(--ios-blue)"/>
-                            <path d="M28 26 Q50 2 72 26 L72 34 Q50 14 28 34 Z" fill="var(--ios-blue)" fill-opacity="0.75"/>
-                        </svg>
-                    </div>
+                    <div class="gender-icon">👦</div>
                     <span>پسر</span>
                 </div>
                 <div class="gender-option" data-gender="girl">
-                    <div class="gender-icon">
-                        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                            <rect x="19" y="28" width="13" height="42" rx="6.5" fill="var(--ios-pink)" fill-opacity="0.75"/>
-                            <rect x="68" y="28" width="13" height="42" rx="6.5" fill="var(--ios-pink)" fill-opacity="0.75"/>
-                            <path d="M14 94 L24 64 L76 64 L86 94 Z" fill="var(--ios-pink)"/>
-                            <circle cx="50" cy="36" r="19" fill="var(--ios-pink)"/>
-                            <path d="M28 26 Q50 2 72 26 L72 34 Q50 14 28 34 Z" fill="var(--ios-pink)" fill-opacity="0.75"/>
-                        </svg>
-                    </div>
+                    <div class="gender-icon">👧</div>
                     <span>دختر</span>
                 </div>
             </div>
-
-            <!-- جای آماده برای انتخاب عکس پروفایل توسط خود کاربر (فعلاً غیرفعال).
-                 وقتی مجموعه‌ی عکس‌های آماده رو اضافه کردی، کافیه اینجا یک گرید از
-                 گزینه‌ها بسازی و انتخاب کاربر رو در GameState.settings.avatarId
-                 ذخیره کنی؛ applyAvatarVisual در app.js از قبل برای این آماده‌ست. -->
-            <button id="btn-choose-avatar-photo" class="ios-btn ghost-btn w-100 avatar-photo-btn">
-                🖼️ انتخاب عکس پروفایل (به‌زودی)
-            </button>
         </main>
     </div>
 
@@ -196,18 +163,11 @@
             <div class="modal-icon join-gate-icon">
                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1.5" fill="white" stroke="none"/></svg>
             </div>
-            <h2>قبل از شروع...</h2>
-            <p>با عضویت در کانال <strong>تِک‌نور</strong> از این امکانات بهره‌مند شو 👇</p>
-            <ul class="join-gate-benefits">
-                <li><span class="jg-icon">🆕</span> اطلاع از نسخه‌ها و قابلیت‌های جدید رازک</li>
-                <li><span class="jg-icon">🧩</span> دسترسی به مراحل و چالش‌های جدید</li>
-                <li><span class="jg-icon">👀</span> مشاهده اخبار و قابلیت‌های جدید زودتر از همه</li>
-                <li><span class="jg-icon">📊</span> شرکت در نظرسنجی‌های توسعه بازی</li>
-                <li><span class="jg-icon">🤖</span> بهرمندی از محتواهای هوش مصنوعی</li>
-                <li><span class="jg-icon">👨🏻‍💻</span> باخبر شدن از اخبار تکنولوژی</li>
-            </ul>
-            <button id="btn-join-channel" class="ios-btn primary-btn w-100">📢 عضویت در کانال تک‌نور</button>
-            <button id="btn-confirm-joined" class="ios-btn ghost-btn w-100">✅ بررسی عضویت و ادامه</button>
+            <h2>قبل از بازی...</h2>
+            <p>برای اینکه از آپدیت‌های جدید بازی و مراحل تازه باخبر بشی، اول باید عضو کانال <strong>تِک نور</strong> بشی 👇</p>
+            <button id="btn-join-channel" class="ios-btn primary-btn w-100">📢 عضویت در کانال</button>
+            <button id="btn-confirm-joined" class="ios-btn success-btn w-100 mt-10">عضو شدم، بریم بازی ✅</button>
+            <button id="btn-join-later" class="text-link-btn w-100 mt-10">شاید بعداً</button>
         </div>
     </div>
 
@@ -304,6 +264,7 @@
             }
         });
     </script>
+    <script src="channels.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
