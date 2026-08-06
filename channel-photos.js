@@ -32,14 +32,12 @@
  */
 const CHANNEL_PHOTOS = {
     avay_khiyal: { photo: 'images/avay-khiyal.jpg' },
-
-    // پروفایل رسامیم و تک‌نور بعداً دستی اضافه می‌شود؛ تا آن موقع همان آیکون
-    // SVG طراحی‌شده (خط‌محور، هماهنگ با بقیه‌ی اپ) نمایش داده می‌شود.
-    tech_nour: { photo: null },
-    rasa_meme: { photo: null },
+    tech_nour: { photo: 'images/tech-nour.jpg' },
+    rasa_meme: { photo: 'images/rasa-meme.jpg' },
 
     // عکس پروفایل تبلیغ‌کننده‌ی فعلی (کانال/فردی که تبلیغ ویژه رزرو کرده).
     // برای هر تبلیغ جدید، یک کلید تازه با همین الگو اضافه کن و photoKey همان
-    // تبلیغ (در CHANNEL_PROMOS) را به همین کلید اشاره بده.
+    // تبلیغ (در CHANNEL_PROMOS) را به همین کلید اشاره بده. تا وقتی عکس واقعی
+    // تبلیغ‌کننده را نداری، همین‌جا null بگذار تا آیکون SVG جایگزینش شود.
     ad_tab_amoo: { photo: null }
 };
