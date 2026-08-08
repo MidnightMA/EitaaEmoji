@@ -174,9 +174,10 @@ const CHANNEL_PROMOS = [
     },
     {
         type: 'ad',
+        name: 'تبلیغات عمو',
         badge: 'Ads',
         iconType: 'ad',
-        photoKey: 'ad_tab_amoo',
+        photoKey: '@tab_amoo',
         desc: 'برای رزرو کلیک کنید و به مدیر پیام بدهید!',
         link: 'https://eitaa.com/tab_amoo',
         buttonText: 'مشاهده'
