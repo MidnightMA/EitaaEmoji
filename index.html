@@ -260,18 +260,6 @@
                 </div>
             </div>
 
-            <div class="settings-group-title">مشارکت</div>
-            <div class="ios-list">
-                <div class="ios-list-item clickable" id="btn-open-suggest-proverb">
-                    <div class="setting-label">
-                        <span class="setting-icon-square icon-suggest">
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                        </span>
-                        <span>پیشنهاد ضرب‌المثل جدید</span>
-                    </div>
-                </div>
-            </div>
-
             <div class="settings-group-title">درباره برنامه</div>
             <div class="ios-list">
                 <div class="ios-list-item clickable" id="btn-open-changelog">
@@ -297,41 +285,6 @@
                 <button class="close-btn" data-close="modal-changelog">×</button>
             </div>
             <div class="changelog-body" id="changelog-body"></div>
-        </div>
-    </div>
-
-    <div id="modal-suggest-proverb" class="modal-overlay hidden">
-        <div class="ios-modal slide-up suggest-proverb-modal">
-            <div class="modal-header">
-                <h2>
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--ios-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-4px; margin-left:6px;"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                    پیشنهاد ضرب‌المثل
-                </h2>
-                <button class="close-btn" data-close="modal-suggest-proverb">×</button>
-            </div>
-
-            <p class="suggest-proverb-intro">یه ضرب‌المثل بلدی که توی بازی نیست؟ بفرست تا بعد از بررسی، احتمالاً به رازک اضافه بشه. نیازی به اسم یا شماره‌ت نیست، کاملاً ناشناس ارسال می‌شه.</p>
-
-            <form id="form-suggest-proverb" novalidate>
-                <div class="suggest-field">
-                    <label for="input-proverb-text">ضرب‌المثل <span class="required-star">*</span></label>
-                    <textarea id="input-proverb-text" rows="2" maxlength="300" placeholder="مثلاً: از تو حرکت، از خدا برکت"></textarea>
-                    <span class="field-error" id="error-proverb-text"></span>
-                </div>
-                <div class="suggest-field">
-                    <label for="input-proverb-meaning">معنی <span class="required-star">*</span></label>
-                    <textarea id="input-proverb-meaning" rows="2" maxlength="500" placeholder="یعنی چی؟"></textarea>
-                    <span class="field-error" id="error-proverb-meaning"></span>
-                </div>
-                <div class="suggest-field">
-                    <label for="input-proverb-example">مثال (اختیاری)</label>
-                    <textarea id="input-proverb-example" rows="2" maxlength="500" placeholder="یه جمله‌ی نمونه که توش استفاده شده"></textarea>
-                </div>
-
-                <div class="suggest-status hidden" id="suggest-status"></div>
-
-                <button type="submit" id="btn-submit-proverb" class="ios-btn primary-btn w-100">ارسال پیشنهاد</button>
-            </form>
         </div>
     </div>
 
