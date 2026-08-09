@@ -680,3 +680,39 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 /* --- دکمه‌ی جای‌گیر «انتخاب عکس پروفایل» --- */
 .avatar-photo-btn { margin-top: 20px; }
+
+/* --- فرم «پیشنهاد ضرب‌المثل» --- */
+.setting-icon-square.icon-suggest { background: linear-gradient(135deg, #34c759, #30b06e); }
+.suggest-proverb-modal { text-align: right; max-height: 85vh; overflow-y: auto; }
+.suggest-proverb-intro { font-size: 0.88rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 18px; }
+.suggest-field { margin-bottom: 16px; }
+.suggest-field label { display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 6px; color: var(--text-main); }
+.required-star { color: var(--ios-red); }
+.suggest-field textarea {
+    width: 100%;
+    background: var(--bg-main);
+    border: 1.5px solid var(--border-color);
+    border-radius: 14px;
+    padding: 12px 14px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    color: var(--text-main);
+    resize: vertical;
+    min-height: 44px;
+    transition: border-color 0.15s;
+}
+.suggest-field textarea:focus { outline: none; border-color: var(--ios-blue); }
+.suggest-field textarea.invalid { border-color: var(--ios-red); }
+.field-error { display: block; font-size: 0.78rem; color: var(--ios-red); margin-top: 4px; min-height: 1em; }
+.suggest-status {
+    text-align: center;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 10px;
+    border-radius: 12px;
+    margin-bottom: 14px;
+}
+.suggest-status.hidden { display: none; }
+.suggest-status.status-success { background: rgba(52, 199, 89, 0.12); color: var(--ios-green); }
+.suggest-status.status-error { background: rgba(255, 59, 48, 0.12); color: var(--ios-red); }
+#btn-submit-proverb:disabled { opacity: 0.6; cursor: default; }
