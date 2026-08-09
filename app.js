@@ -9,16 +9,6 @@
 const KVDB_BUCKET_ID = "YOUR_BUCKET_ID_HERE"; 
 // ==========================================
 
-// ==========================================
-// ⚠️ آدرس Worker/تابع سرورلس برای «پیشنهاد ضرب‌المثل»
-// بعد از دیپلوی worker.js روی Cloudflare Workers (راهنمای کامل در
-// SUBMIT_PROVERB_SETUP.md)، آدرس نهایی‌اش (چیزی شبیه
-// https://razk-proverb-submit.YOUR_SUBDOMAIN.workers.dev) را اینجا بگذار.
-// تا وقتی این مقدار پیش‌فرض بماند، فرم پیشنهاد ضرب‌المثل به کاربر پیام
-// می‌دهد که این قابلیت هنوز فعال نشده (به‌جای خطای گنگ شبکه).
-const PROVERB_SUBMIT_API_URL = "YOUR_WORKER_URL_HERE";
-// ==========================================
-
 const PERSIAN_ALPHABET = "ابپتثجچحخدذرزژسشصضطظعغفقکگلمنوهی";
 const HINT_COST = 15;
 // لینک کانال تک‌نور؛ هم برای کارت کانال در پایین استفاده می‌شود، هم برای
@@ -132,22 +122,22 @@ const MEDALS_DB = [
     { id: 'first_blood', name: 'اولین قدم', icon: '🩴', desc: 'اولین مرحله را حل کن',
         check: (state) => getTotalCompleted(state) >= 1,
         progress: (state) => `${Math.min(getTotalCompleted(state), 1)}/1` },
-    { id: 'proverbs_novice', name: 'ضرب‌المثل آموز', icon: '📜', desc: '۵ ضرب‌المثل را حل کن',
+    { id: 'proverbs_novice', name: 'ضرب‌المثل آموز', icon: '📜', desc: '50 ضرب‌المثل را حل کن',
         check: (state) => (state.progress['proverbs']?.length || 0) >= 5,
-        progress: (state) => `${Math.min(state.progress['proverbs']?.length || 0, 5)}/5` },
-    { id: 'movies_novice', name: 'فیلم‌باز', icon: '🎬', desc: '۵ فیلم و سریال را حل کن',
+        progress: (state) => `${Math.min(state.progress['proverbs']?.length || 0, 50)}/5` },
+    { id: 'movies_novice', name: 'فیلم‌باز', icon: '🎬', desc: '50 فیلم و سریال را حل کن',
         check: (state) => (state.progress['movies']?.length || 0) >= 5,
-        progress: (state) => `${Math.min(state.progress['movies']?.length || 0, 5)}/5` },
-    { id: 'countries_novice', name: 'جهانگرد', icon: '🌍', desc: '۵ کشور را حل کن',
+        progress: (state) => `${Math.min(state.progress['movies']?.length || 0, 50)}/5` },
+    { id: 'countries_novice', name: 'جهانگرد', icon: '🌍', desc: '50 کشور را حل کن',
         check: (state) => (state.progress['countries']?.length || 0) >= 5,
-        progress: (state) => `${Math.min(state.progress['countries']?.length || 0, 5)}/5` },
+        progress: (state) => `${Math.min(state.progress['countries']?.length || 0, 50)}/5` },
     // نکته: عمداً از totalEarned استفاده می‌کنیم نه globalScore، چون globalScore با
     // خرج کردن روی راهنما کم می‌شود و ممکن بود کاربری که واقعاً ۵۰۰ امتیاز کسب
     // کرده ولی خرج کرده، هیچ‌وقت این مدال را نگیرد.
     { id: 'rich', name: 'ثروتمند', icon: '💎', desc: '5000 امتیاز کسب کن',
         check: (state) => state.totalEarned >= 5000,
         progress: (state) => `${Math.min(state.totalEarned, 5000)}/5000` },
-    { id: 'daily_fan', name: 'اهل چالش روزانه', icon: '🔥', desc: '۵ چالش روزانه را حل کن',
+    { id: 'daily_fan', name: 'اهل چالش روزانه', icon: '🔥', desc: '50 چالش روزانه را حل کن',
         check: (state) => (state.dailyChallenge?.completedCount || 0) >= 5,
         progress: (state) => `${Math.min(state.dailyChallenge?.completedCount || 0, 5)}/5` },
     { id: 'all_categories', name: 'استاد بازی', icon: '👑', desc: 'همه دسته‌ها را صد‌درصد کامل کن',
@@ -1128,97 +1118,6 @@ function checkWin() {
     }
 }
 
-/* =========================================
-   8. پیشنهاد ضرب‌المثل (Submit a Proverb)
-========================================= */
-let isSubmittingProverb = false; // جلوگیری از ارسال تکراری با چند بار کلیک روی دکمه
-
-function resetSuggestProverbForm() {
-    document.getElementById('input-proverb-text').value = '';
-    document.getElementById('input-proverb-meaning').value = '';
-    document.getElementById('input-proverb-example').value = '';
-    ['input-proverb-text', 'input-proverb-meaning'].forEach(id => document.getElementById(id).classList.remove('invalid'));
-    document.getElementById('error-proverb-text').textContent = '';
-    document.getElementById('error-proverb-meaning').textContent = '';
-    const statusEl = document.getElementById('suggest-status');
-    statusEl.classList.add('hidden');
-    statusEl.textContent = '';
-}
-
-function setSuggestStatus(type, text) {
-    const statusEl = document.getElementById('suggest-status');
-    statusEl.className = `suggest-status status-${type}`;
-    statusEl.textContent = text;
-}
-
-async function handleSuggestProverbSubmit(e) {
-    e.preventDefault();
-    if (isSubmittingProverb) return; // جلوگیری از ارسال دوباره با کلیک‌های پیاپی
-
-    const proverbEl = document.getElementById('input-proverb-text');
-    const meaningEl = document.getElementById('input-proverb-meaning');
-    const exampleEl = document.getElementById('input-proverb-example');
-    const errProverbEl = document.getElementById('error-proverb-text');
-    const errMeaningEl = document.getElementById('error-proverb-meaning');
-
-    const proverb = proverbEl.value.trim().replace(/\s+/g, ' ');
-    const meaning = meaningEl.value.trim().replace(/\s+/g, ' ');
-    const example = exampleEl.value.trim().replace(/\s+/g, ' ');
-
-    // اعتبارسنجی سمت کاربر (اعتبارسنجی واقعی و قطعی سمت سرور هم انجام می‌شود)
-    let hasError = false;
-    proverbEl.classList.remove('invalid'); errProverbEl.textContent = '';
-    meaningEl.classList.remove('invalid'); errMeaningEl.textContent = '';
-
-    if (!proverb) {
-        proverbEl.classList.add('invalid'); errProverbEl.textContent = 'نوشتن ضرب‌المثل الزامی است.'; hasError = true;
-    } else if (proverb.length > 300) {
-        proverbEl.classList.add('invalid'); errProverbEl.textContent = 'این متن خیلی طولانیه.'; hasError = true;
-    }
-    if (!meaning) {
-        meaningEl.classList.add('invalid'); errMeaningEl.textContent = 'نوشتن معنی الزامی است.'; hasError = true;
-    } else if (meaning.length > 500) {
-        meaningEl.classList.add('invalid'); errMeaningEl.textContent = 'این متن خیلی طولانیه.'; hasError = true;
-    }
-    if (hasError) return;
-
-    if (PROVERB_SUBMIT_API_URL === 'YOUR_WORKER_URL_HERE') {
-        setSuggestStatus('error', 'این قابلیت هنوز فعال نشده؛ بعداً دوباره امتحان کن. 🙏');
-        return;
-    }
-
-    const submitBtn = document.getElementById('btn-submit-proverb');
-    isSubmittingProverb = true;
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'در حال ارسال...';
-    document.getElementById('suggest-status').classList.add('hidden');
-
-    try {
-        const res = await fetch(PROVERB_SUBMIT_API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ proverb, meaning, example })
-        });
-        const data = await res.json().catch(() => ({}));
-
-        if (res.ok && data.success) {
-            AudioEngine.success();
-            resetSuggestProverbForm();
-            setSuggestStatus('success', 'پیشنهادت با موفقیت ارسال شد ❤️ بعد از بررسی ممکنه وارد رازک بشه.');
-            showToast('📜', 'ممنون بابت پیشنهادت!');
-            setTimeout(() => document.getElementById('modal-suggest-proverb').classList.add('hidden'), 1800);
-        } else {
-            setSuggestStatus('error', data.error || 'ارسال با خطا مواجه شد. یه بار دیگه امتحان کن.');
-        }
-    } catch (err) {
-        setSuggestStatus('error', 'اتصال برقرار نشد. اینترنتت رو چک کن و دوباره امتحان کن.');
-    } finally {
-        isSubmittingProverb = false;
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'ارسال پیشنهاد';
-    }
-}
-
 function showToast(icon, text, duration = 3500) {
     const container = document.getElementById('toast-container');
     const toast = document.createElement('div');
@@ -1294,13 +1193,6 @@ function setupEvents() {
         renderChangelog(true);
         document.getElementById('modal-changelog').classList.remove('hidden');
     });
-    document.getElementById('btn-open-suggest-proverb').addEventListener('click', () => {
-        AudioEngine.tap();
-        document.getElementById('modal-settings').classList.add('hidden');
-        resetSuggestProverbForm();
-        document.getElementById('modal-suggest-proverb').classList.remove('hidden');
-    });
-    document.getElementById('form-suggest-proverb').addEventListener('submit', handleSuggestProverbSubmit);
     document.querySelectorAll('.close-btn').forEach(b => b.addEventListener('click', (e) => { document.getElementById(e.target.dataset.close).classList.add('hidden'); }));
     document.getElementById('toggle-theme').addEventListener('change', e => { GameState.settings.darkMode = e.target.checked; applyTheme(); StorageManager.save(); });
     document.getElementById('toggle-sound').addEventListener('change', e => { GameState.settings.sound = e.target.checked; StorageManager.save(); });
