@@ -14,16 +14,6 @@ const HINT_COST = 15;
 // لینک کانال تک‌نور؛ هم برای کارت کانال در پایین استفاده می‌شود، هم برای
 // پنجره‌ی «عضویت اجباری» قبل از بازی.
 const TECH_NOUR_LINK = 'https://eitaa.com/Tech_nour';
-const AVAY_KHIYAL_LINK = 'https://eitaa.com/avay_khiyal';
-
-// کانال‌هایی که عضویتشان قبل از بازی اجباری است. برای اضافه/کم‌کردن یک
-// کانال از این لیست اجباری، فقط همین آرایه را ویرایش کن — بقیه‌ی کد (پنجره،
-// دکمه‌ها) خودش خودکار با هر تعداد کانالی که اینجا باشد ساخته می‌شود.
-const REQUIRED_JOIN_CHANNELS = [
-    { id: 'technour', icon: '📢', name: 'تِک‌نور', link: TECH_NOUR_LINK },
-    { id: 'avaykhiyal', icon: '🕊️', name: 'آوای‌خیال', link: AVAY_KHIYAL_LINK }
-];
-
 const BASE_SCORE = 10;
 const DAILY_BASE_SCORE = 50;
 // فاصله‌ی چرخش خودکار کارت‌های «کانال‌های ما»
@@ -179,7 +169,7 @@ const CHANNEL_PROMOS = [
         desc: 'کانال شعر؛ اگه دلت یه گوشه‌ی آروم برای خوندن شعر می‌خواد، بیا اینجا',
         iconType: 'poetry',
         photoKey: 'avay_khiyal',
-        link: AVAY_KHIYAL_LINK,
+        link: 'https://eitaa.com/avay_khiyal',
         theme: 'poetry'
     },
     {
@@ -825,26 +815,6 @@ function requireChannelJoin(action) {
     document.getElementById('modal-join-gate').classList.remove('hidden');
 }
 
-// یک ردیف دکمه‌ی «عضویت» برای هر کانال داخل REQUIRED_JOIN_CHANNELS می‌سازد؛
-// با اضافه/کم‌کردن یک کانال به آن آرایه، این پنجره خودش به‌روز می‌شود.
-function renderJoinGateChannels() {
-    const container = document.getElementById('join-gate-channels');
-    if (!container) return;
-    container.innerHTML = '';
-    REQUIRED_JOIN_CHANNELS.forEach(ch => {
-        const row = document.createElement('div');
-        row.className = 'join-gate-channel-row';
-        row.innerHTML = `
-            <span class="jg-channel-name">${ch.icon} ${ch.name}</span>
-            <button type="button" class="ios-btn primary-btn jg-join-btn">عضویت</button>`;
-        row.querySelector('.jg-join-btn').addEventListener('click', () => {
-            AudioEngine.tap();
-            openExternalLink(ch.link);
-        });
-        container.appendChild(row);
-    });
-}
-
 function startDailyChallenge() {
     AudioEngine.tap();
     if (GameState.dailyChallenge.lastCompletedDate === getTodayKey()) {
@@ -1194,7 +1164,10 @@ function setupEvents() {
 
     document.getElementById('daily-challenge-card').addEventListener('click', () => requireChannelJoin(startDailyChallenge));
 
-    renderJoinGateChannels();
+    document.getElementById('btn-join-channel').addEventListener('click', () => {
+        AudioEngine.tap();
+        openExternalLink(TECH_NOUR_LINK);
+    });
     document.getElementById('btn-confirm-joined').addEventListener('click', () => {
         AudioEngine.tap();
         // نکته فنی مهم: از داخل مرورگر (بدون سرور و بدون Bot API رسمی ایتا برای
