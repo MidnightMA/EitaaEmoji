@@ -31,22 +31,7 @@
             </div>
             <div class="header-actions">
                 <div class="score-pill">🪙 <span id="home-total-score">0</span></div>
-                <button id="btn-open-settings" class="icon-btn ios-btn" aria-label="تنظیمات">
-                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                        <g fill="var(--text-main)">
-                            <rect x="10.8" y="0.6" width="2.4" height="4.6" rx="1"/>
-                            <rect x="10.8" y="0.6" width="2.4" height="4.6" rx="1" transform="rotate(45 12 12)"/>
-                            <rect x="10.8" y="0.6" width="2.4" height="4.6" rx="1" transform="rotate(90 12 12)"/>
-                            <rect x="10.8" y="0.6" width="2.4" height="4.6" rx="1" transform="rotate(135 12 12)"/>
-                            <rect x="10.8" y="0.6" width="2.4" height="4.6" rx="1" transform="rotate(180 12 12)"/>
-                            <rect x="10.8" y="0.6" width="2.4" height="4.6" rx="1" transform="rotate(225 12 12)"/>
-                            <rect x="10.8" y="0.6" width="2.4" height="4.6" rx="1" transform="rotate(270 12 12)"/>
-                            <rect x="10.8" y="0.6" width="2.4" height="4.6" rx="1" transform="rotate(315 12 12)"/>
-                            <circle cx="12" cy="12" r="7"/>
-                        </g>
-                        <circle cx="12" cy="12" r="2.7" fill="var(--card-bg)"/>
-                    </svg>
-                </button>
+                <button id="btn-open-settings" class="icon-btn ios-btn" aria-label="تنظیمات">⚙️</button>
             </div>
         </header>
 
@@ -197,16 +182,18 @@
                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1.5" fill="white" stroke="none"/></svg>
             </div>
             <h2>قبل از شروع...</h2>
-            <p>با عضویت در کانال <strong>تِک‌نور</strong> از این امکانات بهره‌مند شو 👇</p>
+            <p>هر هفته، عضویت توی یکی از کانال‌های ما برای استفاده از رازک لازمه. این هفته نوبت این کاناله 👇</p>
             <ul class="join-gate-benefits">
                 <li><span class="jg-icon">🆕</span> اطلاع از نسخه‌ها و قابلیت‌های جدید رازک</li>
                 <li><span class="jg-icon">🧩</span> دسترسی به مراحل و چالش‌های جدید</li>
                 <li><span class="jg-icon">👀</span> مشاهده اخبار و قابلیت‌های جدید زودتر از همه</li>
                 <li><span class="jg-icon">📊</span> شرکت در نظرسنجی‌های توسعه بازی</li>
                 <li><span class="jg-icon">🤖</span> بهرمندی از محتواهای هوش مصنوعی</li>
-                <li><span class="jg-icon">👨🏻‍💻</span> باخبر شدن از اخبار تکنولوژی</li>
+                <li><span class="jg-icon">✍️</span> و یه گوشه‌ی آروم برای خوندن شعر و ادب</li>
             </ul>
-            <button id="btn-join-channel" class="ios-btn primary-btn w-100">📢 عضویت در کانال تک‌نور</button>
+
+            <div class="join-gate-channels" id="join-gate-channels"></div>
+
             <button id="btn-confirm-joined" class="ios-btn ghost-btn w-100">✅ بررسی عضویت و ادامه</button>
         </div>
     </div>
