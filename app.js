@@ -11,9 +11,105 @@ const KVDB_BUCKET_ID = "YOUR_BUCKET_ID_HERE";
 
 const PERSIAN_ALPHABET = "ابپتثجچحخدذرزژسشصضطظعغفقکگلمنوهی";
 const HINT_COST = 15;
-// لینک کانال تک‌نور؛ هم برای کارت کانال در پایین استفاده می‌شود، هم برای
-// پنجره‌ی «عضویت اجباری» قبل از بازی.
+// این دو تا هنوز برای کارت‌های «کانال‌های ما» در پایین صفحه استفاده می‌شوند.
 const TECH_NOUR_LINK = 'https://eitaa.com/Tech_nour';
+const AVAY_KHIYAL_LINK = 'https://eitaa.com/avay_khiyal';
+
+/* =========================================
+   عضویت اجباری چرخشی هفتگی (Weekly Mandatory Channel Rotation)
+========================================= */
+// ⚠️ محدودیت واقعی و مهم: این سایت کاملاً استاتیک است و هیچ ارتباطی با
+// API عضویت واقعی ایتا ندارد (چنین APIای برای این پروژه در دسترس نیست، و
+// حتی اگر بود، نیاز داشت ربات ما توی هرکدوم از این کانال‌ها ادمین/عضو باشه
+// که نیستیم). پس این سیستم، دقیقاً مثل قبل، از روش «خوداظهاری» استفاده
+// می‌کند: کاربر روی «عضویت» کلیک می‌کند، کانال باز می‌شود، و با زدن «بررسی
+// عضویت» فقط تأیید می‌کند که عضو شده — نه اینکه واقعاً از سمت سرور چک شود.
+// اگر تیک «عضویت شما تأیید شد» را نشان دهیم انگار واقعاً چک شده، این
+// گمراه‌کننده است؛ به همین دلیل صادقانه همان الگوی قبلی حفظ شده.
+//
+// چیزی که این بخش واقعاً و به‌طور کامل پیاده می‌کند: چرخش هفتگیِ قطعی و
+// بی‌نهایتِ «کدام کانال این هفته الزامی است» — این بخش صد‌درصد واقعی و
+// قابل تست است چون فقط ریاضیِ تاریخ است، نیازی به بک‌اند ندارد.
+
+// همه‌ی تنظیمات چرخش، یک‌جا و متمرکز — برای تغییر دادن کانال‌ها، ترتیب،
+// فعال/غیرفعال کردن، یا تاریخ شروع، فقط همین‌جا را ویرایش کن.
+const ROTATION_CONFIG = {
+    // مبدأ چرخش: هفته‌ی صفر از همین لحظه شروع می‌شود. تغییر این تاریخ، کل
+    // چرخش را جابه‌جا می‌کند؛ بعد از اولین دیپلوی دیگر دستش نزن.
+    // فرمت ISO با افست منطقه‌زمانی صریح (اینجا +۰۳:۳۰ تهران) تا محاسبه‌ها
+    // وابسته به منطقه‌زمانیِ مرورگر کاربر نباشند و برای همه یکسان باشند.
+    startDate: '2025-01-06T00:00:00+03:30',
+    weeksPerChannel: 1, // هر کانال چند هفته پشت‌سرهم فعال بماند
+    channels: [
+        { id: 'avay_khiyal', type: 'channel', name: 'آوای‌خیال', icon: '🕊️', username: 'avay_khiyal', enabled: true },
+        { id: 'tech_nour', type: 'channel', name: 'تِک‌نور', icon: '📢', username: 'Tech_nour', enabled: true },
+        { id: 'rasa_meme', type: 'channel', name: 'رسامیم', icon: '😂', username: 'Rasa_Meme', enabled: true },
+        // کانال همکار/تبلیغاتی: همون رفتار بقیه کانال‌ها رو داره، فقط برچسبش
+        // شفاف «کانال همکار» است تا چیزی از کاربر پنهان نشود. یوزرنیم واقعی
+        // را جایگزین PARTNER_USERNAME_HERE کن (یا enabled:false کن تا از
+        // چرخش کلاً حذف شود).
+        { id: 'partner', type: 'partner', name: 'کانال همکار', icon: '🤝', username: 'PARTNER_USERNAME_HERE', enabled: true }
+    ]
+};
+
+function getChannelUrl(channel) {
+    return `https://eitaa.com/${channel.username}`;
+}
+
+// موتور اصلی چرخش. «now» عمداً قابل تزریق است (پیش‌فرض: همین لحظه) تا
+// بشود بدون وابستگی به ساعت واقعی سیستم، تستش کرد.
+// چون بر مبنای فاصله‌ی زمانی مطلق (میلی‌ثانیه) بین دو لحظه محاسبه می‌شود
+// (نه روز تقویمی محلی)، این محاسبه کاملاً مستقل از منطقه‌زمانی مرورگر
+// کاربر است؛ همه‌ی کاربران در سراسر دنیا در یک لحظه‌ی مشخص، دقیقاً همان
+// نتیجه را می‌گیرند — دقیقاً همان چیزی که «برای همه یکسان باشد» نیاز دارد.
+function getCurrentRotationInfo(now = new Date()) {
+    const enabledChannels = ROTATION_CONFIG.channels.filter(c => c.enabled);
+    if (enabledChannels.length === 0) return null; // اگر همه غیرفعال بودند، گیت را کلاً غیرفعال کن
+
+    const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+    const startMs = new Date(ROTATION_CONFIG.startDate).getTime();
+    const nowMs = now.getTime();
+
+    // اگر (به‌هر دلیلی، مثلاً ساعت اشتباه دستگاه) now قبل از startDate باشد،
+    // در هفته‌ی صفر می‌مانیم، نه یک عدد منفی عجیب.
+    const weekNumber = Math.max(0, Math.floor((nowMs - startMs) / msPerWeek));
+
+    const cycleLength = ROTATION_CONFIG.weeksPerChannel * enabledChannels.length;
+    const positionInCycle = weekNumber % cycleLength;
+    const rotationIndex = Math.floor(positionInCycle / ROTATION_CONFIG.weeksPerChannel);
+
+    const channel = enabledChannels[rotationIndex];
+    const cycleStartWeek = weekNumber - (weekNumber % ROTATION_CONFIG.weeksPerChannel);
+    const startsAt = new Date(startMs + cycleStartWeek * msPerWeek);
+    const endsAt = new Date(startMs + (cycleStartWeek + ROTATION_CONFIG.weeksPerChannel) * msPerWeek);
+
+    return { channel, rotationIndex, weekNumber, startsAt, endsAt };
+}
+
+function getCurrentMandatoryChannel(now) {
+    const info = getCurrentRotationInfo(now);
+    return info ? info.channel : null;
+}
+
+function getNextRotationChange(now) {
+    const info = getCurrentRotationInfo(now);
+    return info ? info.endsAt : null;
+}
+
+// کمک برای دیباگ از کنسول مرورگر (چون سرور/لاگ سرور برای این پروژه وجود
+// ندارد، این معادل صادقانه‌اش سمت کلاینت است). توی کنسول بنویس: debugRotation()
+window.debugRotation = function (customDate) {
+    const info = getCurrentRotationInfo(customDate ? new Date(customDate) : undefined);
+    if (!info) { console.log('[MandatoryJoin] هیچ کانال فعالی نیست (همه غیرفعال‌اند).'); return; }
+    console.log('[MandatoryJoin] Week number:', info.weekNumber);
+    console.log('[MandatoryJoin] Rotation index:', info.rotationIndex);
+    console.log('[MandatoryJoin] Active channel:', info.channel.name, `(@${info.channel.username})`, info.channel.type === 'partner' ? '[کانال همکار]' : '');
+    console.log('[MandatoryJoin] This period:', info.startsAt.toISOString(), '→', info.endsAt.toISOString());
+    console.log('[MandatoryJoin] User confirmed this week already:',
+        GameState.joinGate.confirmedChannelId === info.channel.id && GameState.joinGate.confirmedWeekNumber === info.weekNumber);
+    return info;
+};
+
 const BASE_SCORE = 10;
 const DAILY_BASE_SCORE = 50;
 // فاصله‌ی چرخش خودکار کارت‌های «کانال‌های ما»
@@ -109,7 +205,7 @@ const GameState = {
     // avatarId: رزرو شده برای انتخاب عکس پروفایل در آینده (فعلاً همیشه null)
     settings: { sound: true, darkMode: false, gender: null, avatarId: null },
     dailyChallenge: { lastCompletedDate: null, completedCount: 0 },
-    hasJoinedChannel: false,
+    joinGate: { confirmedChannelId: null, confirmedWeekNumber: null },
     isDailyChallenge: false,
     activeCategory: null,
     activeLevelIndex: 0,
@@ -169,7 +265,7 @@ const CHANNEL_PROMOS = [
         desc: 'کانال شعر؛ اگه دلت یه گوشه‌ی آروم برای خوندن شعر می‌خواد، بیا اینجا',
         iconType: 'poetry',
         photoKey: 'avay_khiyal',
-        link: 'https://eitaa.com/avay_khiyal',
+        link: AVAY_KHIYAL_LINK,
         theme: 'poetry'
     },
     {
@@ -280,7 +376,7 @@ const StorageManager = {
             unlockedMedals: GameState.unlockedMedals,
             settings: GameState.settings,
             dailyChallenge: GameState.dailyChallenge,
-            hasJoinedChannel: GameState.hasJoinedChannel
+            joinGate: GameState.joinGate
         });
         localStorage.setItem(this.getKey(), payload);
         if (GameState.user.id !== 'guest' && KVDB_BUCKET_ID !== "YOUR_BUCKET_ID_HERE") {
@@ -308,7 +404,7 @@ const StorageManager = {
                 GameState.unlockedMedals = data.unlockedMedals || [];
                 GameState.settings = { ...GameState.settings, ...(data.settings || {}) };
                 GameState.dailyChallenge = data.dailyChallenge || { lastCompletedDate: null, completedCount: 0 };
-                GameState.hasJoinedChannel = !!data.hasJoinedChannel;
+                GameState.joinGate = data.joinGate || { confirmedChannelId: null, confirmedWeekNumber: null };
             } catch(e) {}
         }
         callback();
@@ -804,15 +900,47 @@ function renderDailyChallengeCard() {
         : 'یه معمای ایموجی مخصوص امروز، هر روز عوض می‌شه';
 }
 
-// --- عضویت اجباری در کانال قبل از بازی ---
+// --- عضویت اجباری در کانال قبل از بازی (چرخشی هفتگی) ---
 // action همان کاری است که کاربر می‌خواست انجام دهد (باز کردن یک دسته یا
-// چالش روزانه)؛ اگر قبلاً عضویت را تأیید کرده، بلافاصله اجرا می‌شود، وگرنه
-// پنجره عضویت باز می‌شود و action برای بعد از تأیید نگه داشته می‌شود.
+// چالش روزانه). فقط کانال «فعال همین هفته» چک می‌شود، نه همه‌ی کانال‌ها با
+// هم. عضویت هفته‌ی قبل، برای هفته‌ی جدید کافی نیست چون channelId عوض شده.
 let pendingJoinAction = null;
 function requireChannelJoin(action) {
-    if (GameState.hasJoinedChannel) { action(); return; }
+    const info = getCurrentRotationInfo();
+    if (!info) { action(); return; } // اگر هیچ کانال فعالی نبود (همه غیرفعال)، چیزی را بلاک نکن
+
+    const alreadyConfirmedThisWeek =
+        GameState.joinGate.confirmedChannelId === info.channel.id &&
+        GameState.joinGate.confirmedWeekNumber === info.weekNumber;
+
+    if (alreadyConfirmedThisWeek) { action(); return; }
+
     pendingJoinAction = action;
+    renderJoinGateModal(info);
     document.getElementById('modal-join-gate').classList.remove('hidden');
+}
+
+// محتوای پنجره را بر اساس کانالِ فعالِ همین هفته می‌سازد. اگر کانال از نوع
+// «همکار/تبلیغاتی» باشد، همین صراحتاً به کاربر گفته می‌شود (نه اینکه چیز
+// دیگری وانمود شود).
+function renderJoinGateModal(info) {
+    const container = document.getElementById('join-gate-channels');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const row = document.createElement('div');
+    row.className = 'join-gate-channel-row';
+    const partnerNote = info.channel.type === 'partner'
+        ? '<span class="jg-partner-tag">کانال همکار</span>'
+        : '';
+    row.innerHTML = `
+        <span class="jg-channel-name">${info.channel.icon} ${info.channel.name} ${partnerNote}</span>
+        <button type="button" class="ios-btn primary-btn jg-join-btn">عضویت</button>`;
+    row.querySelector('.jg-join-btn').addEventListener('click', () => {
+        AudioEngine.tap();
+        openExternalLink(getChannelUrl(info.channel));
+    });
+    container.appendChild(row);
 }
 
 function startDailyChallenge() {
@@ -1164,20 +1292,20 @@ function setupEvents() {
 
     document.getElementById('daily-challenge-card').addEventListener('click', () => requireChannelJoin(startDailyChallenge));
 
-    document.getElementById('btn-join-channel').addEventListener('click', () => {
-        AudioEngine.tap();
-        openExternalLink(TECH_NOUR_LINK);
-    });
     document.getElementById('btn-confirm-joined').addEventListener('click', () => {
         AudioEngine.tap();
         // نکته فنی مهم: از داخل مرورگر (بدون سرور و بدون Bot API رسمی ایتا برای
         // احراز عضویت) امکان بررسی واقعی و قطعی عضویت کاربر در کانال وجود ندارد.
         // به همین دلیل، به‌جای شبیه‌سازی یک "تأیید" دروغین، این دکمه صادقانه به
-        // عنوان «خودم عضو شدم» عمل می‌کند (self-report) و کاربر را به بازی
-        // می‌فرستد. اگر در آینده یک بک‌اند + ربات ادمین کانال راه‌اندازی شود،
-        // می‌توان اینجا یک fetch واقعی به آن بک‌اند زد و بر اساس پاسخش تصمیم گرفت.
-        GameState.hasJoinedChannel = true;
-        StorageManager.save();
+        // عنوان «خودم عضو شدم» عمل می‌کند (self-report). فقط برای کانال و
+        // هفته‌ی فعلیِ چرخش ثبت می‌شود؛ با شروع هفته‌ی بعد و عوض شدن کانال،
+        // این تأیید خودکار باطل می‌شود و کاربر باید دوباره تأیید کند.
+        const info = getCurrentRotationInfo();
+        if (info) {
+            GameState.joinGate.confirmedChannelId = info.channel.id;
+            GameState.joinGate.confirmedWeekNumber = info.weekNumber;
+            StorageManager.save();
+        }
         document.getElementById('modal-join-gate').classList.add('hidden');
         if (pendingJoinAction) {
             const action = pendingJoinAction;
