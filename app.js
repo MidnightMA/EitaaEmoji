@@ -33,10 +33,6 @@ const AVAY_KHIYAL_LINK = 'https://eitaa.com/avay_khiyal';
 
 // همه‌ی تنظیمات چرخش، یک‌جا و متمرکز — برای تغییر دادن کانال‌ها، ترتیب،
 // فعال/غیرفعال کردن، یا تاریخ شروع، فقط همین‌جا را ویرایش کن.
-// =====================================================
-// 📌 RAZAK MANDATORY CHANNELS — EDIT CHANNELS HERE
-// (تنظیمات کانال‌های اجباری رازک — کانال‌ها را فقط همین‌جا ویرایش کن)
-// =====================================================
 const ROTATION_CONFIG = {
     // مبدأ چرخش: هفته‌ی صفر از همین لحظه شروع می‌شود. تغییر این تاریخ، کل
     // چرخش را جابه‌جا می‌کند؛ بعد از اولین دیپلوی دیگر دستش نزن.
@@ -48,17 +44,13 @@ const ROTATION_CONFIG = {
         { id: 'avay_khiyal', type: 'channel', name: 'آوای‌خیال', icon: '🕊️', username: 'avay_khiyal', enabled: true },
         { id: 'tech_nour', type: 'channel', name: 'تِک‌نور', icon: '📢', username: 'Tech_nour', enabled: true },
         { id: 'rasa_meme', type: 'channel', name: 'رسامیم', icon: '😂', username: 'Rasa_Meme', enabled: true },
-        // کانال همکار/تبلیغاتی: همون رفتار بقیه کانال‌ها رو داره (از دید
-        // کاربر هیچ فرقی با بقیه ندارد، هیچ برچسبی نشونش نمی‌ده)، فقط
-        // internally با type: 'partner' مشخص شده تا خودمان تشخیصش بدهیم.
-        // یوزرنیم واقعی را جایگزین PARTNER_USERNAME_HERE کن (یا برای حذف
-        // کامل از چرخش، enabled: false کن).
-        { id: 'partner', type: 'partner', name: 'PARTNER_CHANNEL_NAME_HERE', icon: '🤝', username: 'PARTNER_USERNAME_HERE', enabled: true }
+        // کانال همکار/تبلیغاتی: همون رفتار بقیه کانال‌ها رو داره، فقط برچسبش
+        // شفاف «کانال همکار» است تا چیزی از کاربر پنهان نشود. یوزرنیم واقعی
+        // را جایگزین PARTNER_USERNAME_HERE کن (یا enabled:false کن تا از
+        // چرخش کلاً حذف شود).
+        { id: 'partner', type: 'partner', name: 'کانال همکار', icon: '🤝', username: 'PARTNER_USERNAME_HERE', enabled: true }
     ]
 };
-// این خط چیزی را عوض نمی‌کند؛ فقط برای دیباگ از کنسول مرورگر و برای
-// تست‌های خودکار (پوشه‌ی tests/) تنظیمات را در دسترس می‌گذارد.
-window.ROTATION_CONFIG = ROTATION_CONFIG;
 
 function getChannelUrl(channel) {
     return `https://eitaa.com/${channel.username}`;
@@ -113,7 +105,8 @@ window.debugRotation = function (customDate) {
     console.log('[MandatoryJoin] Rotation index:', info.rotationIndex);
     console.log('[MandatoryJoin] Active channel:', info.channel.name, `(@${info.channel.username})`, info.channel.type === 'partner' ? '[کانال همکار]' : '');
     console.log('[MandatoryJoin] This period:', info.startsAt.toISOString(), '→', info.endsAt.toISOString());
-    console.log('[MandatoryJoin] User confirmed this week already:', isJoinConfirmedForCurrentWeek(GameState.joinGate, info));
+    console.log('[MandatoryJoin] User confirmed this week already:',
+        GameState.joinGate.confirmedChannelId === info.channel.id && GameState.joinGate.confirmedWeekNumber === info.weekNumber);
     return info;
 };
 
@@ -220,9 +213,6 @@ const GameState = {
     slots: [],
     keys: []
 };
-// برای دیباگ از کنسول مرورگر و برای تست‌های خودکار (tests/) در دسترس است؛
-// چیزی در رفتار برنامه عوض نمی‌کند.
-window.GameState = GameState;
 
 const MEDALS_DB = [
     { id: 'first_blood', name: 'اولین قدم', icon: '🩴', desc: 'اولین مرحله را حل کن',
@@ -914,32 +904,25 @@ function renderDailyChallengeCard() {
 // action همان کاری است که کاربر می‌خواست انجام دهد (باز کردن یک دسته یا
 // چالش روزانه). فقط کانال «فعال همین هفته» چک می‌شود، نه همه‌ی کانال‌ها با
 // هم. عضویت هفته‌ی قبل، برای هفته‌ی جدید کافی نیست چون channelId عوض شده.
-
-// تابع خالص و بدون هیچ وابستگی به DOM — به همین دلیل مستقل و ساده قابل
-// تست است (نگاه کن به tests/rotation.test.js): آیا کاربر همین کانال را
-// دقیقاً برای همین weekNumber قبلاً «تأیید» کرده؟ عضویت هفته‌ی قبل (حتی در
-// همان کانال) برای هفته‌ی جدید کافی نیست، چون weekNumber عوض شده.
-function isJoinConfirmedForCurrentWeek(joinGate, info) {
-    if (!info) return true; // هیچ کانال فعالی نیست (همه غیرفعال) → چیزی برای تأیید لازم نیست
-    return joinGate.confirmedChannelId === info.channel.id &&
-           joinGate.confirmedWeekNumber === info.weekNumber;
-}
-
 let pendingJoinAction = null;
 function requireChannelJoin(action) {
     const info = getCurrentRotationInfo();
-    if (isJoinConfirmedForCurrentWeek(GameState.joinGate, info)) { action(); return; }
+    if (!info) { action(); return; } // اگر هیچ کانال فعالی نبود (همه غیرفعال)، چیزی را بلاک نکن
+
+    const alreadyConfirmedThisWeek =
+        GameState.joinGate.confirmedChannelId === info.channel.id &&
+        GameState.joinGate.confirmedWeekNumber === info.weekNumber;
+
+    if (alreadyConfirmedThisWeek) { action(); return; }
 
     pendingJoinAction = action;
     renderJoinGateModal(info);
     document.getElementById('modal-join-gate').classList.remove('hidden');
 }
 
-// محتوای پنجره را بر اساس کانالِ فعالِ همین هفته می‌سازد. طبق درخواست، از
-// دید کاربر هیچ فرقی بین یک کانال معمولی و کانال همکار/تبلیغاتی نیست —
-// هیچ برچسب «تبلیغ»/«همکار»/«اسپانسر» یا هیچ توضیح اضافه‌ای نشان داده
-// نمی‌شود، فقط نام و دکمه‌ی عضویت (type: 'partner' فقط داخلی/برای خودمان
-// است، مثلاً در دیباگ کنسول).
+// محتوای پنجره را بر اساس کانالِ فعالِ همین هفته می‌سازد. اگر کانال از نوع
+// «همکار/تبلیغاتی» باشد، همین صراحتاً به کاربر گفته می‌شود (نه اینکه چیز
+// دیگری وانمود شود).
 function renderJoinGateModal(info) {
     const container = document.getElementById('join-gate-channels');
     if (!container) return;
@@ -947,8 +930,11 @@ function renderJoinGateModal(info) {
 
     const row = document.createElement('div');
     row.className = 'join-gate-channel-row';
+    const partnerNote = info.channel.type === 'partner'
+        ? '<span class="jg-partner-tag">کانال همکار</span>'
+        : '';
     row.innerHTML = `
-        <span class="jg-channel-name">${info.channel.icon} ${info.channel.name}</span>
+        <span class="jg-channel-name">${info.channel.icon} ${info.channel.name} ${partnerNote}</span>
         <button type="button" class="ios-btn primary-btn jg-join-btn">عضویت</button>`;
     row.querySelector('.jg-join-btn').addEventListener('click', () => {
         AudioEngine.tap();
