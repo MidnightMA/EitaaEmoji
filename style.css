@@ -393,6 +393,50 @@ input:checked + .slider:before { transform: translateX(20px); }
 }
 
 /* --- بخش تبلیغ کانال‌ها (نمای کشویی) --- */
+/* --- بخش «پیشنهادات شما 🫂» --- */
+.suggestions-card {
+    background: var(--card-bg);
+    border-radius: 24px;
+    padding: 20px;
+    box-shadow: var(--shadow-md);
+}
+.suggestions-intro { color: var(--text-muted); font-size: 0.92rem; line-height: 1.6; margin-bottom: 14px; }
+.suggestions-template {
+    background: var(--bg-main);
+    border: 1.5px dashed var(--border-color);
+    border-radius: 16px;
+    padding: 14px 16px;
+    font-family: inherit;
+    font-size: 0.88rem;
+    line-height: 1.9;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--text-primary);
+    margin-bottom: 14px;
+}
+.suggestions-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.suggestions-actions .ios-btn { flex: 1; min-width: 140px; }
+
+/* --- ردیف نیمه‌عرض زیر بخش پیشنهادات: کارت داخلش تقریباً نصف عرض کامل و
+   تقریباً هم‌ارتفاع با یک ردیف دسته‌بندی معمولی است --- */
+.half-width-row { display: flex; }
+.teaser-section { width: 50%; min-width: 160px; }
+.teaser-card {
+    background: var(--card-bg);
+    border: 2px dashed var(--border-color);
+    border-radius: 24px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    opacity: 0.85;
+    height: 100%;
+    box-sizing: border-box;
+}
+.teaser-card .cat-icon { font-size: 2.2rem; }
+.teaser-card .cat-title { font-size: 1rem; margin-bottom: 2px; }
+.teaser-card .cat-stats { font-size: 0.78rem; margin-bottom: 0; }
+
 .channel-promo-section { margin-top: 8px; }
 .channel-promo-scroll {
     display: flex;
@@ -659,16 +703,6 @@ input:checked + .slider:before { transform: translateX(20px); }
     white-space: nowrap;
 }
 
-/* --- کارت «به‌زودی» در انتهای لیست دسته‌بندی‌ها --- */
-.category-card.coming-soon {
-    background: transparent;
-    border: 2px dashed var(--border-color);
-    box-shadow: none;
-    cursor: default;
-    opacity: 0.75;
-}
-.category-card.coming-soon:active { transform: none; }
-
 /* --- صفحه پروفایل --- */
 .profile-container { padding: 30px 20px; max-width: 500px; margin: 0 auto; }
 .profile-avatar-wrap { text-align: center; margin-bottom: 34px; }
@@ -703,5 +737,55 @@ input:checked + .slider:before { transform: translateX(20px); }
 .gender-icon svg { width: 48px; height: 48px; }
 .gender-option span { font-weight: 700; font-size: 1rem; }
 
-/* --- دکمه‌ی جای‌گیر «انتخاب عکس پروفایل» --- */
-.avatar-photo-btn { margin-top: 20px; }
+/* --- بخش «نام شما» --- */
+.name-display-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: var(--card-bg);
+    border-radius: 18px;
+    padding: 14px 16px;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 24px;
+}
+.name-display-text { font-weight: 700; font-size: 1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.name-edit-btn { flex-shrink: 0; padding: 8px 16px; font-size: 0.88rem; }
+
+.text-input {
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--card-bg);
+    border: 1.5px solid var(--border-color);
+    border-radius: 14px;
+    padding: 12px 14px;
+    font-size: 1rem;
+    font-family: inherit;
+    color: var(--text-primary);
+    text-align: right;
+    margin-top: 8px;
+}
+.text-input:focus { outline: none; border-color: var(--ios-blue); }
+
+/* --- گرید انتخاب عکس پروفایل --- */
+.avatar-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+}
+.avatar-picker-item {
+    aspect-ratio: 1;
+    border-radius: 18px;
+    overflow: hidden;
+    border: 2.5px solid transparent;
+    padding: 0;
+    background: var(--card-bg);
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.1s ease, border-color 0.15s ease;
+}
+.avatar-picker-item:active { transform: scale(0.94); }
+.avatar-picker-item.selected { border-color: var(--ios-blue); }
+.avatar-picker-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.avatar-picker-fallback { display: flex; align-items: center; justify-content: center; height: 100%; font-size: 2rem; }

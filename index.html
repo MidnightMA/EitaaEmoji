@@ -65,6 +65,32 @@
                 <div class="categories-list" id="categories-container"></div>
             </section>
 
+            <section class="suggestions-section" id="suggestions-section">
+                <div class="section-header">
+                    <h2 id="suggestions-title">پیشنهادات شما 🫂</h2>
+                </div>
+                <div class="suggestions-card">
+                    <p class="suggestions-intro" id="suggestions-intro"></p>
+                    <pre class="suggestions-template" id="suggestions-template"></pre>
+                    <div class="suggestions-actions">
+                        <button type="button" id="btn-copy-suggestion-template" class="ios-btn ghost-btn">📋 کپی متن</button>
+                        <button type="button" id="btn-send-suggestion" class="ios-btn primary-btn">ارسال پیشنهاد</button>
+                    </div>
+                </div>
+            </section>
+
+            <div class="half-width-row">
+                <section class="teaser-section">
+                    <div class="teaser-card">
+                        <div class="cat-icon">✨</div>
+                        <div class="cat-info">
+                            <h3 class="cat-title">به‌زودی...</h3>
+                            <div class="cat-stats">بازی جدیدی در راه است</div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
             <section class="channel-promo-section">
                 <div class="section-header">
                     <h2>
@@ -139,6 +165,12 @@
                 <h2 id="profile-name">کاربر عزیز</h2>
             </div>
 
+            <div class="profile-section-title">نام شما</div>
+            <div class="name-display-row">
+                <span id="profile-current-name" class="name-display-text">کاربر عزیز</span>
+                <button type="button" id="btn-edit-name" class="ios-btn ghost-btn name-edit-btn">تغییر نام</button>
+            </div>
+
             <div class="profile-section-title">جنسیت</div>
             <div class="gender-picker">
                 <div class="gender-option" data-gender="boy">
@@ -165,14 +197,23 @@
                 </div>
             </div>
 
-            <!-- جای آماده برای انتخاب عکس پروفایل توسط خود کاربر (فعلاً غیرفعال).
-                 وقتی مجموعه‌ی عکس‌های آماده رو اضافه کردی، کافیه اینجا یک گرید از
-                 گزینه‌ها بسازی و انتخاب کاربر رو در GameState.settings.avatarId
-                 ذخیره کنی؛ applyAvatarVisual در app.js از قبل برای این آماده‌ست. -->
-            <button id="btn-choose-avatar-photo" class="ios-btn ghost-btn w-100 avatar-photo-btn">
-                🖼️ انتخاب عکس پروفایل (به‌زودی)
-            </button>
+            <!-- گرید انتخاب عکس پروفایل: از روی AVATAR_PROFILES (فایل profiles.js)
+                 توسط renderAvatarPicker در app.js ساخته می‌شود. -->
+            <div class="profile-section-title">عکس پروفایل</div>
+            <div class="avatar-picker-grid" id="avatar-picker-grid"></div>
         </main>
+    </div>
+
+    <div id="modal-edit-name" class="modal-overlay hidden">
+        <div class="ios-modal pop-in">
+            <h2>تغییر نام</h2>
+            <p>نام جدیدی که می‌خواهی در بازی نشان داده شود را وارد کن.</p>
+            <input type="text" id="edit-name-input" class="text-input" maxlength="40" placeholder="نام شما">
+            <div class="suggestions-actions" style="margin-top:16px;">
+                <button type="button" id="btn-cancel-name" class="ios-btn ghost-btn">انصراف</button>
+                <button type="button" id="btn-save-name" class="ios-btn primary-btn">ذخیره</button>
+            </div>
+        </div>
     </div>
 
     <!-- Modals -->
@@ -290,6 +331,12 @@
             }
         });
     </script>
+    <script src="config/mandatory-channels/avaye-khiyal.js"></script>
+    <script src="config/mandatory-channels/tak-noor.js"></script>
+    <script src="config/mandatory-channels/rasamim.js"></script>
+    <script src="config/mandatory-channels/partner.js"></script>
+    <script src="config/mandatory-channels/index.js"></script>
+    <script src="profiles.js"></script>
     <script src="channel-photos.js"></script>
     <script src="app.js"></script>
 </body>
