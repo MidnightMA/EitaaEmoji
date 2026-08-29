@@ -31,35 +31,26 @@ const AVAY_KHIYAL_LINK = 'https://eitaa.com/avay_khiyal';
 // بی‌نهایتِ «کدام کانال این هفته الزامی است» — این بخش صد‌درصد واقعی و
 // قابل تست است چون فقط ریاضیِ تاریخ است، نیازی به بک‌اند ندارد.
 
-// همه‌ی تنظیمات چرخش، از فایل‌های جداگانه‌ی هر کانال خوانده می‌شود — نه
-// اینجا. برای تغییر دادن کانال‌ها، ترتیب، فعال/غیرفعال کردن، یا تاریخ
-// شروع، به پوشه‌ی config/mandatory-channels/ برو (هر کانال یک فایل جدا،
-// + یک index.js که ترتیب چرخش را مشخص می‌کند). این فایل‌ها باید در
-// index.html قبل از app.js لود شوند.
-//
-// fallback زیر («اگر آن فایل‌ها به هر دلیلی لود نشده بودند») عمداً همان
-// چهار کانال پیش‌فرض را دارد — هم برای اینکه اگر یک نفر config/ را حذف کرد
-// بازی کاملاً نشکند، و هم برای اینکه تست‌ها (tests/) بدون نیاز به لود کردن
-// آن فایل‌های جداگانه هم قابل اجرا بمانند.
-const ROTATION_CONFIG = (typeof window !== 'undefined' && window.MANDATORY_CHANNELS_ROTATION)
-    ? {
-        startDate: window.MANDATORY_CHANNELS_ROTATION.startDate,
-        weeksPerChannel: window.MANDATORY_CHANNELS_ROTATION.weeksPerChannel,
-        channels: window.MANDATORY_CHANNELS_ROTATION.order.filter(Boolean)
-      }
-    : {
-        startDate: '2025-01-06T00:00:00+03:30',
-        weeksPerChannel: 1,
-        channels: [
-            { id: 'avay_khiyal', type: 'channel', name: 'آوای‌خیال', icon: '🕊️', username: 'avay_khiyal', enabled: true },
-            { id: 'tech_nour', type: 'channel', name: 'تِک‌نور', icon: '📢', username: 'Tech_nour', enabled: true },
-            { id: 'rasa_meme', type: 'channel', name: 'رسامیم', icon: '😂', username: 'Rasa_Meme', enabled: true },
-            { id: 'partner', type: 'partner', name: 'PARTNER_CHANNEL_NAME_HERE', icon: '🤝', username: 'PARTNER_USERNAME_HERE', enabled: true }
-        ]
-      };
-// این خط چیزی را عوض نمی‌کند؛ فقط برای دیباگ از کنسول مرورگر و برای
-// تست‌های خودکار (پوشه‌ی tests/) تنظیمات را در دسترس می‌گذارد.
-window.ROTATION_CONFIG = ROTATION_CONFIG;
+// همه‌ی تنظیمات چرخش، یک‌جا و متمرکز — برای تغییر دادن کانال‌ها، ترتیب،
+// فعال/غیرفعال کردن، یا تاریخ شروع، فقط همین‌جا را ویرایش کن.
+const ROTATION_CONFIG = {
+    // مبدأ چرخش: هفته‌ی صفر از همین لحظه شروع می‌شود. تغییر این تاریخ، کل
+    // چرخش را جابه‌جا می‌کند؛ بعد از اولین دیپلوی دیگر دستش نزن.
+    // فرمت ISO با افست منطقه‌زمانی صریح (اینجا +۰۳:۳۰ تهران) تا محاسبه‌ها
+    // وابسته به منطقه‌زمانیِ مرورگر کاربر نباشند و برای همه یکسان باشند.
+    startDate: '2025-01-06T00:00:00+03:30',
+    weeksPerChannel: 1, // هر کانال چند هفته پشت‌سرهم فعال بماند
+    channels: [
+        { id: 'avay_khiyal', type: 'channel', name: 'آوای‌خیال', icon: '🕊️', username: 'avay_khiyal', enabled: true },
+        { id: 'tech_nour', type: 'channel', name: 'تِک‌نور', icon: '📢', username: 'Tech_nour', enabled: true },
+        { id: 'rasa_meme', type: 'channel', name: 'رسامیم', icon: '😂', username: 'Rasa_Meme', enabled: true },
+        // کانال همکار/تبلیغاتی: همون رفتار بقیه کانال‌ها رو داره، فقط برچسبش
+        // شفاف «کانال همکار» است تا چیزی از کاربر پنهان نشود. یوزرنیم واقعی
+        // را جایگزین PARTNER_USERNAME_HERE کن (یا enabled:false کن تا از
+        // چرخش کلاً حذف شود).
+        { id: 'partner', type: 'partner', name: 'کانال همکار', icon: '🤝', username: 'PARTNER_USERNAME_HERE', enabled: true }
+    ]
+};
 
 function getChannelUrl(channel) {
     return `https://eitaa.com/${channel.username}`;
@@ -114,7 +105,8 @@ window.debugRotation = function (customDate) {
     console.log('[MandatoryJoin] Rotation index:', info.rotationIndex);
     console.log('[MandatoryJoin] Active channel:', info.channel.name, `(@${info.channel.username})`, info.channel.type === 'partner' ? '[کانال همکار]' : '');
     console.log('[MandatoryJoin] This period:', info.startsAt.toISOString(), '→', info.endsAt.toISOString());
-    console.log('[MandatoryJoin] User confirmed this week already:', isJoinConfirmedForCurrentWeek(GameState.joinGate, info));
+    console.log('[MandatoryJoin] User confirmed this week already:',
+        GameState.joinGate.confirmedChannelId === info.channel.id && GameState.joinGate.confirmedWeekNumber === info.weekNumber);
     return info;
 };
 
@@ -210,11 +202,8 @@ const GameState = {
     progress: {},
     unlockedMedals: [],
     // gender: null | 'boy' | 'girl'
-    // avatarId: id انتخاب‌شده از AVATAR_PROFILES (فایل profiles.js)، یا null
-    // displayName: نامی که کاربر خودش برای نمایش در بازی انتخاب کرده؛ اگر
-    // null باشد، همان first_name ایتا نشان داده می‌شود (نگاه کن به
-    // getDisplayName پایین‌تر همین فایل).
-    settings: { sound: true, darkMode: false, gender: null, avatarId: null, displayName: null },
+    // avatarId: رزرو شده برای انتخاب عکس پروفایل در آینده (فعلاً همیشه null)
+    settings: { sound: true, darkMode: false, gender: null, avatarId: null },
     dailyChallenge: { lastCompletedDate: null, completedCount: 0 },
     joinGate: { confirmedChannelId: null, confirmedWeekNumber: null },
     isDailyChallenge: false,
@@ -224,9 +213,6 @@ const GameState = {
     slots: [],
     keys: []
 };
-// برای دیباگ از کنسول مرورگر و برای تست‌های خودکار (tests/) در دسترس است؛
-// چیزی در رفتار برنامه عوض نمی‌کند.
-window.GameState = GameState;
 
 const MEDALS_DB = [
     { id: 'first_blood', name: 'اولین قدم', icon: '🩴', desc: 'اولین مرحله را حل کن',
@@ -375,39 +361,6 @@ function populateChannelIcon(container, photoKey, iconType) {
 
 function getTotalCompleted(state) {
     return Object.values(state.progress).reduce((sum, arr) => sum + arr.length, 0);
-}
-
-// --- نام نمایشی قابل‌ویرایش کاربر ---
-const DISPLAY_NAME_MAX_LENGTH = 20;
-
-// همه‌جای بازی که اسم کاربر نشان داده می‌شود (هدر صفحه اصلی، صفحه پروفایل)
-// باید از همین تابع استفاده کند، نه مستقیم از GameState.user.first_name —
-// اینطوری اگر کاربر اسم دلخواه انتخاب کرده باشد همه‌جا یکسان به‌روز است.
-function getDisplayName() {
-    return GameState.settings.displayName || GameState.user.first_name || 'کاربر مهمان';
-}
-
-// اعتبارسنجی/پاک‌سازی نام ورودی کاربر. فارسی/عربی/انگلیسی/عدد/ایموجی همه
-// مجازند (هیچ محدودیت زبانی/کاراکتری خاصی اعمال نمی‌شود) — فقط:
-//   ۱. فاصله‌های اضافه‌ی ابتدا/انتها حذف می‌شود
-//   ۲. کاراکترهای کنترلی نامرئی (که می‌توانند چیدمان را به‌هم بریزند) حذف می‌شوند
-//   ۳. طول به DISPLAY_NAME_MAX_LENGTH محدود می‌شود
-// خروجی یا رشته‌ی پاک‌شده‌ی معتبر است، یا null (یعنی: نامعتبر/خالی).
-// چون همه‌جا با .textContent (نه innerHTML) رندر می‌شود، تزریق HTML/اسکریپت
-// از همان مسیر رندر هم به‌طور خودکار مسدود است؛ این تابع فقط چیدمان/طول را
-// کنترل می‌کند، نه امنیت رندر را (که جای دیگری قبلاً تضمین شده).
-function sanitizeDisplayName(raw) {
-    if (typeof raw !== 'string') return null;
-    // کاراکترهای کنترلی ASCII (\u0000-\u001F, \u007F) را حذف کن
-    let cleaned = raw.replace(/[\u0000-\u001F\u007F]/g, '');
-    cleaned = cleaned.trim().replace(/\s+/g, ' ');
-    if (cleaned.length === 0) return null;
-    // برش بر مبنای کدپوینت (نه UTF-16 code unit) تا وسط یک ایموجی چندبخشی برش نخورد
-    const codepoints = Array.from(cleaned);
-    if (codepoints.length > DISPLAY_NAME_MAX_LENGTH) {
-        cleaned = codepoints.slice(0, DISPLAY_NAME_MAX_LENGTH).join('');
-    }
-    return cleaned;
 }
 
 /* =========================================
@@ -664,55 +617,34 @@ const AVATAR_ICONS = {
     </svg>`
 };
 
-// عنصر آواتار (هدر صفحه اصلی یا صفحه پروفایل) را بر اساس این ترتیب اولویت
-// پر می‌کند: ۱) عکس پروفایلی که خودِ کاربر از بین AVATAR_PROFILES انتخاب
-// کرده (GameState.settings.avatarId) ۲) عکس پروفایل خودِ ایتا (اگر بود)
-// ۳) آیکون جنسیت انتخابی. اگر لود عکس (هرکدام) با خطا مواجه شود، به‌طور
-// خودکار به مرحله‌ی بعدی برمی‌گردد؛ در بدترین حالت همیشه آیکون خنثی نشان
-// داده می‌شود، هیچ‌وقت جای خالی/شکسته نمی‌ماند. کلاس گرادیان پس‌زمینه هم
-// متناسب با جنسیت ست می‌شود (آبی برای پسر، صورتی برای دختر، خنثی پیش‌فرض).
+// عنصر آواتار (هدر صفحه اصلی یا صفحه پروفایل) را بر اساس عکس ایتا (اگر بود)
+// یا آیکون جنسیت انتخابی کاربر پر می‌کند، و کلاس گرادیان پس‌زمینه متناسب با
+// جنسیت را ست می‌کند (آبی برای پسر، صورتی برای دختر، آبی خنثی پیش‌فرض).
 function applyAvatarVisual(avatarEl, gender) {
     avatarEl.classList.remove('gender-boy', 'gender-girl');
     if (gender === 'boy') avatarEl.classList.add('gender-boy');
     if (gender === 'girl') avatarEl.classList.add('gender-girl');
 
-    const showIconFallback = () => {
-        avatarEl.innerHTML = AVATAR_ICONS[gender] || AVATAR_ICONS.neutral;
-        avatarEl.style.background = '';
-    };
-    const showEitaaPhotoOrIcon = () => {
-        if (GameState.user.photo_url) {
-            avatarEl.innerHTML = '';
-            const img = document.createElement('img');
-            img.src = GameState.user.photo_url;
-            img.alt = 'Profile';
-            img.addEventListener('error', showIconFallback, { once: true });
-            avatarEl.appendChild(img);
-            avatarEl.style.background = 'transparent';
-        } else {
-            showIconFallback();
-        }
-    };
-
-    const selectedProfile = typeof AVATAR_PROFILES !== 'undefined'
-        ? AVATAR_PROFILES.find(p => p.id === GameState.settings.avatarId)
-        : null;
-    if (selectedProfile) {
+    if (GameState.user.photo_url) {
         avatarEl.innerHTML = '';
         const img = document.createElement('img');
-        img.src = selectedProfile.image;
+        img.src = GameState.user.photo_url;
         img.alt = 'Profile';
-        img.addEventListener('error', showEitaaPhotoOrIcon, { once: true });
+        img.addEventListener('error', () => {
+            avatarEl.innerHTML = AVATAR_ICONS[gender] || AVATAR_ICONS.neutral;
+            avatarEl.style.background = '';
+        });
         avatarEl.appendChild(img);
         avatarEl.style.background = 'transparent';
     } else {
-        showEitaaPhotoOrIcon();
+        avatarEl.innerHTML = AVATAR_ICONS[gender] || AVATAR_ICONS.neutral;
+        avatarEl.style.background = '';
     }
 }
 
 function renderHome() {
     document.getElementById('home-total-score').textContent = GameState.globalScore;
-    document.getElementById('user-name').textContent = getDisplayName();
+    document.getElementById('user-name').textContent = GameState.user.first_name;
 
     applyAvatarVisual(document.getElementById('user-avatar'), GameState.settings.gender);
 
@@ -747,60 +679,19 @@ function renderHome() {
         catContainer.appendChild(div);
     });
 
+    // کارت چهارم: جای دسته‌بندی بعدی که در آینده اضافه می‌شود (غیرقابل‌کلیک)
+    const comingSoonDiv = document.createElement('div');
+    comingSoonDiv.className = 'category-card coming-soon';
+    comingSoonDiv.innerHTML = `
+        <div class="cat-icon">✨</div>
+        <div class="cat-info">
+            <h3 class="cat-title">به‌زودی...</h3>
+            <div class="cat-stats">بازی جدیدی در راه است...</div>
+        </div>`;
+    catContainer.appendChild(comingSoonDiv);
+
     renderDailyChallengeCard();
     renderChannelPromos();
-    renderSuggestionsSection();
-}
-
-// بخش «پیشنهادات شما 🫂» — جایگزین کارت قبلی «به‌زودی...» که در گرید
-// دسته‌بندی‌ها بود. تمام متن‌ها (عنوان، توضیح، متن الگو، برچسب دکمه‌ها،
-// لینک ایتا) از DB.suggestions خوانده می‌شود (بخش suggestions در
-// data.json) نه از این فایل — برای تغییرشان فقط data.json را ویرایش کن.
-function renderSuggestionsSection() {
-    const s = DB.suggestions;
-    const section = document.getElementById('suggestions-section');
-    if (!section || !s) return;
-
-    document.getElementById('suggestions-title').textContent = s.title || 'پیشنهادات شما 🫂';
-    document.getElementById('suggestions-intro').textContent = s.intro || '';
-    document.getElementById('suggestions-template').textContent = s.template || '';
-
-    const copyBtn = document.getElementById('btn-copy-suggestion-template');
-    copyBtn.textContent = s.copyButtonText || '📋 کپی متن';
-    copyBtn.onclick = () => copySuggestionTemplate(s.template || '');
-
-    const contactBtn = document.getElementById('btn-send-suggestion');
-    contactBtn.textContent = s.contactButtonText || 'ارسال پیشنهاد';
-    contactBtn.onclick = () => {
-        AudioEngine.tap();
-        openExternalLink(s.contactUrl || 'https://eitaa.com/ferstadeh');
-    };
-}
-
-// کپی متن الگو در کلیپ‌بورد. روش اصلی navigator.clipboard (مرورگرهای مدرن،
-// هم دسکتاپ هم موبایل روی HTTPS)؛ اگر به هر دلیلی در دسترس نبود (مثلاً
-// وب‌ویوی قدیمی‌تر)، به روش قدیمی execCommand('copy') برمی‌گردیم تا کپی همچنان
-// کار کند. در هر دو حالت با یک toast به کاربر خبر می‌دهیم.
-async function copySuggestionTemplate(text) {
-    AudioEngine.tap();
-    try {
-        if (navigator.clipboard && window.isSecureContext) {
-            await navigator.clipboard.writeText(text);
-        } else {
-            const ta = document.createElement('textarea');
-            ta.value = text;
-            ta.style.position = 'fixed';
-            ta.style.opacity = '0';
-            document.body.appendChild(ta);
-            ta.focus();
-            ta.select();
-            document.execCommand('copy');
-            ta.remove();
-        }
-        showToast('📋', 'متن کپی شد!');
-    } catch (e) {
-        showToast('⚠️', 'کپی نشد، لطفاً متن را دستی کپی کنید.');
-    }
 }
 
 let promoRotateInterval = null;
@@ -808,56 +699,13 @@ let promoRotateInterval = null;
 // صفحه پروفایل: آواتار و نام کاربر را از GameState می‌خواند و کارت جنسیت
 // انتخاب‌شده را هایلایت می‌کند.
 function renderProfile() {
-    document.getElementById('profile-name').textContent = getDisplayName();
-    document.getElementById('profile-current-name').textContent = getDisplayName();
+    document.getElementById('profile-name').textContent = GameState.user.first_name;
     const gender = GameState.settings.gender;
 
     applyAvatarVisual(document.getElementById('profile-avatar'), gender);
 
     document.querySelectorAll('.gender-option').forEach(el => {
         el.classList.toggle('selected', el.dataset.gender === gender);
-    });
-
-    renderAvatarPicker();
-}
-
-// گرید انتخاب عکس پروفایل را از روی AVATAR_PROFILES (فایل profiles.js) در
-// صفحه پروفایل می‌سازد. هر خانه یک <button> است تا هم قابل کلیک/لمس باشد و
-// هم با کیبورد/صفحه‌خوان قابل استفاده. اگر عکس یک گزینه لود نشود، خودِ همان
-// خانه به یک آیکون ساده fallback می‌شود (نه اینکه کل گرید بشکند).
-function renderAvatarPicker() {
-    const grid = document.getElementById('avatar-picker-grid');
-    if (!grid) return;
-    if (typeof AVATAR_PROFILES === 'undefined' || AVATAR_PROFILES.length === 0) {
-        grid.innerHTML = '';
-        return;
-    }
-    grid.innerHTML = '';
-    AVATAR_PROFILES.forEach(profile => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'avatar-picker-item' + (GameState.settings.avatarId === profile.id ? ' selected' : '');
-        btn.setAttribute('aria-label', 'انتخاب این عکس پروفایل');
-
-        const img = document.createElement('img');
-        img.src = profile.image;
-        img.alt = '';
-        img.loading = 'lazy';
-        img.decoding = 'async';
-        img.addEventListener('error', () => {
-            btn.innerHTML = '<span class="avatar-picker-fallback">👤</span>';
-        }, { once: true });
-        btn.appendChild(img);
-
-        btn.addEventListener('click', () => {
-            AudioEngine.tap();
-            // انتخاب دوباره‌ی همون عکسی که الان فعاله = لغو انتخاب (برگشت به عکس ایتا/آیکون جنسیت)
-            GameState.settings.avatarId = (GameState.settings.avatarId === profile.id) ? null : profile.id;
-            StorageManager.save();
-            renderProfile();
-            renderHome();
-        });
-        grid.appendChild(btn);
     });
 }
 
@@ -1056,20 +904,16 @@ function renderDailyChallengeCard() {
 // action همان کاری است که کاربر می‌خواست انجام دهد (باز کردن یک دسته یا
 // چالش روزانه). فقط کانال «فعال همین هفته» چک می‌شود، نه همه‌ی کانال‌ها با
 // هم. عضویت هفته‌ی قبل، برای هفته‌ی جدید کافی نیست چون channelId عوض شده.
-
-// تابع خالص و بدون هیچ وابستگی به DOM — به همین دلیل مستقل و ساده قابل
-// تست است (نگاه کن به tests/rotation.test.js): آیا کاربر همین کانال را
-// دقیقاً برای همین weekNumber قبلاً «تأیید» کرده؟
-function isJoinConfirmedForCurrentWeek(joinGate, info) {
-    if (!info) return true; // هیچ کانال فعالی نیست (همه غیرفعال) → چیزی برای تأیید لازم نیست
-    return joinGate.confirmedChannelId === info.channel.id &&
-           joinGate.confirmedWeekNumber === info.weekNumber;
-}
-
 let pendingJoinAction = null;
 function requireChannelJoin(action) {
     const info = getCurrentRotationInfo();
-    if (isJoinConfirmedForCurrentWeek(GameState.joinGate, info)) { action(); return; }
+    if (!info) { action(); return; } // اگر هیچ کانال فعالی نبود (همه غیرفعال)، چیزی را بلاک نکن
+
+    const alreadyConfirmedThisWeek =
+        GameState.joinGate.confirmedChannelId === info.channel.id &&
+        GameState.joinGate.confirmedWeekNumber === info.weekNumber;
+
+    if (alreadyConfirmedThisWeek) { action(); return; }
 
     pendingJoinAction = action;
     renderJoinGateModal(info);
@@ -1500,33 +1344,15 @@ function setupEvents() {
         });
     });
 
-    // --- تغییر نام نمایشی ---
-    document.getElementById('btn-edit-name').addEventListener('click', () => {
-        AudioEngine.tap();
-        const input = document.getElementById('edit-name-input');
-        input.value = getDisplayName();
-        document.getElementById('modal-edit-name').classList.remove('hidden');
-        input.focus();
-    });
-    document.getElementById('btn-save-name').addEventListener('click', () => {
-        AudioEngine.tap();
-        const input = document.getElementById('edit-name-input');
-        const clean = sanitizeDisplayName(input.value);
-        if (!clean) {
-            showToast('⚠️', 'نام نمی‌تواند خالی باشد.');
-            return;
-        }
-        GameState.settings.displayName = clean;
-        StorageManager.save();
-        document.getElementById('modal-edit-name').classList.add('hidden');
-        renderProfile();
-        renderHome();
-        showToast('✅', 'نام شما ذخیره شد.');
-    });
-    document.getElementById('btn-cancel-name').addEventListener('click', () => {
-        AudioEngine.tap();
-        document.getElementById('modal-edit-name').classList.add('hidden');
-    });
+    // دکمه‌ی «انتخاب عکس پروفایل» فعلاً فقط جای‌گیر است (طبق درخواست، مجموعه‌ی
+    // عکس‌ها بعداً اضافه می‌شود)؛ همین الان فقط یک پیام می‌دهد.
+    const avatarPhotoBtn = document.getElementById('btn-choose-avatar-photo');
+    if (avatarPhotoBtn) {
+        avatarPhotoBtn.addEventListener('click', () => {
+            AudioEngine.tap();
+            showToast('🖼️', 'انتخاب عکس پروفایل به‌زودی اضافه می‌شه!');
+        });
+    }
 }
 
 /* =========================================
