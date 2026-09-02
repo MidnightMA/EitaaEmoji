@@ -65,6 +65,20 @@
                 <div class="categories-list" id="categories-container"></div>
             </section>
 
+            <section class="suggestions-section" id="suggestions-section">
+                <div class="section-header">
+                    <h2 id="suggestions-title">پیشنهادات شما 🫂</h2>
+                </div>
+                <div class="suggestions-card">
+                    <p class="suggestions-intro" id="suggestions-intro"></p>
+                    <pre class="suggestions-template" id="suggestions-template"></pre>
+                    <div class="suggestions-actions">
+                        <button type="button" id="btn-copy-suggestion-template" class="ios-btn ghost-btn">📋 کپی متن</button>
+                        <button type="button" id="btn-send-suggestion" class="ios-btn primary-btn">ارسال پیشنهاد</button>
+                    </div>
+                </div>
+            </section>
+
             <section class="channel-promo-section">
                 <div class="section-header">
                     <h2>
@@ -139,6 +153,12 @@
                 <h2 id="profile-name">کاربر عزیز</h2>
             </div>
 
+            <div class="profile-section-title">نام شما</div>
+            <div class="name-display-row">
+                <span id="profile-current-name" class="name-display-text">کاربر عزیز</span>
+                <button type="button" id="btn-edit-name" class="ios-btn ghost-btn name-edit-btn">تغییر نام</button>
+            </div>
+
             <div class="profile-section-title">جنسیت</div>
             <div class="gender-picker">
                 <div class="gender-option" data-gender="boy">
@@ -175,6 +195,18 @@
         </main>
     </div>
 
+    <div id="modal-edit-name" class="modal-overlay hidden">
+        <div class="ios-modal pop-in">
+            <h2>تغییر نام</h2>
+            <p>نام جدیدی که می‌خواهی در بازی نشان داده شود را وارد کن.</p>
+            <input type="text" id="edit-name-input" class="text-input" maxlength="40" placeholder="نام شما">
+            <div class="suggestions-actions" style="margin-top:16px;">
+                <button type="button" id="btn-cancel-name" class="ios-btn ghost-btn">انصراف</button>
+                <button type="button" id="btn-save-name" class="ios-btn primary-btn">ذخیره</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modals -->
     <div id="modal-join-gate" class="modal-overlay hidden">
         <div class="ios-modal pop-in join-gate-modal">
@@ -182,7 +214,17 @@
                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1.5" fill="white" stroke="none"/></svg>
             </div>
             <h2>قبل از شروع...</h2>
-            <p>عضویت در کانال تک‌نور برای استفاده از رازک لازمه. عضو شو و از بازی لذت ببر👇</p>
+            <!-- توضیح هر کانال مستقیماً همینجا نوشته شده تا بدون باز کردن هیچ
+                 فایل JS دیگری، فقط با ویرایش همین index.html قابل تغییر باشد.
+                 هر بار فقط یکی از این چهار پاراگراف (همانی که «کانال فعالِ
+                 همین هفته» است) نمایش داده می‌شود؛ app.js با توجه به
+                 data-channel-id تشخیص می‌دهد کدام‌یک را نشان دهد — فقط کافیست
+                 متن داخل تگ‌های p زیر را عوض کنی، هیچ‌جای دیگری از کد نیازی
+                 به تغییر ندارد. -->
+            <p class="join-gate-msg hidden" data-channel-id="avay_khiyal">کانال شعر؛ اگه دلت یه گوشه‌ی آروم برای خوندن شعر و ادب می‌خواد، این هفته باید عضوش باشی 👇</p>
+            <p class="join-gate-msg hidden" data-channel-id="tech_nour">اخبار هوش مصنوعی و تکنولوژی رو می‌خوای دست اول بگیری؟ این هفته عضویت توی تک‌نور لازمه 👇</p>
+            <p class="join-gate-msg hidden" data-channel-id="rasa_meme">دلت یه خنده‌ی حسابی می‌خواد؟ این هفته نوبت رسامیمه، عضو شو و حال کن 👇</p>
+            <p class="join-gate-msg hidden" data-channel-id="partner">برای ادامه‌ی بازی، عضویت توی کانال زیر لازمه؛ عضو شو و از رازک لذت ببر 👇</p>
             <ul class="join-gate-benefits">
                 <li><span class="jg-icon">🆕</span> اطلاع از نسخه‌ها و قابلیت‌های جدید رازک</li>
                 <li><span class="jg-icon">🧩</span> دسترسی به مراحل و چالش‌های جدید</li>
@@ -290,6 +332,8 @@
             }
         });
     </script>
+    <script src="config/mandatory-channels/partner.js"></script>
+    <script src="config/mandatory-channels/index.js"></script>
     <script src="channel-photos.js"></script>
     <script src="app.js"></script>
 </body>
