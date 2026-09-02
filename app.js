@@ -31,26 +31,35 @@ const AVAY_KHIYAL_LINK = 'https://eitaa.com/avay_khiyal';
 // بی‌نهایتِ «کدام کانال این هفته الزامی است» — این بخش صد‌درصد واقعی و
 // قابل تست است چون فقط ریاضیِ تاریخ است، نیازی به بک‌اند ندارد.
 
-// همه‌ی تنظیمات چرخش، یک‌جا و متمرکز — برای تغییر دادن کانال‌ها، ترتیب،
-// فعال/غیرفعال کردن، یا تاریخ شروع، فقط همین‌جا را ویرایش کن.
-const ROTATION_CONFIG = {
-    // مبدأ چرخش: هفته‌ی صفر از همین لحظه شروع می‌شود. تغییر این تاریخ، کل
-    // چرخش را جابه‌جا می‌کند؛ بعد از اولین دیپلوی دیگر دستش نزن.
-    // فرمت ISO با افست منطقه‌زمانی صریح (اینجا +۰۳:۳۰ تهران) تا محاسبه‌ها
-    // وابسته به منطقه‌زمانیِ مرورگر کاربر نباشند و برای همه یکسان باشند.
-    startDate: '2025-01-06T00:00:00+03:30',
-    weeksPerChannel: 1, // هر کانال چند هفته پشت‌سرهم فعال بماند
-    channels: [
-        { id: 'avay_khiyal', type: 'channel', name: 'آوای‌خیال', icon: '🕊️', username: 'avay_khiyal', enabled: true },
-        { id: 'tech_nour', type: 'channel', name: 'تِک‌نور', icon: '📢', username: 'Tech_nour', enabled: true },
-        { id: 'rasa_meme', type: 'channel', name: 'رسامیم', icon: '😂', username: 'Rasa_Meme', enabled: true },
-        // کانال همکار/تبلیغاتی: همون رفتار بقیه کانال‌ها رو داره، فقط برچسبش
-        // شفاف «کانال همکار» است تا چیزی از کاربر پنهان نشود. یوزرنیم واقعی
-        // را جایگزین PARTNER_USERNAME_HERE کن (یا enabled:false کن تا از
-        // چرخش کلاً حذف شود).
-        { id: 'partner', type: 'partner', name: 'کانال همکار', icon: '🤝', username: 'PARTNER_USERNAME_HERE', enabled: true }
-    ]
-};
+// همه‌ی تنظیمات چرخش، از فایل‌های جداگانه‌ی هر کانال خوانده می‌شود — نه
+// اینجا. برای تغییر دادن کانال‌ها، ترتیب، فعال/غیرفعال کردن، یا تاریخ
+// شروع، به پوشه‌ی config/mandatory-channels/ برو (هر کانال یک فایل جدا،
+// + یک index.js که ترتیب چرخش را مشخص می‌کند). این فایل‌ها باید در
+// index.html قبل از app.js لود شوند.
+//
+// fallback زیر («اگر آن فایل‌ها به هر دلیلی لود نشده بودند») عمداً همان
+// چهار کانال پیش‌فرض را دارد تا اگر یک نفر پوشه‌ی config/ را حذف کرد، بازی
+// کاملاً نشکند.
+const ROTATION_CONFIG = (typeof window !== 'undefined' && window.MANDATORY_CHANNELS_ROTATION)
+    ? {
+        startDate: window.MANDATORY_CHANNELS_ROTATION.startDate,
+        weeksPerChannel: window.MANDATORY_CHANNELS_ROTATION.weeksPerChannel,
+        channels: window.MANDATORY_CHANNELS_ROTATION.order.filter(Boolean)
+      }
+    : {
+        startDate: '2025-01-06T00:00:00+03:30',
+        weeksPerChannel: 1,
+        channels: [
+            { id: 'avay_khiyal', type: 'channel', name: 'آوای‌خیال', icon: '🕊️', username: 'avay_khiyal', enabled: true },
+            { id: 'tech_nour', type: 'channel', name: 'تِک‌نور', icon: '📢', username: 'Tech_nour', enabled: true },
+            { id: 'rasa_meme', type: 'channel', name: 'رسامیم', icon: '😂', username: 'Rasa_Meme', enabled: true },
+            { id: 'partner', type: 'partner', name: 'کانال همکار', icon: '🤝', username: 'PARTNER_USERNAME_HERE', enabled: true }
+        ]
+      };
+// این خط چیزی را عوض نمی‌کند؛ فقط برای دیباگ از کنسول مرورگر در دسترس
+// می‌گذارد (چون const در سطح بالای فایل، به‌طور پیش‌فرض روی window در
+// دسترس نیست).
+window.ROTATION_CONFIG = ROTATION_CONFIG;
 
 function getChannelUrl(channel) {
     return `https://eitaa.com/${channel.username}`;
@@ -203,7 +212,10 @@ const GameState = {
     unlockedMedals: [],
     // gender: null | 'boy' | 'girl'
     // avatarId: رزرو شده برای انتخاب عکس پروفایل در آینده (فعلاً همیشه null)
-    settings: { sound: true, darkMode: false, gender: null, avatarId: null },
+    // displayName: نامی که کاربر خودش برای نمایش در بازی انتخاب کرده؛ اگر
+    // null باشد، همان first_name ایتا نشان داده می‌شود (نگاه کن به
+    // getDisplayName بالاتر همین فایل).
+    settings: { sound: true, darkMode: false, gender: null, avatarId: null, displayName: null },
     dailyChallenge: { lastCompletedDate: null, completedCount: 0 },
     joinGate: { confirmedChannelId: null, confirmedWeekNumber: null },
     isDailyChallenge: false,
@@ -213,6 +225,8 @@ const GameState = {
     slots: [],
     keys: []
 };
+// برای دیباگ از کنسول مرورگر در دسترس است؛ چیزی در رفتار برنامه عوض نمی‌کند.
+window.GameState = GameState;
 
 const MEDALS_DB = [
     { id: 'first_blood', name: 'اولین قدم', icon: '🩴', desc: 'اولین مرحله را حل کن',
@@ -361,6 +375,38 @@ function populateChannelIcon(container, photoKey, iconType) {
 
 function getTotalCompleted(state) {
     return Object.values(state.progress).reduce((sum, arr) => sum + arr.length, 0);
+}
+
+// --- نام نمایشی قابل‌ویرایش کاربر ---
+const DISPLAY_NAME_MAX_LENGTH = 20;
+
+// همه‌جای بازی که اسم کاربر نشان داده می‌شود (هدر صفحه اصلی، صفحه پروفایل)
+// باید از همین تابع استفاده کند، نه مستقیم از GameState.user.first_name —
+// اینطوری اگر کاربر اسم دلخواه انتخاب کرده باشد همه‌جا یکسان به‌روز است.
+function getDisplayName() {
+    return GameState.settings.displayName || GameState.user.first_name || 'کاربر مهمان';
+}
+
+// اعتبارسنجی/پاک‌سازی نام ورودی کاربر. کاراکتر خاصی محدود نشده (فارسی،
+// انگلیسی، عدد، ایموجی همه مجازند)، فقط:
+//   ۱. فاصله‌های اضافه‌ی ابتدا/انتها حذف می‌شود
+//   ۲. کاراکترهای کنترلی نامرئی (که می‌توانند چیدمان را به‌هم بریزند) حذف می‌شوند
+//   ۳. طول به DISPLAY_NAME_MAX_LENGTH محدود می‌شود
+// خروجی یا رشته‌ی پاک‌شده‌ی معتبر است، یا null (یعنی نامعتبر/خالی). چون همه‌جا
+// با .textContent (نه innerHTML) رندر می‌شود، تزریق HTML/اسکریپت از همان
+// مسیر رندر هم به‌طور خودکار مسدود است؛ این تابع فقط چیدمان/طول را کنترل
+// می‌کند، نه امنیت رندر را (که جای دیگری قبلاً تضمین شده).
+function sanitizeDisplayName(raw) {
+    if (typeof raw !== 'string') return null;
+    let cleaned = raw.replace(/[\u0000-\u001F\u007F]/g, '');
+    cleaned = cleaned.trim().replace(/\s+/g, ' ');
+    if (cleaned.length === 0) return null;
+    // برش بر مبنای کدپوینت (نه UTF-16 code unit) تا وسط یک ایموجی چندبخشی برش نخورد
+    const codepoints = Array.from(cleaned);
+    if (codepoints.length > DISPLAY_NAME_MAX_LENGTH) {
+        cleaned = codepoints.slice(0, DISPLAY_NAME_MAX_LENGTH).join('');
+    }
+    return cleaned;
 }
 
 /* =========================================
@@ -644,7 +690,7 @@ function applyAvatarVisual(avatarEl, gender) {
 
 function renderHome() {
     document.getElementById('home-total-score').textContent = GameState.globalScore;
-    document.getElementById('user-name').textContent = GameState.user.first_name;
+    document.getElementById('user-name').textContent = getDisplayName();
 
     applyAvatarVisual(document.getElementById('user-avatar'), GameState.settings.gender);
 
@@ -667,31 +713,82 @@ function renderHome() {
         const total = cat.levels.length;
         const perc = total > 0 ? (completed / total) * 100 : 0;
         const div = document.createElement('div');
-        div.className = `category-card ${completed === total && total > 0 ? 'completed' : ''}`;
+        // دسته‌بندی‌ای که هنوز هیچ مرحله‌ای ندارد (total === 0) به‌طور خودکار
+        // به‌شکل «قفل/به‌زودی» نمایش داده می‌شود و قابل‌کلیک نیست — این قانون
+        // عمومی است، یعنی هر دسته‌بندی جدیدی که levels آن هنوز خالی است
+        // (مثل «اصطلاحات» یا «ایده‌های شما» تا وقتی که مرحله‌ای برایش اضافه
+        // نشده) خودکار همین رفتار را می‌گیرد، بدون نیاز به هیچ کد اضافه‌ای؛
+        // به‌محض این‌که در data.json حداقل یک مرحله به levels آن اضافه شود،
+        // خودش قابل‌بازی می‌شود.
+        const isLocked = total === 0;
+        div.className = `category-card ${isLocked ? 'locked' : (completed === total ? 'completed' : '')}`;
         div.innerHTML = `
             <div class="cat-icon">${cat.icon}</div>
             <div class="cat-info">
                 <h3 class="cat-title">${cat.name}</h3>
-                <div class="cat-stats">${completed} از ${total} مرحله</div>
-                <div class="progress-track"><div class="progress-fill" style="width: ${perc}%"></div></div>
+                <div class="cat-stats">${isLocked ? 'به‌زودی...' : `${completed} از ${total} مرحله`}</div>
+                ${isLocked ? '' : `<div class="progress-track"><div class="progress-fill" style="width: ${perc}%"></div></div>`}
             </div>`;
-        div.addEventListener('click', () => { AudioEngine.tap(); requireChannelJoin(() => startCategory(cat)); });
+        if (!isLocked) {
+            div.addEventListener('click', () => { AudioEngine.tap(); requireChannelJoin(() => startCategory(cat)); });
+        }
         catContainer.appendChild(div);
     });
 
-    // کارت چهارم: جای دسته‌بندی بعدی که در آینده اضافه می‌شود (غیرقابل‌کلیک)
-    const comingSoonDiv = document.createElement('div');
-    comingSoonDiv.className = 'category-card coming-soon';
-    comingSoonDiv.innerHTML = `
-        <div class="cat-icon">✨</div>
-        <div class="cat-info">
-            <h3 class="cat-title">به‌زودی...</h3>
-            <div class="cat-stats">بازی جدیدی در راه است...</div>
-        </div>`;
-    catContainer.appendChild(comingSoonDiv);
-
     renderDailyChallengeCard();
     renderChannelPromos();
+    renderSuggestionsSection();
+}
+
+// بخش «پیشنهادات شما 🫂» — جایگزین کارت قبلی «به‌زودی...» است. تمام متن‌ها
+// (عنوان، توضیح، متن الگو، برچسب دکمه‌ها، لینک ایتا) از DB.suggestions
+// خوانده می‌شود (بخش suggestions در data.json)، نه از این فایل — برای
+// تغییرشان فقط data.json را ویرایش کن.
+function renderSuggestionsSection() {
+    const s = DB.suggestions;
+    const section = document.getElementById('suggestions-section');
+    if (!section || !s) return;
+
+    document.getElementById('suggestions-title').textContent = s.title || 'پیشنهادات شما 🫂';
+    document.getElementById('suggestions-intro').textContent = s.intro || '';
+    document.getElementById('suggestions-template').textContent = s.template || '';
+
+    const copyBtn = document.getElementById('btn-copy-suggestion-template');
+    copyBtn.textContent = s.copyButtonText || '📋 کپی متن';
+    copyBtn.onclick = () => copySuggestionTemplate(s.template || '');
+
+    const contactBtn = document.getElementById('btn-send-suggestion');
+    contactBtn.textContent = s.contactButtonText || 'ارسال پیشنهاد';
+    contactBtn.onclick = () => {
+        AudioEngine.tap();
+        openExternalLink(s.contactUrl || 'https://eitaa.com/ferstadeh');
+    };
+}
+
+// کپی متن الگو در کلیپ‌بورد. روش اصلی navigator.clipboard (مرورگرهای مدرن،
+// هم دسکتاپ هم موبایل روی HTTPS)؛ اگر در دسترس نبود (مثلاً وب‌ویوی
+// قدیمی‌تر)، به روش قدیمی execCommand('copy') برمی‌گردیم تا کپی همچنان کار
+// کند. در هر دو حالت با یک toast به کاربر خبر می‌دهیم.
+async function copySuggestionTemplate(text) {
+    AudioEngine.tap();
+    try {
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(text);
+        } else {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            document.execCommand('copy');
+            ta.remove();
+        }
+        showToast('📋', 'متن کپی شد!');
+    } catch (e) {
+        showToast('⚠️', 'کپی نشد، لطفاً متن را دستی کپی کنید.');
+    }
 }
 
 let promoRotateInterval = null;
@@ -699,7 +796,8 @@ let promoRotateInterval = null;
 // صفحه پروفایل: آواتار و نام کاربر را از GameState می‌خواند و کارت جنسیت
 // انتخاب‌شده را هایلایت می‌کند.
 function renderProfile() {
-    document.getElementById('profile-name').textContent = GameState.user.first_name;
+    document.getElementById('profile-name').textContent = getDisplayName();
+    document.getElementById('profile-current-name').textContent = getDisplayName();
     const gender = GameState.settings.gender;
 
     applyAvatarVisual(document.getElementById('profile-avatar'), gender);
@@ -920,21 +1018,25 @@ function requireChannelJoin(action) {
     document.getElementById('modal-join-gate').classList.remove('hidden');
 }
 
-// محتوای پنجره را بر اساس کانالِ فعالِ همین هفته می‌سازد. اگر کانال از نوع
-// «همکار/تبلیغاتی» باشد، همین صراحتاً به کاربر گفته می‌شود (نه اینکه چیز
-// دیگری وانمود شود).
+// محتوای پنجره را بر اساس کانالِ فعالِ همین هفته می‌سازد. متن معرفیِ هر
+// کانال دیگر از JS نمی‌آید — مستقیماً در index.html نوشته شده (چهار
+// <p class="join-gate-msg" data-channel-id="..."> داخل modal-join-gate)؛
+// این تابع فقط همان‌یکی که با کانال فعال این هفته می‌خواند را نشان
+// می‌دهد و بقیه را مخفی می‌کند. فقط ردیف پایین (نام/آیکون/دکمه‌ی عضویت)
+// همچنان پویاست، چون لینک آن هر هفته عوض می‌شود.
 function renderJoinGateModal(info) {
+    document.querySelectorAll('.join-gate-msg').forEach(el => {
+        el.classList.toggle('hidden', el.dataset.channelId !== info.channel.id);
+    });
+
     const container = document.getElementById('join-gate-channels');
     if (!container) return;
     container.innerHTML = '';
 
     const row = document.createElement('div');
     row.className = 'join-gate-channel-row';
-    const partnerNote = info.channel.type === 'partner'
-        ? '<span class="jg-partner-tag">کانال همکار</span>'
-        : '';
     row.innerHTML = `
-        <span class="jg-channel-name">${info.channel.icon} ${info.channel.name} ${partnerNote}</span>
+        <span class="jg-channel-name">${info.channel.icon} ${info.channel.name}</span>
         <button type="button" class="ios-btn primary-btn jg-join-btn">عضویت</button>`;
     row.querySelector('.jg-join-btn').addEventListener('click', () => {
         AudioEngine.tap();
@@ -1353,6 +1455,34 @@ function setupEvents() {
             showToast('🖼️', 'انتخاب عکس پروفایل به‌زودی اضافه می‌شه!');
         });
     }
+
+    // --- تغییر نام نمایشی ---
+    document.getElementById('btn-edit-name').addEventListener('click', () => {
+        AudioEngine.tap();
+        const input = document.getElementById('edit-name-input');
+        input.value = getDisplayName();
+        document.getElementById('modal-edit-name').classList.remove('hidden');
+        input.focus();
+    });
+    document.getElementById('btn-save-name').addEventListener('click', () => {
+        AudioEngine.tap();
+        const input = document.getElementById('edit-name-input');
+        const clean = sanitizeDisplayName(input.value);
+        if (!clean) {
+            showToast('⚠️', 'نام نمی‌تواند خالی باشد.');
+            return;
+        }
+        GameState.settings.displayName = clean;
+        StorageManager.save();
+        document.getElementById('modal-edit-name').classList.add('hidden');
+        renderProfile();
+        renderHome();
+        showToast('✅', 'نام شما ذخیره شد.');
+    });
+    document.getElementById('btn-cancel-name').addEventListener('click', () => {
+        AudioEngine.tap();
+        document.getElementById('modal-edit-name').classList.add('hidden');
+    });
 }
 
 /* =========================================
