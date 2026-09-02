@@ -216,6 +216,7 @@ body {
 
 /* --- پنجره عضویت اجباری در کانال --- */
 .join-gate-modal p { color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; margin: 8px 0 16px; }
+.join-gate-msg.hidden { display: none; }
 .join-gate-icon {
     width: 72px; height: 72px; margin: 0 auto 14px;
     background: linear-gradient(135deg, #0a84ff, #34c3ff);
@@ -249,17 +250,6 @@ body {
     padding: 10px 14px;
 }
 .jg-channel-name { font-weight: 700; font-size: 0.95rem; }
-.jg-partner-tag {
-    display: inline-block;
-    font-size: 0.68rem;
-    font-weight: 700;
-    color: var(--ios-orange);
-    background: rgba(255, 149, 0, 0.12);
-    padding: 2px 8px;
-    border-radius: 8px;
-    margin-right: 6px;
-    vertical-align: middle;
-}
 .jg-join-btn { padding: 8px 18px; font-size: 0.9rem; border-radius: 12px; flex-shrink: 0; }
 .reward-box { background: var(--card-bg); border-radius: 16px; padding: 16px; margin: 20px 0; display: flex; flex-direction: column; gap: 10px; }
 .reward-row { display: flex; justify-content: space-between; font-size: 1.1rem; }
@@ -393,6 +383,30 @@ input:checked + .slider:before { transform: translateX(20px); }
 }
 
 /* --- بخش تبلیغ کانال‌ها (نمای کشویی) --- */
+/* --- بخش «پیشنهادات شما 🫂» --- */
+.suggestions-card {
+    background: var(--card-bg);
+    border-radius: 24px;
+    padding: 20px;
+    box-shadow: var(--shadow-md);
+}
+.suggestions-intro { color: var(--text-muted); font-size: 0.92rem; line-height: 1.6; margin-bottom: 14px; }
+.suggestions-template {
+    background: var(--bg-main);
+    border: 1.5px dashed var(--border-color);
+    border-radius: 16px;
+    padding: 14px 16px;
+    font-family: inherit;
+    font-size: 0.88rem;
+    line-height: 1.9;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--text-primary);
+    margin-bottom: 14px;
+}
+.suggestions-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.suggestions-actions .ios-btn { flex: 1; min-width: 140px; }
+
 .channel-promo-section { margin-top: 8px; }
 .channel-promo-scroll {
     display: flex;
@@ -630,7 +644,13 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 /* --- رنگ‌بندی اختصاصی کارت‌های کانال بر اساس حال‌وهوای هرکدام --- */
 .channel-promo-card.theme-tech { background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); }
-.channel-promo-card.theme-poetry { background: linear-gradient(135deg, #6a3093, #c86dd7 55%, #d391b5); }
+/* رنگ‌بندی هماهنگ با هویت بصری واقعی کانال آوای‌خیال: پس‌زمینه‌ی تیره و
+   مه‌آلود (مثل عکس پروفایل خودش) + یک درخشش قرمز ظریف، به‌جای بنفش/صورتیِ
+   ژنریک قبلی. */
+.channel-promo-card.theme-poetry {
+    background: linear-gradient(135deg, #1a1a1a, #2b2b2b 55%, #3d1f1f);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255, 59, 48, 0.18);
+}
 .channel-promo-card.theme-meme { background: linear-gradient(135deg, #f9d423, #ff4e50); }
 
 /* --- کارت تبلیغ (داخل همون کاروسل کانال‌ها، ولی عمداً رنگ/ظاهر متفاوت
@@ -659,16 +679,6 @@ input:checked + .slider:before { transform: translateX(20px); }
     white-space: nowrap;
 }
 
-/* --- کارت «به‌زودی» در انتهای لیست دسته‌بندی‌ها --- */
-.category-card.coming-soon {
-    background: transparent;
-    border: 2px dashed var(--border-color);
-    box-shadow: none;
-    cursor: default;
-    opacity: 0.75;
-}
-.category-card.coming-soon:active { transform: none; }
-
 /* --- صفحه پروفایل --- */
 .profile-container { padding: 30px 20px; max-width: 500px; margin: 0 auto; }
 .profile-avatar-wrap { text-align: center; margin-bottom: 34px; }
@@ -684,6 +694,37 @@ input:checked + .slider:before { transform: translateX(20px); }
 }
 .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .profile-avatar-wrap h2 { font-size: 1.3rem; font-weight: 700; }
+
+/* --- بخش «نام شما» --- */
+.name-display-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: var(--card-bg);
+    border-radius: 18px;
+    padding: 14px 16px;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 24px;
+}
+.name-display-text { font-weight: 700; font-size: 1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.name-edit-btn { flex-shrink: 0; padding: 8px 16px; font-size: 0.88rem; }
+
+.text-input {
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--card-bg);
+    border: 1.5px solid var(--border-color);
+    border-radius: 14px;
+    padding: 12px 14px;
+    font-size: 1rem;
+    font-family: inherit;
+    color: var(--text-primary);
+    text-align: right;
+    margin-top: 8px;
+}
+.text-input:focus { outline: none; border-color: var(--ios-blue); }
+
 .profile-section-title { font-size: 0.9rem; font-weight: 700; color: var(--text-muted); margin-bottom: 12px; }
 .gender-picker { display: flex; gap: 14px; }
 .gender-option {
@@ -705,3 +746,10 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 /* --- دکمه‌ی جای‌گیر «انتخاب عکس پروفایل» --- */
 .avatar-photo-btn { margin-top: 20px; }
+
+/* --- دسته‌بندیِ «قفل/به‌زودی»: هر دسته‌بندی‌ای که هنوز هیچ مرحله‌ای ندارد
+   (levels خالی در data.json) خودکار همین ظاهر را می‌گیرد و غیرقابل‌کلیک
+   است — نیازی به کلاس دستی جداگانه برای هر کدام نیست. --- */
+.category-card.locked { border: 1.5px dashed var(--border-color); box-shadow: none; cursor: default; opacity: 0.8; }
+.category-card.locked:active { transform: none; }
+.category-card.locked .cat-icon { opacity: 0.7; }
