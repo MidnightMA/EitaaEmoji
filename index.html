@@ -185,12 +185,9 @@
                 </div>
             </div>
 
-            <!-- جای آماده برای انتخاب عکس پروفایل توسط خود کاربر (فعلاً غیرفعال).
-                 وقتی مجموعه‌ی عکس‌های آماده رو اضافه کردی، کافیه اینجا یک گرید از
-                 گزینه‌ها بسازی و انتخاب کاربر رو در GameState.settings.avatarId
-                 ذخیره کنی؛ applyAvatarVisual در app.js از قبل برای این آماده‌ست. -->
+            <!-- گرید انتخاب عکس پروفایل داخل modal-avatar-picker پایین صفحه است -->
             <button id="btn-choose-avatar-photo" class="ios-btn ghost-btn w-100 avatar-photo-btn">
-                🖼️ انتخاب عکس پروفایل (به‌زودی)
+                🖼️ انتخاب عکس پروفایل
             </button>
         </main>
     </div>
@@ -204,6 +201,16 @@
                 <button type="button" id="btn-cancel-name" class="ios-btn ghost-btn">انصراف</button>
                 <button type="button" id="btn-save-name" class="ios-btn primary-btn">ذخیره</button>
             </div>
+        </div>
+    </div>
+
+    <div id="modal-avatar-picker" class="modal-overlay hidden">
+        <div class="ios-modal slide-up avatar-picker-modal">
+            <div class="modal-header">
+                <h2>🖼️ انتخاب عکس پروفایل</h2>
+                <button class="close-btn" data-close="modal-avatar-picker">×</button>
+            </div>
+            <div class="avatar-picker-grid" id="avatar-picker-grid"></div>
         </div>
     </div>
 
