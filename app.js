@@ -729,9 +729,9 @@ function renderAvatarPicker() {
     noneOption.addEventListener('click', () => selectAvatarPhoto(null));
     grid.appendChild(noneOption);
 
-    ['boy', 'girl'].forEach(genderKey => {
+    ['Boy', 'Girl'].forEach(genderKey => {
         AVATAR_PHOTO_IDS[genderKey].forEach(num => {
-            const id = `${genderKey}-${num}`;
+            const id = `profile_${genderKey}${num}`;
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = `avatar-option ${currentAvatarId === id ? 'selected' : ''}`;
