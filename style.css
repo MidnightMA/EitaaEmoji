@@ -14,7 +14,7 @@
     
     --bg-main: #f2f2f7;
     --bg-main-rgb: 242, 242, 247;
-    --card-bg: #ffffff;
+    --card-bg: #fbfbfd;
     --text-main: #1c1c1e;
     --text-muted: #8e8e93;
     
@@ -30,11 +30,15 @@
 }
 
 [data-theme="dark"] {
-    --bg-main: #000000;
-    --bg-main-rgb: 0, 0, 0;
-    --card-bg: #1c1c1e;
-    --text-main: #f2f2f7;
-    --text-muted: #98989d;
+    /* به‌جای مشکی مطلق (#000000) از یک تیره‌ی نرم استفاده می‌کنیم؛ سیاه مطلق
+       روی صفحه‌های OLED باعث درخشش/خیرگی بیش از حد (halation) و خستگی چشم
+       می‌شود، به‌خصوص در محیط کم‌نور. متن هم به‌جای سفید تقریباً خالص، یک
+       سفید ملایم‌تر است تا کنتراست کمتر گزنده باشد ولی خوانایی حفظ شود. */
+    --bg-main: #121214;
+    --bg-main-rgb: 18, 18, 20;
+    --card-bg: #1e1e21;
+    --text-main: #e6e6ea;
+    --text-muted: #96969c;
     --border-color: #38383a;
     --shadow-md: 0 8px 24px rgba(0,0,0,0.3);
 }
@@ -753,3 +757,31 @@ input:checked + .slider:before { transform: translateX(20px); }
 .category-card.locked { border: 1.5px dashed var(--border-color); box-shadow: none; cursor: default; opacity: 0.8; }
 .category-card.locked:active { transform: none; }
 .category-card.locked .cat-icon { opacity: 0.7; }
+
+/* --- گرید انتخاب عکس پروفایل --- */
+.avatar-picker-modal { max-height: 80vh; }
+.avatar-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    overflow-y: auto;
+    max-height: 60vh;
+    padding: 4px 2px;
+}
+.avatar-option {
+    aspect-ratio: 1 / 1;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid transparent;
+    padding: 0;
+    background: var(--bg-main);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.avatar-option img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.avatar-option.selected { border-color: var(--ios-blue); }
+.avatar-option-none svg { width: 60%; height: 60%; }
+.avatar-option-none { background: var(--ios-blue); }
+.avatar-option:active { transform: scale(0.94); }
