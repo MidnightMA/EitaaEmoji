@@ -122,7 +122,7 @@ window.debugRotation = function (customDate) {
 const BASE_SCORE = 10;
 const DAILY_BASE_SCORE = 50;
 // فاصله‌ی چرخش خودکار کارت‌های «کانال‌های ما»
-const PROMO_ROTATE_INTERVAL_MS = 4000;
+const PROMO_ROTATE_INTERVAL_MS = 5000;
 
 // امتیاز پایه‌ی هر دسته؛ اگر دسته‌ای اینجا نبود از BASE_SCORE استفاده می‌شود.
 // (درخواست: امتیاز ضرب‌المثل‌ها حداقل ۲۵ باشد)
@@ -284,12 +284,12 @@ const CHANNEL_PROMOS = [
     },
     {
         type: 'ad',
-        name: 'تبلیغات عمو',
+        name: 'محمد آزاد',
         badge: 'Ads',
         iconType: 'ad',
-        photoKey: '@tab_amoo',
-        desc: 'برای رزرو کلیک کنید و به مدیر پیام بدهید!',
-        link: 'https://eitaa.com/tab_amoo',
+        photoKey: '@Im_Azad',
+        desc: 'سازنده ایتا+',
+        link: 'https://eitaa.com/Im_Azad',
         buttonText: 'مشاهده'
         // برای ثبت تبلیغ جدید، فقط همین چند خط را عوض کن (و در صورت وجود
         // عکس تبلیغ‌کننده، کلید photoKey را در channel-photos.js هم پر کن).
@@ -671,6 +671,23 @@ function applyAvatarVisual(avatarEl, gender) {
     if (gender === 'boy') avatarEl.classList.add('gender-boy');
     if (gender === 'girl') avatarEl.classList.add('gender-girl');
 
+    const avatarId = GameState.settings.avatarId;
+    if (avatarId) {
+        avatarEl.innerHTML = '';
+        const img = document.createElement('img');
+        img.src = `Profile/${avatarId}.jpg`;
+        img.alt = 'Profile';
+        img.addEventListener('error', () => {
+            // اگه فایل عکس پیدا نشد (مثلاً پاک/جابه‌جا شده)، به‌جای آیکون شکسته
+            // برمی‌گردیم به همون آیکون هندسی جنسیت
+            avatarEl.innerHTML = AVATAR_ICONS[gender] || AVATAR_ICONS.neutral;
+            avatarEl.style.background = '';
+        });
+        avatarEl.appendChild(img);
+        avatarEl.style.background = 'transparent';
+        return;
+    }
+
     if (GameState.user.photo_url) {
         avatarEl.innerHTML = '';
         const img = document.createElement('img');
@@ -686,6 +703,54 @@ function applyAvatarVisual(avatarEl, gender) {
         avatarEl.innerHTML = AVATAR_ICONS[gender] || AVATAR_ICONS.neutral;
         avatarEl.style.background = '';
     }
+}
+
+// مجموعه‌ی عکس‌های آماده‌ی پروفایل (داخل پوشه‌ی Profile/، از قبل کوچک و
+// بهینه شده‌اند). برای افزودن عکس بیشتر، فایل را با همین الگوی نام‌گذاری
+// (boy-N.jpg / girl-N.jpg) در پوشه‌ی Profile/ بگذار و شماره‌اش را به یکی
+// از دو آرایه‌ی زیر اضافه کن — همین، جای دیگری از کد نیازی به تغییر ندارد.
+const AVATAR_PHOTO_IDS = {
+    boy: [1, 2, 3, 4, 5, 6, 7, 10, 11, 12],
+    girl: [1, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+};
+
+function renderAvatarPicker() {
+    const grid = document.getElementById('avatar-picker-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    const currentAvatarId = GameState.settings.avatarId;
+
+    // یک گزینه‌ی «بدون عکس» برای برگشت به آیکون ساده
+    const noneOption = document.createElement('button');
+    noneOption.type = 'button';
+    noneOption.className = `avatar-option avatar-option-none ${!currentAvatarId ? 'selected' : ''}`;
+    noneOption.innerHTML = AVATAR_ICONS[GameState.settings.gender] || AVATAR_ICONS.neutral;
+    noneOption.addEventListener('click', () => selectAvatarPhoto(null));
+    grid.appendChild(noneOption);
+
+    ['boy', 'girl'].forEach(genderKey => {
+        AVATAR_PHOTO_IDS[genderKey].forEach(num => {
+            const id = `${genderKey}-${num}`;
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = `avatar-option ${currentAvatarId === id ? 'selected' : ''}`;
+            btn.innerHTML = `<img src="Profile/${id}.jpg" alt="${genderKey}" loading="lazy" width="64" height="64">`;
+            btn.addEventListener('click', () => selectAvatarPhoto(id, genderKey));
+            grid.appendChild(btn);
+        });
+    });
+}
+
+function selectAvatarPhoto(avatarId, matchingGender) {
+    AudioEngine.tap();
+    GameState.settings.avatarId = avatarId;
+    // انتخاب یک عکس، جنسیت متناظرش رو هم خودکار ست می‌کنه تا لازم نباشه
+    // کاربر جدا هم جنسیت رو انتخاب کنه هم عکس رو
+    if (matchingGender) GameState.settings.gender = matchingGender;
+    StorageManager.save();
+    renderProfile();
+    document.getElementById('modal-avatar-picker').classList.add('hidden');
 }
 
 function renderHome() {
@@ -1446,13 +1511,13 @@ function setupEvents() {
         });
     });
 
-    // دکمه‌ی «انتخاب عکس پروفایل» فعلاً فقط جای‌گیر است (طبق درخواست، مجموعه‌ی
-    // عکس‌ها بعداً اضافه می‌شود)؛ همین الان فقط یک پیام می‌دهد.
+    // دکمه‌ی «انتخاب عکس پروفایل»: مجموعه‌ی عکس‌های آماده رو داخل یک پنجره نشون می‌ده
     const avatarPhotoBtn = document.getElementById('btn-choose-avatar-photo');
     if (avatarPhotoBtn) {
         avatarPhotoBtn.addEventListener('click', () => {
             AudioEngine.tap();
-            showToast('🖼️', 'انتخاب عکس پروفایل به‌زودی اضافه می‌شه!');
+            renderAvatarPicker();
+            document.getElementById('modal-avatar-picker').classList.remove('hidden');
         });
     }
 
