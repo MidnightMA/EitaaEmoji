@@ -285,9 +285,10 @@ const CHANNEL_PROMOS = [
     {
         type: 'ad',
         name: 'محمد آزاد',
+        handle: '@Im_Azad',
         badge: 'Ads',
         iconType: 'ad',
-        photoKey: '@Im_Azad',
+        photoKey: 'im_azad',
         desc: 'سازنده ایتا+',
         link: 'https://eitaa.com/Im_Azad',
         buttonText: 'مشاهده'
@@ -710,8 +711,8 @@ function applyAvatarVisual(avatarEl, gender) {
 // (boy-N.jpg / girl-N.jpg) در پوشه‌ی Profile/ بگذار و شماره‌اش را به یکی
 // از دو آرایه‌ی زیر اضافه کن — همین، جای دیگری از کد نیازی به تغییر ندارد.
 const AVATAR_PHOTO_IDS = {
-    boy: [1, 2, 3, 4, 5, 6, 7, 10, 11, 12],
-    girl: [1, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    Boy: [1, 2, 3, 4, 5, 6, 7, 10, 11, 12],
+    Girl: [1, 3, 4, 5, 6, 7, 8, 9, 10, 11]
 };
 
 function renderAvatarPicker() {
@@ -750,6 +751,7 @@ function selectAvatarPhoto(avatarId, matchingGender) {
     if (matchingGender) GameState.settings.gender = matchingGender;
     StorageManager.save();
     renderProfile();
+    renderHome();
     document.getElementById('modal-avatar-picker').classList.add('hidden');
 }
 
@@ -903,7 +905,9 @@ function renderChannelPromos() {
                 <span class="ad-ribbon">${promo.badge || 'Ads'}</span>
                 <div class="channel-promo-icon"></div>
                 <div class="channel-promo-info">
-                    <p class="channel-promo-desc ad-desc">${promo.desc}</p>
+                    <h3 class="channel-promo-title">${promo.name}</h3>
+                    <span class="channel-promo-handle">${promo.handle || ''}</span>
+                    <p class="channel-promo-desc">${promo.desc}</p>
                 </div>
                 <div class="ad-cta-btn">${promo.buttonText || 'مشاهده'}</div>`;
         } else {
@@ -1181,10 +1185,10 @@ function startCategory(category) {
     }
     GameState.activeLevelIndex = nextIndex;
     
-    // نمایش هشدار برای ضرب‌المثل‌ها
+    // نمایش هشدار برای بخش‌هایی که ماهیت محاوره‌ای/عامیانه دارند
     const noticeEl = document.getElementById('category-notice');
-    if (category.id === 'proverbs') {
-        noticeEl.innerHTML = '💡 <strong>توجه:</strong> برخی از ضرب‌المثل‌ها به زبان محاوره و عامیانه نوشته شده‌اند.';
+    if (category.id === 'proverbs' || category.id === 'idioms') {
+        noticeEl.innerHTML = '💡 <strong>توجه:</strong> برخی از ' + (category.id === 'idioms' ? 'اصطلاحات' : 'ضرب‌المثل‌ها') + ' به زبان محاوره و عامیانه نوشته شده‌اند.';
         noticeEl.classList.remove('hidden');
     } else {
         noticeEl.classList.add('hidden');
@@ -1209,7 +1213,7 @@ function renderLevel() {
     document.getElementById('ui-level').textContent = GameState.activeLevelIndex + 1;
     document.getElementById('game-score').textContent = GameState.globalScore;
 
-    const isWordMode = cat.id === 'proverbs';
+    const isWordMode = cat.id === 'proverbs' || cat.id === 'idioms';
 
     const diffKey = computeDifficulty(levelData, isWordMode);
     const diffInfo = DIFFICULTY_LABELS[diffKey];
@@ -1508,6 +1512,7 @@ function setupEvents() {
             GameState.settings.gender = el.dataset.gender;
             StorageManager.save();
             renderProfile();
+            renderHome();
         });
     });
 
