@@ -34,10 +34,10 @@ const CHANNEL_PHOTOS = {
     avay_khiyal: { photo: 'images/avay_khiyal.webp' },
     tech_nour: { photo: 'images/tech_nour.webp' },
     rasa_meme: { photo: 'images/rasa_meme.webp' },
-    ad_tab_amoo: { photo: 'images/Ads.webp' }
 
-    // عکس پروفایل تبلیغ‌کننده‌ی فعلی (کانال/فردی که تبلیغ ویژه رزرو کرده).
-    // برای هر تبلیغ جدید، یک کلید تازه با همین الگو اضافه کن و photoKey همان
-    // تبلیغ (در CHANNEL_PROMOS) را به همین کلید اشاره بده. تا وقتی عکس واقعی
-    // تبلیغ‌کننده را نداری، همین‌جا null بگذار تا آیکون SVG جایگزینش شود.
+    // عکس پروفایل تبلیغ‌کننده‌ی فعلی. برای هر تبلیغ جدید، یک کلید تازه با
+    // همین الگو اضافه کن و photoKey همان تبلیغ (در CHANNEL_PROMOS، داخل
+    // app.js) را به همین کلید اشاره بده. تا وقتی عکس واقعی تبلیغ‌کننده را
+    // نداری، همین‌جا null بگذار تا آیکون SVG جایگزینش شود.
+    im_azad: { photo: 'images/im_azad.webp' }
 };
