@@ -671,7 +671,6 @@ input:checked + .slider:before { transform: translateX(20px); }
     border-radius: 9px;
 }
 .channel-promo-card.promo-type-ad .channel-promo-icon { margin-top: 10px; }
-.ad-desc { margin-top: 10px; font-weight: 600; }
 .ad-cta-btn {
     background: rgba(255,255,255,0.25);
     color: #fff;
