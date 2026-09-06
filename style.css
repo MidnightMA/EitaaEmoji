@@ -760,28 +760,12 @@ input:checked + .slider:before { transform: translateX(20px); }
 /* --- گرید انتخاب عکس پروفایل --- */
 .avatar-picker-modal { max-height: 80vh; }
 .avatar-picker-grid {
-    overflow-y: auto;
-    max-height: 65vh;
-    padding: 4px 2px;
-}
-.avatar-picker-none-wrap {
-    display: flex;
-    justify-content: center;
-    padding-bottom: 14px;
-    margin-bottom: 10px;
-    border-bottom: 1px solid var(--border-color);
-}
-.avatar-picker-section-title {
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: var(--text-muted);
-    margin: 14px 2px 8px;
-}
-.avatar-picker-section-title:first-of-type { margin-top: 0; }
-.avatar-picker-grid-inner {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 10px;
+    overflow-y: auto;
+    max-height: 60vh;
+    padding: 4px 2px;
 }
 .avatar-option {
     aspect-ratio: 1 / 1;
@@ -797,6 +781,6 @@ input:checked + .slider:before { transform: translateX(20px); }
 }
 .avatar-option img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .avatar-option.selected { border-color: var(--ios-blue); }
-.avatar-option-none { width: 64px; height: 64px; background: var(--ios-blue); }
 .avatar-option-none svg { width: 60%; height: 60%; }
+.avatar-option-none { background: var(--ios-blue); }
 .avatar-option:active { transform: scale(0.94); }
