@@ -945,6 +945,11 @@ async function copySuggestionTemplate(text) {
 }
 
 let promoRotateInterval = null;
+let promoResumeTimeout = null;
+// این دو رفرنس فقط برای این نگه داشته می‌شوند که بشود لیسنرهای رندر قبلی را
+// قبل از اضافه‌کردن لیسنر تازه از روی container برداشت (پایین‌تر توضیح کامل).
+let promoScrollHandler = null;
+let promoPointerDownHandler = null;
 
 // صفحه پروفایل: آواتار و نام کاربر را از GameState می‌خواند و کارت جنسیت
 // انتخاب‌شده را هایلایت می‌کند.
@@ -968,7 +973,22 @@ function renderChannelPromos() {
     const dotsContainer = document.getElementById('channel-promo-dots');
     if (!container || !dotsContainer) return;
 
+    // ⚠️ باگ واقعی که اینجا بود: container (بر خلاف کارت‌های داخلش) هر بار
+    // از نو ساخته نمی‌شود، فقط innerHTML آن پاک می‌شود. یعنی این تابع با هر
+    // بار برگشت کاربر به صفحه اصلی (goBackToHome → renderHome) دوباره
+    // addEventListener('scroll')/('pointerdown') را روی همان container قبلی
+    // صدا می‌زد بدون حذف لیسنر قبلی. نتیجه بعد از چند بار رفت‌وبرگشت: تعداد
+    // لیسنرها روی هم انباشته می‌شد (نشتی حافظه) و چند setInterval چرخش خودکار
+    // هم‌زمان اجرا می‌شدند (مصرف بی‌مورد CPU/باتری روی گوشی‌های ضعیف و پرش
+    // نامنظم کارت‌ها). با پاک کردن صریح لیسنرها/تایمرهای قبلی قبل از ساخت
+    // نسخه‌ی تازه، این مشکل کاملاً برطرف می‌شود.
     clearInterval(promoRotateInterval);
+    clearTimeout(promoResumeTimeout);
+    if (promoScrollHandler) container.removeEventListener('scroll', promoScrollHandler);
+    if (promoPointerDownHandler) container.removeEventListener('pointerdown', promoPointerDownHandler);
+    promoScrollHandler = null;
+    promoPointerDownHandler = null;
+
     container.innerHTML = '';
     dotsContainer.innerHTML = '';
 
@@ -1030,13 +1050,14 @@ function renderChannelPromos() {
     dotsContainer.classList.toggle('hidden', visiblePromos.length <= 1);
 
     if (visiblePromos.length > 1) {
-        container.addEventListener('scroll', () => {
+        promoScrollHandler = () => {
             const cardWidth = container.firstElementChild ? container.firstElementChild.offsetWidth + 12 : 1;
             const activeIndex = Math.round(Math.abs(container.scrollLeft) / cardWidth);
             dotsContainer.querySelectorAll('.channel-promo-dot').forEach((dot, i) => {
                 dot.classList.toggle('active', i === activeIndex);
             });
-        });
+        };
+        container.addEventListener('scroll', promoScrollHandler);
 
         // چرخش خودکار هر ۴ ثانیه. از scrollIntoView به‌جای دستکاری مستقیم
         // scrollLeft استفاده می‌کنیم چون علامت (مثبت/منفی) scrollLeft در حالت
@@ -1050,14 +1071,14 @@ function renderChannelPromos() {
         promoRotateInterval = setInterval(rotateToNext, PROMO_ROTATE_INTERVAL_MS);
 
         // با تعامل دستی کاربر، چرخش خودکار موقتاً متوقف و بعد از چند ثانیه از سر گرفته می‌شود
-        let resumeTimeout = null;
-        container.addEventListener('pointerdown', () => {
+        promoPointerDownHandler = () => {
             clearInterval(promoRotateInterval);
-            clearTimeout(resumeTimeout);
-            resumeTimeout = setTimeout(() => {
+            clearTimeout(promoResumeTimeout);
+            promoResumeTimeout = setTimeout(() => {
                 promoRotateInterval = setInterval(rotateToNext, PROMO_ROTATE_INTERVAL_MS);
             }, 6000);
-        });
+        };
+        container.addEventListener('pointerdown', promoPointerDownHandler);
     }
 }
 
