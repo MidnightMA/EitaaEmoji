@@ -232,24 +232,24 @@ const MEDALS_DB = [
     { id: 'first_blood', name: 'اولین قدم', icon: '🩴', desc: 'اولین مرحله را حل کن',
         check: (state) => getTotalCompleted(state) >= 1,
         progress: (state) => `${Math.min(getTotalCompleted(state), 1)}/1` },
-    { id: 'proverbs_novice', name: 'ضرب‌المثل آموز', icon: '📜', desc: '50 ضرب‌المثل را حل کن',
-        check: (state) => (state.progress['proverbs']?.length || 0) >= 5,
-        progress: (state) => `${Math.min(state.progress['proverbs']?.length || 0, 50)}/5` },
-    { id: 'movies_novice', name: 'فیلم‌باز', icon: '🎬', desc: '50 فیلم و سریال را حل کن',
-        check: (state) => (state.progress['movies']?.length || 0) >= 5,
-        progress: (state) => `${Math.min(state.progress['movies']?.length || 0, 50)}/5` },
-    { id: 'countries_novice', name: 'جهانگرد', icon: '🌍', desc: '50 کشور را حل کن',
-        check: (state) => (state.progress['countries']?.length || 0) >= 5,
-        progress: (state) => `${Math.min(state.progress['countries']?.length || 0, 50)}/5` },
+    { id: 'proverbs_novice', name: 'ضرب‌المثل آموز', icon: '📜', desc: '۵۰ ضرب‌المثل را حل کن',
+        check: (state) => (state.progress['proverbs']?.length || 0) >= 50,
+        progress: (state) => `${Math.min(state.progress['proverbs']?.length || 0, 50)}/50` },
+    { id: 'movies_novice', name: 'فیلم‌باز', icon: '🎬', desc: '۵۰ فیلم و سریال را حل کن',
+        check: (state) => (state.progress['movies']?.length || 0) >= 50,
+        progress: (state) => `${Math.min(state.progress['movies']?.length || 0, 50)}/50` },
+    { id: 'countries_novice', name: 'جهانگرد', icon: '🌍', desc: '۵۰ کشور را حل کن',
+        check: (state) => (state.progress['countries']?.length || 0) >= 50,
+        progress: (state) => `${Math.min(state.progress['countries']?.length || 0, 50)}/50` },
     // نکته: عمداً از totalEarned استفاده می‌کنیم نه globalScore، چون globalScore با
-    // خرج کردن روی راهنما کم می‌شود و ممکن بود کاربری که واقعاً ۵۰۰ امتیاز کسب
+    // خرج کردن روی راهنما کم می‌شود و ممکن بود کاربری که واقعاً ۵۰۰۰ امتیاز کسب
     // کرده ولی خرج کرده، هیچ‌وقت این مدال را نگیرد.
-    { id: 'rich', name: 'ثروتمند', icon: '💎', desc: '5000 امتیاز کسب کن',
+    { id: 'rich', name: 'ثروتمند', icon: '💎', desc: '۵۰۰۰ امتیاز کسب کن',
         check: (state) => state.totalEarned >= 5000,
         progress: (state) => `${Math.min(state.totalEarned, 5000)}/5000` },
-    { id: 'daily_fan', name: 'اهل چالش روزانه', icon: '🔥', desc: '50 چالش روزانه را حل کن',
-        check: (state) => (state.dailyChallenge?.completedCount || 0) >= 5,
-        progress: (state) => `${Math.min(state.dailyChallenge?.completedCount || 0, 5)}/5` },
+    { id: 'daily_fan', name: 'اهل چالش روزانه', icon: '🔥', desc: '۱۰ چالش روزانه را حل کن',
+        check: (state) => (state.dailyChallenge?.completedCount || 0) >= 10,
+        progress: (state) => `${Math.min(state.dailyChallenge?.completedCount || 0, 10)}/10` },
     { id: 'all_categories', name: 'استاد بازی', icon: '👑', desc: 'همه دسته‌ها را صد‌درصد کامل کن',
         check: (state) => DB.categories.length > 0 && DB.categories.every(c => (state.progress[c.id]?.length || 0) >= c.levels.length),
         progress: (state) => {
@@ -706,48 +706,80 @@ function applyAvatarVisual(avatarEl, gender) {
     }
 }
 
-// مجموعه‌ی عکس‌های آماده‌ی پروفایل (داخل پوشه‌ی Profile/، از قبل کوچک و
-// بهینه شده‌اند). برای افزودن عکس بیشتر، فایل را با همین الگوی نام‌گذاری
-// (boy-N.jpg / girl-N.jpg) در پوشه‌ی Profile/ بگذار و شماره‌اش را به یکی
-// از دو آرایه‌ی زیر اضافه کن — همین، جای دیگری از کد نیازی به تغییر ندارد.
+// مجموعه‌ی عکس‌های آماده‌ی پروفایل (داخل پوشه‌ی Profile/). نام واقعی
+// فایل‌ها روی دیسک این الگو را دارد: profile_Boy1.jpg, profile_Girl3.jpg,
+// ... (حرف اول جنسیت بزرگ، بدون خط تیره). برای افزودن عکس بیشتر، فایل را
+// با همین الگو در پوشه‌ی Profile/ بگذار و شماره‌اش را به یکی از دو
+// آرایه‌ی زیر اضافه کن.
 const AVATAR_PHOTO_IDS = {
     Boy: [1, 2, 3, 4, 5, 6, 7, 10, 11, 12],
     Girl: [1, 3, 4, 5, 6, 7, 8, 9, 10, 11]
 };
 
+// عکس‌های پسرها و دخترها را در دو بخش جدا (با عنوان مجزا) نشان می‌دهد، نه
+// مخلوط در یک گرید — انتخاب راحت‌تر می‌شود و مشخصه هر عکس مال کدام گروهه.
 function renderAvatarPicker() {
-    const grid = document.getElementById('avatar-picker-grid');
-    if (!grid) return;
-    grid.innerHTML = '';
+    const container = document.getElementById('avatar-picker-grid');
+    if (!container) return;
+    container.innerHTML = '';
 
     const currentAvatarId = GameState.settings.avatarId;
 
-    // یک گزینه‌ی «بدون عکس» برای برگشت به آیکون ساده
+    // گزینه‌ی «بدون عکس» — خارج از دو بخش جنسیتی، چون خنثی است
+    const noneWrap = document.createElement('div');
+    noneWrap.className = 'avatar-picker-none-wrap';
     const noneOption = document.createElement('button');
     noneOption.type = 'button';
     noneOption.className = `avatar-option avatar-option-none ${!currentAvatarId ? 'selected' : ''}`;
     noneOption.innerHTML = AVATAR_ICONS[GameState.settings.gender] || AVATAR_ICONS.neutral;
     noneOption.addEventListener('click', () => selectAvatarPhoto(null));
-    grid.appendChild(noneOption);
+    noneWrap.appendChild(noneOption);
+    container.appendChild(noneWrap);
 
-    ['Boy', 'Girl'].forEach(genderKey => {
+    const sections = [
+        { key: 'Boy', label: 'پسرها' },
+        { key: 'Girl', label: 'دخترها' }
+    ];
+
+    sections.forEach(({ key: genderKey, label }) => {
+        const lowerGender = genderKey.toLowerCase(); // 'boy'/'girl' — همونی که GameState.settings.gender واقعاً استفاده می‌کنه
+
+        const sectionTitle = document.createElement('div');
+        sectionTitle.className = 'avatar-picker-section-title';
+        sectionTitle.textContent = label;
+        container.appendChild(sectionTitle);
+
+        const sectionGrid = document.createElement('div');
+        sectionGrid.className = 'avatar-picker-grid-inner';
+
         AVATAR_PHOTO_IDS[genderKey].forEach(num => {
             const id = `profile_${genderKey}${num}`;
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = `avatar-option ${currentAvatarId === id ? 'selected' : ''}`;
-            btn.innerHTML = `<img src="Profile/${id}.jpg" alt="${genderKey}" loading="lazy" width="64" height="64">`;
-            btn.addEventListener('click', () => selectAvatarPhoto(id, genderKey));
-            grid.appendChild(btn);
+            const img = document.createElement('img');
+            img.src = `Profile/${id}.jpg`;
+            img.alt = lowerGender;
+            img.loading = 'lazy';
+            img.width = 64;
+            img.height = 64;
+            // اگه یک فایل خاص گم بود، به‌جای آیکون شکسته، کل گزینه مخفی می‌شود
+            img.addEventListener('error', () => { btn.style.display = 'none'; });
+            btn.appendChild(img);
+            btn.addEventListener('click', () => selectAvatarPhoto(id, lowerGender));
+            sectionGrid.appendChild(btn);
         });
+
+        container.appendChild(sectionGrid);
     });
 }
 
 function selectAvatarPhoto(avatarId, matchingGender) {
     AudioEngine.tap();
     GameState.settings.avatarId = avatarId;
-    // انتخاب یک عکس، جنسیت متناظرش رو هم خودکار ست می‌کنه تا لازم نباشه
-    // کاربر جدا هم جنسیت رو انتخاب کنه هم عکس رو
+    // انتخاب یک عکس، جنسیت متناظرش رو هم خودکار ست می‌کنه (با حروف کوچک،
+    // چون بقیه‌ی کد از جمله AVATAR_ICONS و data-gender با حروف کوچک کار
+    // می‌کنند) تا لازم نباشه کاربر جدا هم جنسیت رو انتخاب کنه هم عکس رو
     if (matchingGender) GameState.settings.gender = matchingGender;
     StorageManager.save();
     renderProfile();
@@ -1213,7 +1245,7 @@ function renderLevel() {
     document.getElementById('ui-level').textContent = GameState.activeLevelIndex + 1;
     document.getElementById('game-score').textContent = GameState.globalScore;
 
-    const isWordMode = cat.id === 'proverbs' || cat.id === 'idioms';
+    const isWordMode = cat.id === 'proverbs';
 
     const diffKey = computeDifficulty(levelData, isWordMode);
     const diffInfo = DIFFICULTY_LABELS[diffKey];
@@ -1250,6 +1282,10 @@ function renderLevel() {
             const group = document.createElement('div');
             group.className = 'word-group';
             for (let char of word) {
+                // نیم‌فاصله (ZWNJ) یک کاراکتر نامرئی است که فقط برای چسباندن
+                // بصری دو تکه‌ی یک کلمه‌ی مرکب استفاده می‌شود (مثل «پاچه‌خواری»)؛
+                // نباید خودش یک خانه/کلید قابل‌حدس‌زدن باشد.
+                if (char === '\u200c') continue;
                 const slotObj = { id: slotId++, char: char, filledWith: '', keyId: null, locked: false, isWord: false };
                 GameState.slots.push(slotObj);
                 requiredUnits.push(char);
