@@ -9,6 +9,20 @@
 const KVDB_BUCKET_ID = "YOUR_BUCKET_ID_HERE"; 
 // ==========================================
 
+// --- تشخیص مقاوم شناسه‌ی کاربر ایتا ---
+// دلیل وجود این تابع: قبلاً کد مستقیماً از initDataUnsafe.user.id استفاده
+// می‌کرد. اگر SDK ایتا در نسخه/پلتفرم خاصی این فیلد را با نام دیگری برگرداند
+// یا موقتاً خالی باشد، id می‌شد undefined، کلید ذخیره‌سازی عوض می‌شد، و کاربر
+// «امتیازش صفر شده» می‌دید (چون دیگر به رکورد قبلی‌اش وصل نمی‌شد). این تابع
+// چند نام محتمل را امتحان می‌کند و همیشه یک رشته یا null برمی‌گرداند، هرگز
+// undefined/NaN که به رشته‌ی کلید نشت کند.
+function resolveEitaaUserId(rawUser) {
+    if (!rawUser || typeof rawUser !== 'object') return null;
+    const candidate = rawUser.id ?? rawUser.user_id ?? rawUser.userId ?? rawUser.chat_id ?? null;
+    if (candidate === null || candidate === undefined || candidate === '') return null;
+    return String(candidate);
+}
+
 const PERSIAN_ALPHABET = "ابپتثجچحخدذرزژسشصضطظعغفقکگلمنوهی";
 const HINT_COST = 15;
 // این دو تا هنوز برای کارت‌های «کانال‌های ما» در پایین صفحه استفاده می‌شوند.
@@ -414,8 +428,19 @@ function sanitizeDisplayName(raw) {
    1. Cloud Storage Sync (KVDB)
 ========================================= */
 const StorageManager = {
+    // ⚠️ قفل ایمنی: تا وقتی load() یک‌بار با موفقیت (یا با اطمینان از «کاربر
+    // واقعاً جدید است») تمام نشده، save() هیچ‌کاری نمی‌کند. بدون این قفل،
+    // اگر بارگذاری امتیاز به هر دلیلی (قطعی شبکه، خطای KVDB، schema نامعتبر)
+    // شکست بخورد، GameState با مقادیر پیش‌فرض (globalScore: 0) باقی می‌ماند
+    // و اولین save() همان صفر را روی رکورد واقعی کاربر در KVDB می‌نویسد —
+    // دقیقاً همان الگوی «امتیاز صفر شد» که هرگز نباید اتفاق بیفتد.
+    ready: false,
     getKey: () => `eitaa_game_${GameState.user.id}`,
     save: async function() {
+        if (!this.ready) {
+            console.warn('StorageManager.save() قبل از پایان load() فراخوانی شد؛ برای جلوگیری از رونویسی دیتای واقعی نادیده گرفته شد.');
+            return;
+        }
         const payload = JSON.stringify({
             globalScore: GameState.globalScore,
             totalEarned: GameState.totalEarned,
@@ -432,13 +457,23 @@ const StorageManager = {
     },
     load: async function(callback) {
         let finalData = null;
+        let cloudWasAttempted = false;
+        let cloudFailedUnexpectedly = false; // true فقط برای خطای واقعی، نه برای «۴۰۴ یعنی کاربر جدید»
         if (GameState.user.id !== 'guest' && KVDB_BUCKET_ID !== "YOUR_BUCKET_ID_HERE") {
+            cloudWasAttempted = true;
             try {
                 const response = await fetch(`https://kvdb.io/${KVDB_BUCKET_ID}/${GameState.user.id}`);
-                if (response.ok) finalData = await response.text();
-            } catch (e) {}
+                if (response.ok) {
+                    finalData = await response.text();
+                } else if (response.status !== 404) {
+                    cloudFailedUnexpectedly = true;
+                }
+            } catch (e) {
+                cloudFailedUnexpectedly = true;
+            }
         }
         if (!finalData) finalData = localStorage.getItem(this.getKey());
+
         if (finalData) {
             try {
                 const data = JSON.parse(finalData);
@@ -452,7 +487,26 @@ const StorageManager = {
                 GameState.settings = { ...GameState.settings, ...(data.settings || {}) };
                 GameState.dailyChallenge = data.dailyChallenge || { lastCompletedDate: null, completedCount: 0 };
                 GameState.joinGate = data.joinGate || { confirmedChannelId: null, confirmedWeekNumber: null };
-            } catch(e) {}
+                this.ready = true;
+            } catch (e) {
+                // دیتا وجود داشت ولی خراب/ناسازگار بود؛ به‌جای رفتن به مقادیر
+                // پیش‌فرض و ذخیره‌ی صفر روی آن، save() را قفل نگه می‌داریم تا
+                // کاربر حداقل در همین نشست دیتای خرابش رونویسی نشود.
+                console.error('داده‌ی ذخیره‌شده معتبر نبود، از رونویسی آن جلوگیری شد:', e);
+                this.ready = false;
+            }
+        } else if (cloudWasAttempted && cloudFailedUnexpectedly) {
+            // کلاود بود ولی گرفتنش شکست خورد (نه ۴۰۴) و لوکال هم چیزی نداشت.
+            // این می‌تواند یعنی همین الان اتصال قطع است، نه اینکه کاربر واقعاً
+            // جدید است. save() را قفل می‌کنیم تا صفر روی رکورد واقعی ننشیند.
+            this.ready = false;
+            if (typeof showToast === 'function') {
+                showToast('⚠️', 'مشکل در اتصال به سرور؛ پیشرفت شما بارگذاری نشد');
+            }
+        } else {
+            // نه دیتای کلاود بود نه لوکال، و کلاود هم واقعاً ۴۰۴/غیرفعال بود
+            // (نه خطای شبکه) → این واقعاً یک کاربر جدید است، صفر بودن درست است.
+            this.ready = true;
         }
         callback();
     }
@@ -1633,9 +1687,19 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (window.Eitaa && window.Eitaa.WebApp) {
         window.Eitaa.WebApp.ready();
         window.Eitaa.WebApp.expand();
-        if (window.Eitaa.WebApp.initDataUnsafe?.user) {
-            GameState.user = window.Eitaa.WebApp.initDataUnsafe.user;
+        const eitaaUser = window.Eitaa.WebApp.initDataUnsafe?.user;
+        const resolvedId = resolveEitaaUserId(eitaaUser);
+        if (eitaaUser && resolvedId) {
+            // عمداً merge می‌کنیم نه جایگزینی کامل GameState.user: اگر SDK در
+            // یک نسخه فیلدی (مثلاً photo_url) را برنگرداند، مقدار پیش‌فرض حذف
+            // نمی‌شود. مهم‌تر از همه: id همیشه از resolveEitaaUserId می‌آید که
+            // تضمین می‌کند هرگز undefined/NaN به کلید ذخیره‌سازی نشت نمی‌کند.
+            GameState.user = { ...GameState.user, ...eitaaUser, id: resolvedId };
         }
+        // اگر eitaaUser وجود داشت ولی id قابل تشخیص نبود، عمداً GameState.user
+        // را دست‌نخورده (guest) نگه می‌داریم — بهتر است کاربر به‌عنوان مهمان
+        // دیده شود تا اینکه با کلید نادرست (eitaa_game_undefined) به رکورد
+        // اشتباهی وصل شود یا رکورد واقعی‌اش گم به‌نظر برسد.
     }
 
     try {
