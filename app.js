@@ -298,13 +298,13 @@ const CHANNEL_PROMOS = [
     },
     {
         type: 'ad',
-        name: 'محمد آزاد',
-        handle: '@Im_Azad',
+        name: 'تبلیغات عمو',
+        handle: '@tab_amoo',
         badge: 'Ads',
         iconType: 'ad',
-        photoKey: 'im_azad',
-        desc: 'سازنده ایتا+',
-        link: 'https://eitaa.com/Im_Azad',
+        photoKey: '@tab_amoo',
+        desc: 'برای رزرو تبلیغات پیام بدهید.',
+        link: 'https://eitaa.com/tab_amoo',
         buttonText: 'مشاهده'
         // برای ثبت تبلیغ جدید، فقط همین چند خط را عوض کن (و در صورت وجود
         // عکس تبلیغ‌کننده، کلید photoKey را در channel-photos.js هم پر کن).
@@ -324,7 +324,7 @@ const CHANNEL_PROMOS = [
         type: 'channel',
         name: 'Rasa Meme | رسامیم',
         handle: '@Rasa_Meme',
-        desc: 'یسری میم چرت و پرت',
+        desc: 'یسری میم جذاب و فان',
         iconType: 'meme',
         photoKey: 'rasa_meme',
         link: 'https://eitaa.com/Rasa_Meme',
