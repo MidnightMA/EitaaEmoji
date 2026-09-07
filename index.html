@@ -223,22 +223,39 @@
             <h2>قبل از شروع...</h2>
             <!-- توضیح هر کانال مستقیماً همینجا نوشته شده تا بدون باز کردن هیچ
                  فایل JS دیگری، فقط با ویرایش همین index.html قابل تغییر باشد.
-                 هر بار فقط یکی از این چهار پاراگراف (همانی که «کانال فعالِ
-                 همین هفته» است) نمایش داده می‌شود؛ app.js با توجه به
-                 data-channel-id تشخیص می‌دهد کدام‌یک را نشان دهد — فقط کافیست
-                 متن داخل تگ‌های p زیر را عوض کنی، هیچ‌جای دیگری از کد نیازی
-                 به تغییر ندارد. -->
-            <p class="join-gate-msg hidden" data-channel-id="avay_khiyal">کانال شعر؛ اگه دلت یه گوشه‌ی آروم برای خوندن شعر و ادب می‌خواد، این هفته باید عضوش باشی 👇</p>
-            <p class="join-gate-msg hidden" data-channel-id="tech_nour">اخبار هوش مصنوعی و تکنولوژی رو می‌خوای دست اول بگیری؟ این هفته عضویت توی تک‌نور لازمه 👇</p>
-            <p class="join-gate-msg hidden" data-channel-id="rasa_meme">دلت یه خنده‌ی حسابی می‌خواد؟ این هفته نوبت رسامیمه، عضو شو و حال کن 👇</p>
-            <p class="join-gate-msg hidden" data-channel-id="partner">برای ادامه‌ی بازی، عضویت توی کانال زیر لازمه؛ عضو شو و از رازک لذت ببر 👇</p>
-            <ul class="join-gate-benefits">
-                <li><span class="jg-icon">🆕</span> اطلاع از نسخه‌ها و قابلیت‌های جدید رازک</li>
-                <li><span class="jg-icon">🧩</span> دسترسی به مراحل و چالش‌های جدید</li>
-                <li><span class="jg-icon">👀</span> مشاهده اخبار و قابلیت‌های جدید زودتر از همه</li>
-                <li><span class="jg-icon">📊</span> شرکت در نظرسنجی‌های توسعه بازی</li>
-                <li><span class="jg-icon">🤖</span> بهرمندی از محتواهای جذاب هوش مصنوعی</li>
-            </ul>
+                 هر بار فقط یکی از این بلوک‌ها (همانی که «کانال فعالِ همین
+                 هفته» است) نمایش داده می‌شود؛ app.js با توجه به
+                 data-channel-id تشخیص می‌دهد کدام‌یک را نشان دهد. -->
+            <div class="join-gate-channel-block hidden" data-channel-id="avay_khiyal">
+                <p class="join-gate-msg">🎨 آوای‌خیال — این هفته عضویت اینجا لازمه:</p>
+                <ul class="join-gate-benefits">
+                    <li><span class="jg-icon">🌙</span> محتوای احساسی و متفاوت</li>
+                    <li><span class="jg-icon">🖼️</span> پست‌های زیبا و چشم‌نواز</li>
+                    <li><span class="jg-icon">💭</span> متن‌های خاص و تأمل‌برانگیز</li>
+                    <li><span class="jg-icon">✨</span> اشعار زیبا و متنوع</li>
+                    <li><span class="jg-icon">🫶</span>  شمافضایی برای لحظه‌های آرام و دلنشین</li>
+                </ul>
+            </div>
+            <div class="join-gate-channel-block hidden" data-channel-id="tech_nour">
+                <p class="join-gate-msg">💡 تک‌نور — این هفته عضویت اینجا لازمه:</p>
+                <ul class="join-gate-benefits">
+                    <li><span class="jg-icon">📱</span> اخبار و مطالب جذاب دنیای تکنولوژی</li>
+                    <li><span class="jg-icon">💻</span> معرفی برنامه‌ها، ابزارها و قابلیت‌های کاربردی</li>
+                    <li><span class="jg-icon">🧠</span> آموزش و ترفندهای مفید</li>
+                    <li><span class="jg-icon">🔥</span> مطالب جدید و به‌روز تکنولوژی</li>
+                    <li><span class="jg-icon">⚡</span> محتوای کاربردی و مفید</li>
+                </ul>
+            </div>
+            <div class="join-gate-channel-block hidden" data-channel-id="rasa_meme">
+                <p class="join-gate-msg">😂 رسامیم — این هفته عضویت اینجا لازمه:</p>
+                <ul class="join-gate-benefits">
+                    <li><span class="jg-icon">🤣</span> میم‌های خنده‌دار و سرگرم‌کننده</li>
+                    <li><span class="jg-icon">🎭</span> محتوای طنز و جالب</li>
+                    <li><span class="jg-icon">😂</span> پست‌هایی برای خندیدن و وقت‌گذرونی</li>
+                    <li><span class="jg-icon">🔥</span> میم‌ها و مطالب خنده‌دار</li>
+                    <li><span class="jg-icon">🫠</span> محتوای فان و برای هر سلیقه‌ای</li>
+                </ul>
+            </div>
 
             <div class="join-gate-channels" id="join-gate-channels"></div>
 
@@ -339,7 +356,6 @@
             }
         });
     </script>
-    <script src="partner.js"></script>
     <script src="index.js"></script>
     <script src="channel-photos.js"></script>
     <script src="app.js"></script>
