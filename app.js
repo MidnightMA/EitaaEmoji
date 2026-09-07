@@ -1195,13 +1195,13 @@ function requireChannelJoin(action) {
 }
 
 // محتوای پنجره را بر اساس کانالِ فعالِ همین هفته می‌سازد. متن معرفیِ هر
-// کانال دیگر از JS نمی‌آید — مستقیماً در index.html نوشته شده (چهار
-// <p class="join-gate-msg" data-channel-id="..."> داخل modal-join-gate)؛
+// کانال دیگر از JS نمی‌آید — مستقیماً در index.html نوشته شده (سه
+// <div class="join-gate-channel-block" data-channel-id="..."> داخل modal-join-gate)؛
 // این تابع فقط همان‌یکی که با کانال فعال این هفته می‌خواند را نشان
 // می‌دهد و بقیه را مخفی می‌کند. فقط ردیف پایین (نام/آیکون/دکمه‌ی عضویت)
 // همچنان پویاست، چون لینک آن هر هفته عوض می‌شود.
 function renderJoinGateModal(info) {
-    document.querySelectorAll('.join-gate-msg').forEach(el => {
+    document.querySelectorAll('.join-gate-channel-block').forEach(el => {
         el.classList.toggle('hidden', el.dataset.channelId !== info.channel.id);
     });
 
