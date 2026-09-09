@@ -220,7 +220,7 @@ body {
 
 /* --- پنجره عضویت اجباری در کانال --- */
 .join-gate-modal p { color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; margin: 8px 0 16px; }
-.join-gate-msg.hidden { display: none; }
+.join-gate-channel-block.hidden { display: none; }
 .join-gate-icon {
     width: 72px; height: 72px; margin: 0 auto 14px;
     background: linear-gradient(135deg, #0a84ff, #34c3ff);
