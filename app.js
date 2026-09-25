@@ -135,21 +135,6 @@ window.debugRotation = function (customDate) {
 
 const BASE_SCORE = 10;
 const DAILY_BASE_SCORE = 50;
-
-/* =========================================
-   امتیاز روزانه (پاداش ورود روزانه) + کارت‌های عضویت با پاداش
-========================================= */
-// حداقل/حداکثر سکه‌ای که با «دریافت پاداش امروز» به کاربر داده می‌شود؛
-// هر بار عدد تصادفی بین این دو (شامل خودشان) انتخاب می‌شود.
-const DAILY_LOGIN_REWARD_MIN = 20;
-const DAILY_LOGIN_REWARD_MAX = 50;
-
-// لیست کارت‌های عضویت با پاداش، از فایل جداگانه‌ی reward-channels.js خوانده
-// می‌شود (نه اینجا) — برای افزودن/ویرایش کانال، فقط همان فایل را عوض کن.
-// این فایل باید در index.html قبل از app.js لود شده باشد.
-const REWARD_CHANNELS = (typeof window !== 'undefined' && Array.isArray(window.REWARD_CHANNELS))
-    ? window.REWARD_CHANNELS.filter(Boolean)
-    : [];
 // فاصله‌ی چرخش خودکار کارت‌های «کانال‌های ما»
 const PROMO_ROTATE_INTERVAL_MS = 5000;
 
@@ -256,15 +241,6 @@ const GameState = {
     settings: { sound: true, darkMode: false, gender: null, avatarId: null, displayName: null },
     dailyChallenge: { lastCompletedDate: null, completedCount: 0 },
     joinGate: { confirmedChannelId: null, confirmedWeekNumber: null },
-    // dailyReward: پاداش روزانه‌ی «امتیاز روزانه» (جدا از dailyChallenge که
-    // مخصوص معمای روزانه است). claimedDates فقط برای نمایش ردیف هفتگی
-    // (شنبه تا جمعه) نگه داشته می‌شود، حداکثر ۳۰ روز اخیر.
-    dailyReward: { lastClaimedDate: null, claimedDates: [] },
-    // channelRewards.claimed: نگاشت «کلید پاداش» → true. کلید برای کارت‌های
-    // once:true همان id کانال است؛ برای کارت‌های once:false (مثل جایگاه
-    // تبلیغاتی) همان adKey است، تا با عوض شدن adKey پاداش دوباره قابل
-    // دریافت شود (نگاه کن به reward-channels.js).
-    channelRewards: { claimed: {} },
     isDailyChallenge: false,
     activeCategory: null,
     activeLevelIndex: 0,
@@ -481,9 +457,7 @@ const StorageManager = {
             unlockedMedals: GameState.unlockedMedals,
             settings: GameState.settings,
             dailyChallenge: GameState.dailyChallenge,
-            joinGate: GameState.joinGate,
-            dailyReward: GameState.dailyReward,
-            channelRewards: GameState.channelRewards
+            joinGate: GameState.joinGate
         });
         localStorage.setItem(this.getKey(), payload);
         if (GameState.user.id !== 'guest' && KVDB_BUCKET_ID !== "YOUR_BUCKET_ID_HERE") {
@@ -522,8 +496,6 @@ const StorageManager = {
                 GameState.settings = { ...GameState.settings, ...(data.settings || {}) };
                 GameState.dailyChallenge = data.dailyChallenge || { lastCompletedDate: null, completedCount: 0 };
                 GameState.joinGate = data.joinGate || { confirmedChannelId: null, confirmedWeekNumber: null };
-                GameState.dailyReward = data.dailyReward || { lastClaimedDate: null, claimedDates: [] };
-                GameState.channelRewards = data.channelRewards || { claimed: {} };
                 this.ready = true;
             } catch (e) {
                 // دیتا وجود داشت ولی خراب/ناسازگار بود؛ به‌جای رفتن به مقادیر
@@ -926,8 +898,6 @@ function renderHome() {
     });
 
     renderDailyChallengeCard();
-    renderDailyLoginRewardCard();
-    renderRewardChannelCards();
     renderChannelPromos();
     renderSuggestionsSection();
 }
@@ -1121,216 +1091,7 @@ function renderChannelPromos() {
     }
 }
 
-/* =========================================
-   4.5 امتیاز روزانه + کارت‌های عضویت با پاداش
-========================================= */
-// نکته: getTodayKey() پایین‌تر همین فایل (بخش ۵) تعریف شده؛ چون یک
-// function declaration معمولی است (نه const/arrow)، در کل فایل hoist
-// می‌شود و همینجا هم قابل استفاده است.
 
-// برچسب روزهای هفته به ترتیب شنبه...جمعه، برای ردیف هفتگیِ کارت پاداش روزانه.
-const PERSIAN_WEEK_DAY_LABELS = ['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج'];
-
-// JS از یکشنبه=0 شروع می‌کند؛ اینجا تبدیل می‌کنیم به شنبه=0...جمعه=6 (هفته‌ی ایرانی).
-function getPersianWeekdayIndex(date) {
-    return (date.getDay() + 1) % 7;
-}
-
-function dateToDayKey(d) {
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-// آرایه‌ی ۷ تایی تاریخ‌های همین هفته (شنبه تا جمعه‌ای که referenceDate توش قرار دارد).
-function getCurrentWeekDates(referenceDate = new Date()) {
-    const idx = getPersianWeekdayIndex(referenceDate);
-    const dates = [];
-    for (let i = 0; i < 7; i++) {
-        const d = new Date(referenceDate);
-        d.setDate(d.getDate() - idx + i);
-        dates.push(d);
-    }
-    return dates;
-}
-
-// --- پاداش ورود روزانه ---
-function claimDailyLoginReward() {
-    AudioEngine.tap();
-    const todayKey = getTodayKey();
-    if (GameState.dailyReward.lastClaimedDate === todayKey) {
-        showToast('🎁', 'پاداش امروز رو قبلاً گرفتی! فردا دوباره سر بزن.');
-        return;
-    }
-    const amount = Math.floor(Math.random() * (DAILY_LOGIN_REWARD_MAX - DAILY_LOGIN_REWARD_MIN + 1)) + DAILY_LOGIN_REWARD_MIN;
-
-    GameState.globalScore += amount;
-    GameState.totalEarned += amount;
-    GameState.dailyReward.lastClaimedDate = todayKey;
-    GameState.dailyReward.claimedDates = GameState.dailyReward.claimedDates || [];
-    if (!GameState.dailyReward.claimedDates.includes(todayKey)) {
-        GameState.dailyReward.claimedDates.push(todayKey);
-        // فقط ۳۰ تای اخیر لازم است (فقط برای نمایش ردیف هفته‌ی جاری استفاده می‌شود).
-        if (GameState.dailyReward.claimedDates.length > 30) {
-            GameState.dailyReward.claimedDates = GameState.dailyReward.claimedDates.slice(-30);
-        }
-    }
-    StorageManager.save();
-
-    document.getElementById('home-total-score').textContent = GameState.globalScore;
-    renderDailyLoginRewardCard();
-    checkMedals();
-    showCoinRewardModal('مبارکه 🎊', `امتیاز روزانه‌ت رو گرفتی، ${amount} سکه به حسابت اضافه شد.`);
-}
-
-function renderDailyLoginRewardCard() {
-    const card = document.getElementById('daily-reward-card');
-    if (!card) return;
-    const todayKey = getTodayKey();
-    const doneToday = GameState.dailyReward.lastClaimedDate === todayKey;
-    card.classList.toggle('claimed', doneToday);
-
-    const statusText = document.getElementById('daily-reward-status-text');
-    if (statusText) {
-        statusText.textContent = doneToday
-            ? 'پاداش امروز رو گرفتی! فردا یه پاداش تازه منتظرته 🌙'
-            : 'هر روز بین ۲۰ تا ۵۰ سکه هدیه بگیر';
-    }
-
-    const btn = document.getElementById('btn-claim-daily-reward');
-    if (btn) {
-        btn.textContent = doneToday ? '✅ دریافت شد' : '🎁 دریافت پاداش امروز';
-        btn.disabled = doneToday;
-    }
-
-    const weekContainer = document.getElementById('daily-reward-week');
-    if (!weekContainer) return;
-    weekContainer.innerHTML = '';
-    const claimedSet = new Set(GameState.dailyReward.claimedDates || []);
-    getCurrentWeekDates().forEach(d => {
-        const key = dateToDayKey(d);
-        const isToday = key === todayKey;
-        const isDone = claimedSet.has(key);
-        const dayIdx = getPersianWeekdayIndex(d);
-        const el = document.createElement('div');
-        el.className = `daily-reward-day ${isDone ? 'done' : ''} ${isToday ? 'today' : ''}`;
-        el.innerHTML = `<div class="drd-label">${PERSIAN_WEEK_DAY_LABELS[dayIdx]}</div><div class="drd-dot">${isDone ? '✓' : ''}</div>`;
-        weekContainer.appendChild(el);
-    });
-}
-
-// --- کارت‌های عضویت در کانال با پاداش ---
-// pendingChannelReturnChecks: شناسه‌ی کارت‌هایی که کاربر روی «عضویت»‌شان زده
-// و منتظریم ببینیم به رازک برمی‌گردد یا نه، تا دکمه را به «دریافت» تبدیل
-// کنیم. عمداً فقط در حافظه نگه داشته می‌شود (ذخیره نمی‌شود)، چون فقط برای
-// تشخیص «رفت و برگشت» در همین یک نشست کاربر لازم است؛ با رفرش صفحه دوباره
-// از «عضویت» شروع می‌شود که مشکلی نیست (کاربر می‌تواند دوباره بزند).
-const pendingChannelReturnChecks = new Set();
-
-// کلیدی که وضعیت «دریافت‌شده» با آن ذخیره می‌شود: برای کارت‌های همیشگی
-// (once:true) همان id؛ برای جایگاه تبلیغاتی (once:false) همان adKey، تا با
-// عوض شدن adKey (تبلیغ جدید) پاداش دوباره برای همه قابل دریافت شود.
-function getRewardClaimKey(reward) {
-    return reward.once === false ? (reward.adKey || reward.id) : reward.id;
-}
-
-function isRewardClaimed(reward) {
-    return !!(GameState.channelRewards.claimed && GameState.channelRewards.claimed[getRewardClaimKey(reward)]);
-}
-
-function updateRewardButtonState(btn, claimed, pending) {
-    btn.classList.remove('state-join', 'state-claim', 'state-done');
-    if (claimed) {
-        btn.textContent = '✅ دریافت شد';
-        btn.classList.add('state-done');
-        btn.disabled = true;
-    } else if (pending) {
-        btn.textContent = 'دریافت';
-        btn.classList.add('state-claim');
-        btn.disabled = false;
-    } else {
-        btn.textContent = 'عضویت';
-        btn.classList.add('state-join');
-        btn.disabled = false;
-    }
-}
-
-function onRewardChannelButtonClick(reward, btn) {
-    AudioEngine.tap();
-    if (isRewardClaimed(reward)) return;
-
-    const pending = pendingChannelReturnChecks.has(reward.id);
-    if (!pending) {
-        // مرحله ۱: کاربر هنوز عضو نشده (یا حداقل ادعا نکرده) — کانال را باز
-        // کن و منتظر بازگشتش بمان؛ امتیازی هنوز داده نمی‌شود.
-        openExternalLink(getChannelUrl(reward));
-        pendingChannelReturnChecks.add(reward.id);
-        updateRewardButtonState(btn, false, true);
-        return;
-    }
-
-    // مرحله ۲: کاربر برگشته و حالا خودش روی «دریافت» زده → پاداش را بده.
-    GameState.channelRewards.claimed = GameState.channelRewards.claimed || {};
-    GameState.channelRewards.claimed[getRewardClaimKey(reward)] = true;
-    GameState.globalScore += reward.reward;
-    GameState.totalEarned += reward.reward;
-    pendingChannelReturnChecks.delete(reward.id);
-    StorageManager.save();
-
-    document.getElementById('home-total-score').textContent = GameState.globalScore;
-    checkMedals();
-    updateRewardButtonState(btn, true, false);
-    showCoinRewardModal('مبارکه 🎊', `با عضویت در کانال ${reward.name}، ${reward.reward} سکه به شما داده شد.`);
-}
-
-function renderRewardChannelCards() {
-    const container = document.getElementById('reward-channels-container');
-    if (!container) return;
-    container.innerHTML = '';
-
-    REWARD_CHANNELS.filter(r => r.active !== false).forEach(reward => {
-        const card = document.createElement('div');
-        card.className = 'reward-channel-card';
-        card.dataset.rewardId = reward.id;
-        card.innerHTML = `
-            <div class="reward-channel-info">
-                <span class="reward-channel-name">${reward.name}</span>
-                <span class="reward-channel-coins">🪙 ${reward.reward} امتیاز</span>
-            </div>
-            <button type="button" class="reward-channel-btn"></button>`;
-
-        const btn = card.querySelector('.reward-channel-btn');
-        updateRewardButtonState(btn, isRewardClaimed(reward), pendingChannelReturnChecks.has(reward.id));
-        btn.addEventListener('click', () => onRewardChannelButtonClick(reward, btn));
-
-        container.appendChild(card);
-    });
-}
-
-// وقتی کاربر از یک کانال باز‌شده به رازک برمی‌گردد (تب/اپ دوباره فعال
-// می‌شود)، دکمه‌ی کارت‌های «منتظر بازگشت» را خودکار از «عضویت» به «دریافت»
-// تبدیل می‌کنیم. این فقط UI را عوض می‌کند و عضویت واقعی را چک نمی‌کند
-// (طبق همان محدودیت صادقانه‌ای که بالای reward-channels.js توضیح داده شده)؛
-// امتیاز همچنان فقط با کلیک خودِ کاربر روی «دریافت» داده می‌شود.
-function refreshPendingRewardButtons() {
-    if (pendingChannelReturnChecks.size === 0) return;
-    document.querySelectorAll('#reward-channels-container .reward-channel-card').forEach(card => {
-        const rewardId = card.dataset.rewardId;
-        if (!pendingChannelReturnChecks.has(rewardId)) return;
-        const reward = REWARD_CHANNELS.find(r => r.id === rewardId);
-        if (!reward) return;
-        updateRewardButtonState(card.querySelector('.reward-channel-btn'), isRewardClaimed(reward), true);
-    });
-}
-document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') refreshPendingRewardButtons();
-});
-window.addEventListener('focus', refreshPendingRewardButtons);
-
-// پنجره‌ی تأییدِ مشترک برای پاداش ورود روزانه و کارت‌های عضویت.
-function showCoinRewardModal(title, text) {
-    document.getElementById('channel-reward-title').textContent = title;
-    document.getElementById('channel-reward-text').textContent = text;
-    document.getElementById('modal-channel-reward').classList.remove('hidden');
-}
 
 
 /* =========================================
@@ -1842,12 +1603,6 @@ function setupEvents() {
             pendingJoinAction = null;
             action();
         }
-    });
-
-    document.getElementById('btn-claim-daily-reward').addEventListener('click', claimDailyLoginReward);
-    document.getElementById('btn-close-channel-reward').addEventListener('click', () => {
-        AudioEngine.tap();
-        document.getElementById('modal-channel-reward').classList.add('hidden');
     });
 
     document.getElementById('btn-open-settings').addEventListener('click', () => { AudioEngine.tap(); document.getElementById('modal-settings').classList.remove('hidden'); });
