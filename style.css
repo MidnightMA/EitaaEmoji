@@ -630,6 +630,9 @@ input:checked + .slider:before { transform: translateX(20px); }
 .ios-list-item.clickable { cursor: pointer; transition: opacity 0.15s; }
 .ios-list-item.clickable:active { opacity: 0.6; }
 .setting-version { font-size: 0.85rem; color: var(--text-muted); font-weight: 600; }
+/* فلش کوچیک کنار «جایزه» که نشون می‌ده این ردیف قابل‌کلیکه؛ عمداً بزرگ‌تر و
+   پررنگ‌تر از متن نسخه (setting-version) است تا کاربر راحت‌تر ببیندش. */
+.setting-chevron { font-size: 1.7rem; line-height: 1; color: var(--text-muted); font-weight: 700; }
 
 /* --- مودال تازه‌های اپ (Changelog) --- */
 .changelog-modal { text-align: right; max-height: 80vh; display: flex; flex-direction: column; }
@@ -800,3 +803,94 @@ input:checked + .slider:before { transform: translateX(20px); }
 .avatar-option-none { width: 64px; height: 64px; background: var(--ios-blue); }
 .avatar-option-none svg { width: 60%; height: 60%; }
 .avatar-option:active { transform: scale(0.94); }
+
+/* --- بخش «🎁 امتیاز و پاداش» --- */
+.setting-icon-square.icon-rewards { background: linear-gradient(135deg, #ffd60a, #ff9500); }
+
+.rewards-modal { text-align: right; max-height: 85vh; display: flex; flex-direction: column; }
+.rewards-body { overflow-y: auto; max-height: 75vh; padding-right: 2px; }
+
+.daily-reward-card {
+    background: linear-gradient(135deg, #ffd60a, #ff9500);
+    border-radius: 22px;
+    padding: 18px;
+    color: #fff;
+    margin-bottom: 22px;
+    box-shadow: 0 8px 20px rgba(255, 149, 0, 0.3);
+}
+.daily-reward-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 4px; }
+.daily-reward-sub { font-size: 0.8rem; opacity: 0.92; margin-bottom: 16px; line-height: 1.5; }
+.daily-reward-pips { display: flex; justify-content: space-between; gap: 4px; margin-bottom: 18px; }
+.daily-pip { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.daily-pip-dot {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: rgba(255,255,255,0.25);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem; font-weight: 700;
+}
+.daily-pip.claimed .daily-pip-dot { background: #fff; color: var(--ios-orange); }
+.daily-pip.today .daily-pip-dot { box-shadow: 0 0 0 2px #fff; }
+.daily-pip-label { font-size: 0.6rem; opacity: 0.9; }
+.daily-reward-btn { width: 100%; background: #fff; color: var(--ios-orange); font-weight: 800; }
+.daily-reward-btn:disabled { opacity: 0.55; cursor: default; }
+
+.reward-channels-title { font-size: 0.95rem; font-weight: 700; color: var(--text-muted); margin: 4px 2px 12px; }
+.reward-channels-list { display: flex; flex-direction: column; gap: 12px; }
+.reward-channel-card {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--card-bg); border-radius: 18px; padding: 14px 16px;
+    box-shadow: var(--shadow-sm);
+}
+.reward-channel-info { flex: 1; min-width: 0; }
+.reward-channel-name { font-size: 0.95rem; font-weight: 800; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.reward-channel-coins { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; }
+.reward-channel-btn { padding: 9px 16px; font-size: 0.85rem; border-radius: 12px; flex-shrink: 0; }
+.reward-btn-join { background: #ffcc00; color: #1c1c1e; }
+.reward-btn-claim { background: var(--ios-green); color: #fff; }
+.reward-btn-claimed { background: var(--border-color); color: var(--text-muted); }
+
+.reward-join-info-modal p { color: var(--text-muted); font-size: 0.95rem; line-height: 1.7; margin: 12px 0 20px; }
+
+/* =========================================================
+   آیکون‌های گرافیکی (به‌جای ایموجی) — دسته‌بندی‌ها، مدال‌ها، کارت‌های پاداش
+   همه یک زبان بصری مشترک دارن: مربع/دایره‌ی رنگی گرادیانی + آیکون خط‌محور
+   سفید وسطش (دقیقاً سبک آیکون‌های تنظیمات).
+========================================================= */
+.cat-icon-badge, .medal-icon-badge, .reward-channel-icon {
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.18);
+    background: linear-gradient(135deg, #8e8e93, #636366); /* پیش‌فرض خنثی برای idهای تعریف‌نشده */
+}
+.cat-icon-badge svg, .medal-icon-badge svg, .reward-channel-icon svg { display: block; }
+
+/* کارت دسته‌بندی صفحه‌ی اصلی */
+.cat-icon-badge { width: 60px; height: 60px; border-radius: 18px; }
+.cat-icon-badge svg { width: 30px; height: 30px; }
+.category-card.locked .cat-icon-badge { filter: grayscale(0.6); opacity: 0.7; }
+
+/* مدال‌ها (خود .medal-card از قبل حالت قفل/باز رو با opacity+grayscale مدیریت می‌کنه) */
+.medal-icon-badge { width: 48px; height: 48px; border-radius: 14px; margin: 0 auto 8px; }
+.medal-icon-badge svg { width: 24px; height: 24px; }
+
+/* کارت‌های پاداش کانالی */
+.reward-channel-icon { width: 44px; height: 44px; border-radius: 12px; }
+.reward-channel-icon svg { width: 22px; height: 22px; }
+
+/* رنگ هر آیکون (گرادیان‌های متفاوت برای تشخیص سریع بخش‌ها) */
+.icon-cat-proverbs, .icon-rc-avay { background: linear-gradient(135deg, #9d7bff, #6c47e0); }
+.icon-cat-movies { background: linear-gradient(135deg, #ff6b9d, #ff2d78); }
+.icon-cat-countries { background: linear-gradient(135deg, #34c3ff, #0a84ff); }
+.icon-cat-idioms { background: linear-gradient(135deg, #34d399, #059669); }
+.icon-cat-ideas { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
+
+.icon-medal-first { background: linear-gradient(135deg, #34d399, #047857); }
+.icon-medal-rich { background: linear-gradient(135deg, #c084fc, #7c3aed); }
+.icon-medal-daily { background: linear-gradient(135deg, #ff8a65, #ff5f6d); }
+.icon-medal-crown { background: linear-gradient(135deg, #ffd60a, #f59e0b); }
+
+.icon-rc-tech { background: linear-gradient(135deg, #34c3ff, #0a84ff); }
+.icon-rc-meme { background: linear-gradient(135deg, #ff6b9d, #ff2d78); }
+.icon-rc-my { background: linear-gradient(135deg, #ff9f0a, #ff6b00); }
+.icon-rc-ad { background: linear-gradient(135deg, #4ade80, #16a34a); }
+.icon-rc-star { background: linear-gradient(135deg, #ffd60a, #ff9500); }
