@@ -1,0 +1,249 @@
+/* =====================================================
+   RAZAK — لایه‌ی تم (هویت بصری اختصاصی، نسخه‌ی ۲)
+   -----------------------------------------------------
+   بعد از style.css لود می‌شود و فقط شکل/حرکت را override می‌کند؛ به هیچ
+   متغیر رنگی تم روشن/تاریک (--bg-main، --card-bg، --text-main، --ios-blue،
+   --ios-orange، --ios-green، --border-color و ...) دست نمی‌زند. یعنی هر دو
+   تم دقیقاً همون رنگ‌های style.css رو دارن؛ فقط شکل ظرف‌ها عوض شده.
+
+   ایده‌ی طراحی: «میز بازی حدس-ایموجی» — به‌جای کپی iOS (کارت سفید صاف +
+   دکمه‌ی آبی صاف)، هر بخش شکل واقعیِ خودش رو تقلید می‌کنه:
+     • دسته‌بندی‌ها → «بلیت بازی» با دو شکاف گرد لبه (مثل بلیت بخت‌آزمایی)
+     • خانه‌های جواب و کلیدهای صفحه‌کلید → «مهره‌ی فیزیکی» با ضخامت/برجستگی
+     • امتیاز → «سکه»
+     • مدال‌ها → «نشان روبان‌دار»
+     • دکمه‌ی اصلی → «دکمه‌ی آرکید» که موقع لمس واقعاً فرو می‌ره
+   برای اینکه توی هر دو تم درست کار کنه، همه‌ی سایه/ضخامت‌ها یا از
+   var(--border-color)/var(--shadow-*) خود style.css استفاده می‌کنن، یا از
+   سیاهِ نیمه‌شفاف (rgba(0,0,0,..)) که روی هر پس‌زمینه‌ای خنثی و قابل‌قبوله.
+===================================================== */
+
+@media (prefers-reduced-motion: no-preference) {
+    :root { --pz-ease: cubic-bezier(.34, 1.56, .64, 1); }
+}
+:root { --pz-ease: ease-out; }
+
+/* ---------- تایپوگرافی امتیاز/تیتر: کمی «بازی‌وار»تر ---------- */
+.score-pill,
+.medal-name,
+.level-indicator,
+.reward-channel-coins,
+h2 {
+    letter-spacing: 0.2px;
+}
+
+/* =========================================================
+   ۱) امتیاز = سکه
+========================================================= */
+.score-pill {
+    position: relative;
+    overflow: hidden;
+    background: var(--card-bg);
+    border: 2px solid var(--ios-orange);
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.15), 0 2px 0 rgba(0, 0, 0, 0.12);
+    font-weight: 800;
+}
+[data-theme="dark"] .score-pill { box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.25), 0 2px 0 rgba(0, 0, 0, 0.35); }
+.score-pill::after {
+    content: "";
+    position: absolute; inset: 0;
+    background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,0.35) 50%, transparent 60%);
+    transform: translateX(-120%);
+    animation: pz-coin-shine 4.5s ease-in-out infinite;
+}
+@keyframes pz-coin-shine {
+    0%, 60% { transform: translateX(-120%); }
+    85%, 100% { transform: translateX(120%); }
+}
+
+/* =========================================================
+   ۲) کارت دسته‌بندی = «بلیت بازی» (دو شکاف گرد در لبه‌ها)
+========================================================= */
+.category-card {
+    position: relative;
+    border-radius: 18px;
+    box-shadow: 0 3px 0 rgba(0, 0, 0, 0.10), var(--shadow-sm);
+    transition: transform 0.15s var(--pz-ease), box-shadow 0.15s;
+    overflow: visible;
+}
+.category-card::before,
+.category-card::after {
+    content: "";
+    position: absolute;
+    width: 16px; height: 16px;
+    background: var(--bg-main);
+    border-radius: 50%;
+    top: 50%; transform: translateY(-50%);
+    box-shadow: inset 0 0 0 2px var(--border-color);
+}
+.category-card::before { right: -8px; }
+.category-card::after { left: -8px; }
+.category-card:active {
+    transform: translateY(2px) scale(0.98);
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.10), var(--shadow-sm);
+}
+.category-card.locked { box-shadow: none; }
+.category-card.locked::before, .category-card.locked::after { opacity: 0.5; }
+.progress-track { border-radius: 6px; overflow: hidden; }
+.progress-fill { border-radius: 6px; }
+
+/* =========================================================
+   ۳) کارت چالش روزانه و کارت جایزه‌ی روزانه = «بلیت طلایی»
+========================================================= */
+.daily-challenge-card,
+.daily-reward-card {
+    position: relative;
+    border-radius: 20px;
+    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.16), var(--shadow-md);
+}
+.daily-challenge-card::before,
+.daily-challenge-card::after {
+    content: "";
+    position: absolute;
+    width: 18px; height: 18px;
+    background: var(--bg-main);
+    border-radius: 50%;
+    top: 50%; transform: translateY(-50%);
+}
+.daily-challenge-card::before { right: -9px; }
+.daily-challenge-card::after { left: -9px; }
+.daily-challenge-card:active { transform: translateY(2px) scale(0.98); }
+
+/* =========================================================
+   ۴) خانه‌های جواب و کلیدهای صفحه‌کلید = «مهره‌ی فیزیکی»
+========================================================= */
+.slot {
+    border-radius: 10px;
+    border-width: 2px;
+    box-shadow: 0 3px 0 var(--border-color);
+    transition: transform 0.12s var(--pz-ease), box-shadow 0.12s, border-color 0.2s, color 0.2s;
+}
+.slot.filled {
+    box-shadow: 0 3px 0 var(--ios-blue);
+    transform: translateY(-1px);
+}
+.slot.locked {
+    box-shadow: 0 3px 0 var(--ios-green);
+    animation: pz-slot-lock 0.35s var(--pz-ease);
+}
+@keyframes pz-slot-lock {
+    0% { transform: scale(1); }
+    45% { transform: scale(1.18) rotate(-4deg); }
+    100% { transform: scale(1) rotate(0); }
+}
+
+.key {
+    border-radius: 10px;
+    box-shadow: 0 4px 0 var(--border-color);
+    transition: transform 0.08s var(--pz-ease), box-shadow 0.08s;
+}
+.key:active {
+    transform: translateY(4px);
+    box-shadow: 0 0 0 var(--border-color);
+}
+.key.used { transform: translateY(4px) scale(0.5); }
+
+/* =========================================================
+   ۵) صحنه‌ی ایموجی = «استیج/ویترین بازی»
+========================================================= */
+.emoji-area {
+    position: relative;
+    border-radius: 22px;
+    background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.05) 0%, transparent 70%);
+}
+[data-theme="dark"] .emoji-area {
+    background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+}
+.apple-emoji, .apple-emoji-native {
+    animation: pz-emoji-in 0.4s var(--pz-ease) both;
+}
+@keyframes pz-emoji-in {
+    from { transform: scale(0.5) rotate(-8deg); opacity: 0; }
+    to { transform: scale(1) rotate(0); opacity: 1; }
+}
+
+/* =========================================================
+   ۶) دکمه‌ها = «دکمه‌ی آرکید» (واقعاً فرو می‌ره)
+========================================================= */
+.ios-btn { transition: transform 0.1s var(--pz-ease), box-shadow 0.1s, opacity 0.15s; }
+.ios-btn:active { opacity: 1; }
+
+.primary-btn, .success-btn {
+    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.22);
+}
+.primary-btn:active, .success-btn:active {
+    transform: translateY(4px);
+    box-shadow: 0 0 0 rgba(0, 0, 0, 0.22);
+}
+.ghost-btn:active { transform: scale(0.96); }
+.icon-btn { transition: transform 0.12s var(--pz-ease); }
+.icon-btn:active { transform: scale(0.88) rotate(-4deg); }
+
+/* =========================================================
+   ۷) مدال‌ها = «نشان روبان‌دار»
+========================================================= */
+.medal-card {
+    position: relative;
+    border-radius: 16px 16px 6px 6px;
+}
+.medal-card::after {
+    content: "";
+    position: absolute;
+    left: 50%; bottom: -6px; transform: translateX(-50%);
+    width: 0; height: 0;
+    border-left: 9px solid transparent;
+    border-right: 9px solid transparent;
+    border-top: 7px solid var(--border-color);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+.medal-card.unlocked::after { opacity: 1; border-top-color: var(--ios-orange); }
+.medal-card.unlocked {
+    animation: pz-medal-pop 0.5s var(--pz-ease);
+}
+.medal-card.unlocked .medal-icon {
+    display: inline-block;
+    animation: pz-medal-wiggle 2.6s ease-in-out infinite;
+}
+@keyframes pz-medal-pop {
+    0% { transform: scale(0.7) rotate(-10deg); }
+    60% { transform: scale(1.12) rotate(4deg); }
+    100% { transform: scale(1) rotate(0); }
+}
+@keyframes pz-medal-wiggle {
+    0%, 85%, 100% { transform: rotate(0); }
+    90% { transform: rotate(-6deg); }
+    95% { transform: rotate(6deg); }
+}
+
+/* =========================================================
+   ۸) مودال‌ها: کمی فنری‌تر از فید ساده‌ی قبلی
+========================================================= */
+@keyframes pz-modal-pop { 0% { transform: scale(0.85); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes pz-modal-rise { 0% { transform: translateY(36px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+.ios-modal.pop-in { animation: pz-modal-pop 0.32s var(--pz-ease) both; }
+.ios-modal.slide-up { animation: pz-modal-rise 0.34s var(--pz-ease) both; }
+.modal-icon { animation: pz-medal-pop 0.4s var(--pz-ease); }
+
+/* =========================================================
+   ۹) کارت‌های پاداش کانال + آیتم‌های تنظیمات: کمی گرم‌تر
+========================================================= */
+.reward-channel-card { border-radius: 16px; box-shadow: 0 2px 0 rgba(0, 0, 0, 0.08), var(--shadow-sm); }
+.reward-btn-join, .reward-btn-claim { box-shadow: 0 3px 0 rgba(0, 0, 0, 0.18); transition: transform 0.1s var(--pz-ease), box-shadow 0.1s; }
+.reward-btn-join:active, .reward-btn-claim:active { transform: translateY(3px); box-shadow: 0 0 0 rgba(0, 0, 0, 0.18); }
+.ios-list-item.clickable:active { background: rgba(0, 0, 0, 0.03); }
+[data-theme="dark"] .ios-list-item.clickable:active { background: rgba(255, 255, 255, 0.04); }
+
+/* دسترسی‌پذیری: خاموش کردن انیمیشن برای کسانی که کم‌تحرکی رو ترجیح می‌دن */
+@media (prefers-reduced-motion: reduce) {
+    .score-pill::after,
+    .apple-emoji, .apple-emoji-native,
+    .medal-card.unlocked, .medal-card.unlocked .medal-icon,
+    .ios-modal.pop-in, .ios-modal.slide-up, .modal-icon,
+    .slot.locked {
+        animation: none !important;
+    }
+    .category-card, .ios-btn, .key, .icon-btn, .reward-btn-join, .reward-btn-claim {
+        transition: none !important;
+    }
+}
