@@ -135,8 +135,11 @@ window.debugRotation = function (customDate) {
 
 const BASE_SCORE = 10;
 const DAILY_BASE_SCORE = 50;
-// فاصله‌ی چرخش خودکار کارت‌های «کانال‌های ما»
-const PROMO_ROTATE_INTERVAL_MS = 5000;
+// پاداشی که با گرفتن هر مدال (یک‌بار، همون لحظه‌ی آنلاک‌شدن) به امتیاز کاربر اضافه می‌شود
+const MEDAL_REWARD_SCORE = 200;
+// فاصله‌ی چرخش خودکار کارت‌های «کانال‌های ما» (قبلاً ۵ ثانیه بود؛ به درخواست
+// کاربر ۳ ثانیه بیشتر شد تا حرکت کارت‌ها آروم‌تر و قابل‌خوندن‌تر باشه)
+const PROMO_ROTATE_INTERVAL_MS = 8000;
 
 // امتیاز پایه‌ی هر دسته؛ اگر دسته‌ای اینجا نبود از BASE_SCORE استفاده می‌شود.
 // (درخواست: امتیاز ضرب‌المثل‌ها حداقل ۲۵ باشد)
@@ -150,8 +153,17 @@ const CATEGORY_SCORES = {
 // یک آبجکت جدید بالای این آرایه اضافه کن و APP_VERSION را هم به‌روز کن؛
 // خودکار یک بار برای کاربرهایی که نسخه قبلی را دیده‌اند، پنجره «تازه‌های این
 // نسخه» نمایش داده می‌شود (و همیشه هم از تنظیمات قابل مشاهده است).
-const APP_VERSION = '1.9.0';
+const APP_VERSION = '1.10.0';
 const CHANGELOG_DB = [
+    {
+        version: '1.10.0',
+        added: [
+            'بخش جدید «🎁 جایزه» به تنظیمات اضافه شد',
+            'امکان دریافت امتیاز روزانه رایگان',
+            'امکان دریافت سکه با عضویت در کانال‌ها',
+            'ظاهر و تجربه کاربری بخش جایزه بهتر شد'
+        ]
+    },
     {
         version: '1.9.0',
         added: [
@@ -241,6 +253,15 @@ const GameState = {
     settings: { sound: true, darkMode: false, gender: null, avatarId: null, displayName: null },
     dailyChallenge: { lastCompletedDate: null, completedCount: 0 },
     joinGate: { confirmedChannelId: null, confirmedWeekNumber: null },
+    // amount roozane: weekStartKey/claimedDaysThisWeek برای نمایش هفته‌ی
+    // جاری، lastGrantedDateKey یک محافظ یکنواخت (monotonic) اضافه‌ست تا
+    // عقب کشیدن ساعت دستگاه نتونه یک روز/هفته‌ی قبلاً گرفته‌شده رو دوباره
+    // باز کنه (توضیح کامل جلوی تابع syncDailyRewardWeek). channels: شناسه‌ی
+    // کارت‌های پاداش کانالی که برای همیشه گرفته شده‌اند.
+    rewards: {
+        daily: { weekStartKey: null, claimedDaysThisWeek: [], lastGrantedDateKey: null },
+        channels: {}
+    },
     isDailyChallenge: false,
     activeCategory: null,
     activeLevelIndex: 0,
@@ -372,6 +393,64 @@ function getPromoIconMarkup(iconType) {
     return PROMO_ICONS[iconType] || PROMO_ICONS.tech;
 }
 
+// آیکون‌های گرافیکی (خط-محور، دقیقاً همون سبک آیکون‌های تنظیمات در
+// index.html) برای دسته‌بندی‌ها، مدال‌ها و کارت‌های پاداش کانالی — به‌جای
+// ایموجی خام. اگر شناسه‌ای اینجا تعریف نشده باشد (مثلاً یک دسته‌بندی کاملاً
+// جدید که بعداً به data.json اضافه می‌شود)، همان ایموجی قبلی fallback است؛
+// یعنی چیزی خراب نمی‌شود، فقط شکل ظاهری‌اش ساده‌تر می‌ماند تا کسی این
+// آبجکت‌ها را برایش تکمیل کند.
+const ICON_BOOK = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h7a4 4 0 0 1 4 4v12a3 3 0 0 0-3-3H2z"/><path d="M22 4h-7a4 4 0 0 0-4 4v12a3 3 0 0 1 3-3h8z"/></svg>`;
+const ICON_CLAPPER = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3Z"/><path d="M6.2 5.3 7 8"/><path d="M12.4 3.4l.8 2.7"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>`;
+const ICON_GLOBE = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10Z"/></svg>`;
+const ICON_CHAT = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
+const ICON_BULB = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-2.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2Z"/></svg>`;
+const ICON_FLAG = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>`;
+const ICON_GEM = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 12L2 9Z"/><path d="M11 3 8 9l4 12 4-12-3-6"/><path d="M2 9h20"/></svg>`;
+const ICON_FLAME = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 17a2.5 2.5 0 0 0 2.5-2.5c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7.5 7.5 0 1 1-15 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>`;
+const ICON_CROWN = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7Z"/><path d="M5 20h14"/></svg>`;
+const ICON_MEGAPHONE = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5v12L3 13v-2z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>`;
+const ICON_LAUGH = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M18 13a6 6 0 0 1-12 0"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>`;
+const ICON_LAYERS = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg>`;
+const ICON_TAG = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.6 2.6a2 2 0 0 0-1.4-.6H4a2 2 0 0 0-2 2v7.2c0 .5.2 1 .6 1.4l8.7 8.7a2.4 2.4 0 0 0 3.4 0l6.6-6.6a2.4 2.4 0 0 0 0-3.4Z"/><circle cx="7.5" cy="7.5" r="1.5" fill="white" stroke="none"/></svg>`;
+const ICON_STAR = `<svg viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+
+// کلید = id همان دسته‌بندی در data.json
+const CATEGORY_ICONS = {
+    proverbs: { svg: ICON_BOOK, cls: 'icon-cat-proverbs' },
+    movies: { svg: ICON_CLAPPER, cls: 'icon-cat-movies' },
+    countries: { svg: ICON_GLOBE, cls: 'icon-cat-countries' },
+    idioms: { svg: ICON_CHAT, cls: 'icon-cat-idioms' },
+    ideas: { svg: ICON_BULB, cls: 'icon-cat-ideas' }
+};
+
+// کلید = id همان مدال در MEDALS_DB (سه‌تای اول همون آیکون دسته‌بندی‌شون رو
+// قرض می‌گیرن تا یه‌دستی بصری حفظ بشه)
+const MEDAL_ICONS = {
+    first_blood: { svg: ICON_FLAG, cls: 'icon-medal-first' },
+    proverbs_novice: { svg: ICON_BOOK, cls: 'icon-cat-proverbs' },
+    movies_novice: { svg: ICON_CLAPPER, cls: 'icon-cat-movies' },
+    countries_novice: { svg: ICON_GLOBE, cls: 'icon-cat-countries' },
+    rich: { svg: ICON_GEM, cls: 'icon-medal-rich' },
+    daily_fan: { svg: ICON_FLAME, cls: 'icon-medal-daily' },
+    all_categories: { svg: ICON_CROWN, cls: 'icon-medal-crown' }
+};
+
+// کلید = id همان کارت در reward-channels.js (avay_khiyal, tech_nour، ...)
+const REWARD_ICONS = {
+    avay_khiyal: { svg: ICON_BOOK, cls: 'icon-rc-avay' },
+    tech_nour: { svg: ICON_MEGAPHONE, cls: 'icon-rc-tech' },
+    rasa_meme: { svg: ICON_LAUGH, cls: 'icon-rc-meme' },
+    my_channels: { svg: ICON_LAYERS, cls: 'icon-rc-my' },
+    tab_amoo: { svg: ICON_TAG, cls: 'icon-rc-ad' },
+    chaharom: { svg: ICON_STAR, cls: 'icon-rc-star' }
+};
+
+function renderIconBadge(map, id, badgeClass, fallbackEmoji) {
+    const entry = map[id];
+    if (!entry) return `<div class="${badgeClass}">${fallbackEmoji || ''}</div>`;
+    return `<div class="${badgeClass} ${entry.cls}">${entry.svg}</div>`;
+}
+
 // عکس پروفایل کانال/تبلیغ‌کننده را داخل container (همان .channel-promo-icon)
 // می‌گذارد. عکس‌ها در فایل جداگانه‌ی channel-photos.js (متغیر CHANNEL_PHOTOS)
 // نگهداری می‌شوند تا تغییرشان نیازی به دست‌زدن به این فایل نداشته باشد.
@@ -457,7 +536,8 @@ const StorageManager = {
             unlockedMedals: GameState.unlockedMedals,
             settings: GameState.settings,
             dailyChallenge: GameState.dailyChallenge,
-            joinGate: GameState.joinGate
+            joinGate: GameState.joinGate,
+            rewards: GameState.rewards
         });
         localStorage.setItem(this.getKey(), payload);
         if (GameState.user.id !== 'guest' && KVDB_BUCKET_ID !== "YOUR_BUCKET_ID_HERE") {
@@ -496,6 +576,14 @@ const StorageManager = {
                 GameState.settings = { ...GameState.settings, ...(data.settings || {}) };
                 GameState.dailyChallenge = data.dailyChallenge || { lastCompletedDate: null, completedCount: 0 };
                 GameState.joinGate = data.joinGate || { confirmedChannelId: null, confirmedWeekNumber: null };
+                // با ...(اسپرد) روی مقدار پیش‌فرض merge می‌کنیم، نه جایگزینی
+                // کامل، تا کاربرهایی که از قبل دیتا دارن ولی این فیلد رو
+                // ندارن (نسخه‌ی قبل از این آپدیت) خطا نگیرن و مقدار پیش‌فرض
+                // امن جایگزین بشه.
+                GameState.rewards = {
+                    daily: { weekStartKey: null, claimedDaysThisWeek: [], lastGrantedDateKey: null, ...(data.rewards && data.rewards.daily) },
+                    channels: (data.rewards && data.rewards.channels) || {}
+                };
                 this.ready = true;
             } catch (e) {
                 // دیتا وجود داشت ولی خراب/ناسازگار بود؛ به‌جای رفتن به مقادیر
@@ -863,7 +951,7 @@ function renderHome() {
         const div = document.createElement('div');
         div.className = `medal-card ${isUnlocked ? 'unlocked' : ''}`;
         const progressHtml = (!isUnlocked && medal.progress) ? `<span class="medal-progress">${medal.progress(GameState)}</span>` : '';
-        div.innerHTML = `<span class="medal-icon">${medal.icon}</span><span class="medal-name">${medal.name}</span>${progressHtml}`;
+        div.innerHTML = `${renderIconBadge(MEDAL_ICONS, medal.id, 'medal-icon-badge', medal.icon)}<span class="medal-name">${medal.name}</span>${progressHtml}`;
         medalsContainer.appendChild(div);
     });
     document.getElementById('medals-count').textContent = `${GameState.unlockedMedals.length}/${MEDALS_DB.length}`;
@@ -885,7 +973,7 @@ function renderHome() {
         const isLocked = total === 0;
         div.className = `category-card ${isLocked ? 'locked' : (completed === total ? 'completed' : '')}`;
         div.innerHTML = `
-            <div class="cat-icon">${cat.icon}</div>
+            ${renderIconBadge(CATEGORY_ICONS, cat.id, 'cat-icon-badge', cat.icon)}
             <div class="cat-info">
                 <h3 class="cat-title">${cat.name}</h3>
                 <div class="cat-stats">${isLocked ? 'به‌زودی...' : `${completed} از ${total} مرحله`}</div>
@@ -1550,7 +1638,9 @@ function checkMedals() {
     MEDALS_DB.forEach(medal => {
         if (!GameState.unlockedMedals.includes(medal.id) && medal.check(GameState)) {
             GameState.unlockedMedals.push(medal.id);
-            showToast(medal.icon, `مدال جدید: ${medal.name}`);
+            GameState.globalScore += MEDAL_REWARD_SCORE;
+            GameState.totalEarned += MEDAL_REWARD_SCORE;
+            showToast(medal.icon, `مدال جدید: ${medal.name} (+${MEDAL_REWARD_SCORE} 🪙)`);
             AudioEngine.medal();
         }
     });
@@ -1606,6 +1696,13 @@ function setupEvents() {
     });
 
     document.getElementById('btn-open-settings').addEventListener('click', () => { AudioEngine.tap(); document.getElementById('modal-settings').classList.remove('hidden'); });
+    document.getElementById('btn-open-rewards').addEventListener('click', () => {
+        AudioEngine.tap();
+        document.getElementById('modal-settings').classList.add('hidden');
+        renderRewardsModal();
+        document.getElementById('modal-rewards').classList.remove('hidden');
+    });
+    document.getElementById('btn-claim-daily-reward').addEventListener('click', claimDailyReward);
     document.getElementById('btn-open-changelog').addEventListener('click', () => {
         AudioEngine.tap();
         document.getElementById('modal-settings').classList.add('hidden');
@@ -1711,6 +1808,232 @@ function checkForUpdates() {
         renderChangelog(false);
         document.getElementById('modal-changelog').classList.remove('hidden');
     }
+}
+
+/* =========================================
+   8. امتیاز و پاداش (Daily Reward + Channel Rewards)
+========================================= */
+// همه‌ی کارت‌های پاداش کانالی از فایل جداگانه‌ی reward-channels.js خوانده
+// می‌شود (نه اینجا)؛ برای اضافه/ویرایش یک کانال پاداش به آن فایل برو.
+// fallback زیر فقط برای وقتی است که آن فایل به هر دلیلی لود نشده باشد.
+const REWARD_CONFIG = (typeof window !== 'undefined' && window.REWARD_SETTINGS)
+    ? window.REWARD_SETTINGS
+    : { channels: [], rotatingSlot: null };
+
+const REWARD_DAYS_FA = ['شنبه', 'یک‌شنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه'];
+const DAILY_REWARD_MIN = 10;
+const DAILY_REWARD_MAX = 85;
+
+// همون فرمت YYYY-MM-DD که getTodayKey هم استفاده می‌کند (بر مبنای ساعت محلی دستگاه)
+function getDateKey(d) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+// شروع هفته‌ی جاری (شنبه) برای تاریخ داده‌شده. getDay() در جاوااسکریپت
+// یکشنبه=۰ ... شنبه=۶ برمی‌گرداند؛ فرمول زیر فاصله‌ی «امروز» تا آخرین شنبه را می‌دهد.
+function getWeekStartDate(d) {
+    const daysSinceSaturday = (d.getDay() + 1) % 7;
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate() - daysSinceSaturday);
+}
+
+// ⚠️ محدودیت واقعی (مثل بقیه‌ی این پروژه‌ی کاملاً استاتیک، نگاه کن به
+// توضیح گیت عضویت اجباری بالاتر همین فایل): تشخیص «امروز چه روزیه» فقط از
+// روی ساعت خود گوشی ممکن است، نه یک ساعت سرور واقعی (چون این سایت اصلاً
+// بک‌اند ندارد). اگر امنیت ۱۰۰٪ در برابر دستکاری ساعت لازم باشد، این بخش
+// باید به یک سرویس بک‌اند واقعی (که ساعت را خودش تعیین کند، نه کلاینت) وصل
+// شود. تا آن زمان، محافظ زیر ساده‌ترین و رایج‌ترین روش تقلب — عقب بردن
+// ساعت گوشی برای گرفتن دوباره‌ی جایزه‌ی همون روز/هفته — را می‌گیرد:
+// «هفته‌ی ثبت‌شده» در GameState هرگز به عقب برنمی‌گردد، فقط می‌تواند جلوتر
+// برود. یعنی اگر GameState.rewards.daily.weekStartKey از هفته‌ی محاسبه‌شده‌ی
+// فعلی جلوتر یا برابر باشد، هیچ چیزی ریست نمی‌شود و روزهای قبلاً گرفته‌شده
+// (claimedDaysThisWeek) دست‌نخورده می‌مانند.
+function syncDailyRewardWeek() {
+    const now = new Date();
+    const todayKey = getDateKey(now);
+    const weekStartKey = getDateKey(getWeekStartDate(now));
+    const daily = GameState.rewards.daily;
+
+    if (!daily.weekStartKey || weekStartKey > daily.weekStartKey) {
+        daily.weekStartKey = weekStartKey;
+        daily.claimedDaysThisWeek = [];
+        StorageManager.save();
+    }
+    return { now, todayKey, weekStartKey, isCurrentWeek: weekStartKey === daily.weekStartKey };
+}
+
+function canClaimDailyRewardToday() {
+    const { todayKey, isCurrentWeek } = syncDailyRewardWeek();
+    const daily = GameState.rewards.daily;
+    // اگر ساعت دستگاه از هفته‌ی ثبت‌شده عقب‌تر باشد (یعنی کسی ساعت را عقب
+    // برده)، هفته‌ی ثبت‌شده معتبر باقی می‌ماند و چیزی قابل دریافت نیست.
+    if (!isCurrentWeek) return false;
+    if (daily.claimedDaysThisWeek.includes(todayKey)) return false;
+    if (daily.lastGrantedDateKey && todayKey <= daily.lastGrantedDateKey) return false;
+    return true;
+}
+
+function claimDailyReward() {
+    if (!canClaimDailyRewardToday()) { showToast('⏳', 'امتیاز روزانه‌ی امروز رو قبلاً گرفتی.'); return; }
+    AudioEngine.tap();
+    const { todayKey } = syncDailyRewardWeek();
+    const amount = Math.floor(Math.random() * (DAILY_REWARD_MAX - DAILY_REWARD_MIN + 1)) + DAILY_REWARD_MIN;
+    GameState.globalScore += amount;
+    GameState.totalEarned += amount;
+    GameState.rewards.daily.claimedDaysThisWeek.push(todayKey);
+    GameState.rewards.daily.lastGrantedDateKey = todayKey;
+    checkMedals();
+    StorageManager.save();
+    AudioEngine.success();
+    renderHome();
+    renderDailyRewardSection();
+    showToast('🎁', `${amount} سکه امتیاز روزانه‌ت رو گرفتی! مبارکه 🎊`);
+}
+
+function renderDailyRewardSection() {
+    const { todayKey, weekStartKey } = syncDailyRewardWeek();
+    const daily = GameState.rewards.daily;
+
+    const pipsContainer = document.getElementById('daily-reward-pips');
+    if (pipsContainer) {
+        pipsContainer.innerHTML = '';
+        const [wy, wm, wd] = weekStartKey.split('-').map(Number);
+        for (let i = 0; i < 7; i++) {
+            const dayKey = getDateKey(new Date(wy, wm - 1, wd + i));
+            const claimed = daily.claimedDaysThisWeek.includes(dayKey);
+            const isToday = dayKey === todayKey;
+            const pip = document.createElement('div');
+            pip.className = `daily-pip ${claimed ? 'claimed' : ''} ${isToday ? 'today' : ''}`;
+            pip.innerHTML = `<div class="daily-pip-dot">${claimed ? '✓' : i + 1}</div><span class="daily-pip-label">${REWARD_DAYS_FA[i]}</span>`;
+            pipsContainer.appendChild(pip);
+        }
+    }
+
+    const canClaim = canClaimDailyRewardToday();
+    const btn = document.getElementById('btn-claim-daily-reward');
+    if (btn) {
+        btn.disabled = !canClaim;
+        btn.textContent = canClaim ? '🎁 دریافت امتیاز امروز' : '✅ امروز رو گرفتی، فردا دوباره بیا';
+    }
+}
+
+// --- پاداش عضویت در کانال‌ها ---
+// دقیقاً مثل گیت عضویت اجباری بالاتر همین فایل: از فرانت (بدون سرور و بدون
+// Bot API رسمی ایتا) امکان بررسی واقعی و قطعی عضویت وجود ندارد. اگر بعداً
+// یک بک‌اند/بات با دسترسی ادمین به این کانال‌ها راه‌اندازی شد، دقیقاً همینجا
+// (تابع claimRewardChannel، قبل از دادن پاداش) باید یک فراخوانی به API واقعی
+// عضویت (مثلاً getChatMember) اضافه شود. تا آن زمان، از self-report صادقانه
+// استفاده می‌شود: فقط بعد از اینکه کاربر واقعاً به کانال فرستاده شده و به
+// رازک برگشته (نه بلافاصله بعد از کلیک روی «عضویت»)، دکمه به «دریافت» تغییر
+// می‌کند؛ خود گرفتن پاداش با کلیک جدا و آگاهانه روی «دریافت» انجام می‌شود.
+const rewardChannelsReturned = new Set(); // فقط برای همین نشست؛ دائمی ذخیره نمی‌شود
+let pendingRewardCardKey = null;
+
+// کلید ذخیره‌سازی: برای کارت‌های ثابت همان id، برای جایگاه چرخشی «چهارم»
+// ترکیب id+slotVersion — همین باعث می‌شود با عوض شدن تبلیغ‌کننده (slotVersion
+// جدید در reward-channels.js) کاربر دوباره واجد شرایط پاداش شود.
+function getRewardCardKey(card) {
+    return card.slotVersion ? `${card.id}:${card.slotVersion}` : card.id;
+}
+
+function getAllRewardCards() {
+    const fixedCards = (REWARD_CONFIG.channels || []).filter(c => c.active !== false);
+    const cards = [...fixedCards];
+    if (REWARD_CONFIG.rotatingSlot && REWARD_CONFIG.rotatingSlot.active !== false) {
+        cards.push(REWARD_CONFIG.rotatingSlot);
+    }
+    return cards;
+}
+
+function isRewardChannelClaimed(card) {
+    return !!GameState.rewards.channels[getRewardCardKey(card)];
+}
+
+function renderRewardChannelsSection() {
+    const container = document.getElementById('reward-channels-list');
+    if (!container) return;
+    container.innerHTML = '';
+
+    getAllRewardCards().forEach(card => {
+        const key = getRewardCardKey(card);
+        const claimed = isRewardChannelClaimed(card);
+        const returned = rewardChannelsReturned.has(key);
+
+        const row = document.createElement('div');
+        row.className = 'reward-channel-card';
+        row.innerHTML = `
+            ${renderIconBadge(REWARD_ICONS, card.id, 'reward-channel-icon', card.icon)}
+            <div class="reward-channel-info">
+                <h4 class="reward-channel-name">${card.name}</h4>
+                <span class="reward-channel-coins">🪙 ${card.reward} سکه</span>
+            </div>`;
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'ios-btn reward-channel-btn';
+        if (claimed) {
+            btn.textContent = '✅ دریافت شد';
+            btn.classList.add('reward-btn-claimed');
+            btn.disabled = true;
+        } else if (returned) {
+            btn.textContent = 'دریافت';
+            btn.classList.add('reward-btn-claim');
+            btn.addEventListener('click', () => claimRewardChannel(card));
+        } else {
+            btn.textContent = 'عضویت';
+            btn.classList.add('reward-btn-join');
+            btn.addEventListener('click', () => openRewardChannelInfo(card));
+        }
+        row.appendChild(btn);
+        container.appendChild(row);
+    });
+}
+
+// قدم اول: پیام اطلاع‌رسانی («حتماً عضو کانال شوید...») قبل از باز شدن کانال.
+function openRewardChannelInfo(card) {
+    AudioEngine.tap();
+    pendingRewardCardKey = getRewardCardKey(card);
+    const textEl = document.getElementById('reward-join-info-text');
+    if (textEl) {
+        textEl.textContent = `برای دریافت سکه، لطفاً داخل کانال ${card.name} عضو شوید و پست‌ها را با دقت و به‌آرامی سین کنید تا سکه‌های شما فعال شوند.`;
+    }
+    const enterBtn = document.getElementById('btn-reward-enter-channel');
+    enterBtn.onclick = () => {
+        AudioEngine.tap();
+        openExternalLink(`https://eitaa.com/${card.username}`);
+    };
+    document.getElementById('modal-reward-join-info').classList.remove('hidden');
+}
+
+// وقتی کاربر از کانال به رازک برمی‌گردد (تب/اپ دوباره «دیده» می‌شود)، اگر
+// یک کارت پاداش در انتظار بود، self-report ثبت می‌شود و دکمه‌اش زرد→سبز
+// تغییر می‌کند. توضیح کامل محدودیت این روش بالای همین بخش آمده است.
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && pendingRewardCardKey) {
+        rewardChannelsReturned.add(pendingRewardCardKey);
+        pendingRewardCardKey = null;
+        document.getElementById('modal-reward-join-info').classList.add('hidden');
+        renderRewardChannelsSection();
+    }
+});
+
+function claimRewardChannel(card) {
+    const key = getRewardCardKey(card);
+    if (isRewardChannelClaimed(card)) return; // ضدتقلب: هر کلید فقط یک‌بار قابل دریافت است
+    AudioEngine.success();
+    GameState.globalScore += card.reward;
+    GameState.totalEarned += card.reward;
+    GameState.rewards.channels[key] = true;
+    rewardChannelsReturned.delete(key);
+    checkMedals();
+    StorageManager.save();
+    renderHome();
+    renderRewardChannelsSection();
+    showToast('🎊', `با عضویت در کانال ${card.name}، ${card.reward} سکه به شما داده شد. مبارکه 🎊`);
+}
+
+function renderRewardsModal() {
+    renderDailyRewardSection();
+    renderRewardChannelsSection();
 }
 
 window.addEventListener('DOMContentLoaded', async () => {
