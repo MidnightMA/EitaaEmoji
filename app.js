@@ -135,11 +135,8 @@ window.debugRotation = function (customDate) {
 
 const BASE_SCORE = 10;
 const DAILY_BASE_SCORE = 50;
-// پاداشی که با گرفتن هر مدال (یک‌بار، همون لحظه‌ی آنلاک‌شدن) به امتیاز کاربر اضافه می‌شود
-const MEDAL_REWARD_SCORE = 200;
-// فاصله‌ی چرخش خودکار کارت‌های «کانال‌های ما» (قبلاً ۵ ثانیه بود؛ به درخواست
-// کاربر ۳ ثانیه بیشتر شد تا حرکت کارت‌ها آروم‌تر و قابل‌خوندن‌تر باشه)
-const PROMO_ROTATE_INTERVAL_MS = 8000;
+// فاصله‌ی چرخش خودکار کارت‌های «کانال‌های ما»
+const PROMO_ROTATE_INTERVAL_MS = 5000;
 
 // امتیاز پایه‌ی هر دسته؛ اگر دسته‌ای اینجا نبود از BASE_SCORE استفاده می‌شود.
 // (درخواست: امتیاز ضرب‌المثل‌ها حداقل ۲۵ باشد)
@@ -391,64 +388,6 @@ const PROMO_ICONS = {
 
 function getPromoIconMarkup(iconType) {
     return PROMO_ICONS[iconType] || PROMO_ICONS.tech;
-}
-
-// آیکون‌های گرافیکی (خط-محور، دقیقاً همون سبک آیکون‌های تنظیمات در
-// index.html) برای دسته‌بندی‌ها، مدال‌ها و کارت‌های پاداش کانالی — به‌جای
-// ایموجی خام. اگر شناسه‌ای اینجا تعریف نشده باشد (مثلاً یک دسته‌بندی کاملاً
-// جدید که بعداً به data.json اضافه می‌شود)، همان ایموجی قبلی fallback است؛
-// یعنی چیزی خراب نمی‌شود، فقط شکل ظاهری‌اش ساده‌تر می‌ماند تا کسی این
-// آبجکت‌ها را برایش تکمیل کند.
-const ICON_BOOK = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h7a4 4 0 0 1 4 4v12a3 3 0 0 0-3-3H2z"/><path d="M22 4h-7a4 4 0 0 0-4 4v12a3 3 0 0 1 3-3h8z"/></svg>`;
-const ICON_CLAPPER = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3Z"/><path d="M6.2 5.3 7 8"/><path d="M12.4 3.4l.8 2.7"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>`;
-const ICON_GLOBE = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10Z"/></svg>`;
-const ICON_CHAT = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
-const ICON_BULB = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-2.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2Z"/></svg>`;
-const ICON_FLAG = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>`;
-const ICON_GEM = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 12L2 9Z"/><path d="M11 3 8 9l4 12 4-12-3-6"/><path d="M2 9h20"/></svg>`;
-const ICON_FLAME = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 17a2.5 2.5 0 0 0 2.5-2.5c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7.5 7.5 0 1 1-15 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>`;
-const ICON_CROWN = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7Z"/><path d="M5 20h14"/></svg>`;
-const ICON_MEGAPHONE = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5v12L3 13v-2z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>`;
-const ICON_LAUGH = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M18 13a6 6 0 0 1-12 0"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>`;
-const ICON_LAYERS = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg>`;
-const ICON_TAG = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.6 2.6a2 2 0 0 0-1.4-.6H4a2 2 0 0 0-2 2v7.2c0 .5.2 1 .6 1.4l8.7 8.7a2.4 2.4 0 0 0 3.4 0l6.6-6.6a2.4 2.4 0 0 0 0-3.4Z"/><circle cx="7.5" cy="7.5" r="1.5" fill="white" stroke="none"/></svg>`;
-const ICON_STAR = `<svg viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
-
-// کلید = id همان دسته‌بندی در data.json
-const CATEGORY_ICONS = {
-    proverbs: { svg: ICON_BOOK, cls: 'icon-cat-proverbs' },
-    movies: { svg: ICON_CLAPPER, cls: 'icon-cat-movies' },
-    countries: { svg: ICON_GLOBE, cls: 'icon-cat-countries' },
-    idioms: { svg: ICON_CHAT, cls: 'icon-cat-idioms' },
-    ideas: { svg: ICON_BULB, cls: 'icon-cat-ideas' }
-};
-
-// کلید = id همان مدال در MEDALS_DB (سه‌تای اول همون آیکون دسته‌بندی‌شون رو
-// قرض می‌گیرن تا یه‌دستی بصری حفظ بشه)
-const MEDAL_ICONS = {
-    first_blood: { svg: ICON_FLAG, cls: 'icon-medal-first' },
-    proverbs_novice: { svg: ICON_BOOK, cls: 'icon-cat-proverbs' },
-    movies_novice: { svg: ICON_CLAPPER, cls: 'icon-cat-movies' },
-    countries_novice: { svg: ICON_GLOBE, cls: 'icon-cat-countries' },
-    rich: { svg: ICON_GEM, cls: 'icon-medal-rich' },
-    daily_fan: { svg: ICON_FLAME, cls: 'icon-medal-daily' },
-    all_categories: { svg: ICON_CROWN, cls: 'icon-medal-crown' }
-};
-
-// کلید = id همان کارت در reward-channels.js (avay_khiyal, tech_nour، ...)
-const REWARD_ICONS = {
-    avay_khiyal: { svg: ICON_BOOK, cls: 'icon-rc-avay' },
-    tech_nour: { svg: ICON_MEGAPHONE, cls: 'icon-rc-tech' },
-    rasa_meme: { svg: ICON_LAUGH, cls: 'icon-rc-meme' },
-    my_channels: { svg: ICON_LAYERS, cls: 'icon-rc-my' },
-    tab_amoo: { svg: ICON_TAG, cls: 'icon-rc-ad' },
-    chaharom: { svg: ICON_STAR, cls: 'icon-rc-star' }
-};
-
-function renderIconBadge(map, id, badgeClass, fallbackEmoji) {
-    const entry = map[id];
-    if (!entry) return `<div class="${badgeClass}">${fallbackEmoji || ''}</div>`;
-    return `<div class="${badgeClass} ${entry.cls}">${entry.svg}</div>`;
 }
 
 // عکس پروفایل کانال/تبلیغ‌کننده را داخل container (همان .channel-promo-icon)
@@ -939,7 +878,13 @@ function selectAvatarPhoto(avatarId, matchingGender) {
 }
 
 function renderHome() {
-    document.getElementById('home-total-score').textContent = GameState.globalScore;
+    const scoreEl = document.getElementById('home-total-score');
+    const prevShown = parseInt(scoreEl.textContent, 10);
+    scoreEl.textContent = GameState.globalScore;
+    if (!isNaN(prevShown) && GameState.globalScore > prevShown) {
+        const pill = scoreEl.closest('.score-pill');
+        pill.classList.remove('bump'); void pill.offsetWidth; pill.classList.add('bump');
+    }
     document.getElementById('user-name').textContent = getDisplayName();
 
     applyAvatarVisual(document.getElementById('user-avatar'), GameState.settings.gender);
@@ -951,7 +896,7 @@ function renderHome() {
         const div = document.createElement('div');
         div.className = `medal-card ${isUnlocked ? 'unlocked' : ''}`;
         const progressHtml = (!isUnlocked && medal.progress) ? `<span class="medal-progress">${medal.progress(GameState)}</span>` : '';
-        div.innerHTML = `${renderIconBadge(MEDAL_ICONS, medal.id, 'medal-icon-badge', medal.icon)}<span class="medal-name">${medal.name}</span>${progressHtml}`;
+        div.innerHTML = `<span class="medal-icon">${medal.icon}</span><span class="medal-name">${medal.name}</span>${progressHtml}`;
         medalsContainer.appendChild(div);
     });
     document.getElementById('medals-count').textContent = `${GameState.unlockedMedals.length}/${MEDALS_DB.length}`;
@@ -973,7 +918,7 @@ function renderHome() {
         const isLocked = total === 0;
         div.className = `category-card ${isLocked ? 'locked' : (completed === total ? 'completed' : '')}`;
         div.innerHTML = `
-            ${renderIconBadge(CATEGORY_ICONS, cat.id, 'cat-icon-badge', cat.icon)}
+            <div class="cat-icon">${cat.icon}</div>
             <div class="cat-info">
                 <h3 class="cat-title">${cat.name}</h3>
                 <div class="cat-stats">${isLocked ? 'به‌زودی...' : `${completed} از ${total} مرحله`}</div>
@@ -986,8 +931,58 @@ function renderHome() {
     });
 
     renderDailyChallengeCard();
+    renderHeroBanner();
     renderChannelPromos();
     renderSuggestionsSection();
+}
+
+// بنر بزرگ وسط صفحه: درصد پیشرفت کل بازی + دکمه‌ی ادامه (اولین دسته‌ی ناتمام)
+function renderHeroBanner() {
+    const banner = document.getElementById('hero-banner');
+    if (!banner) return;
+    let done = 0, total = 0, next = null;
+    DB.categories.forEach(cat => {
+        const t = cat.levels.length;
+        const d = Math.min(GameState.progress[cat.id]?.length || 0, t);
+        total += t; done += d;
+        if (!next && t > 0 && d < t) next = cat;
+    });
+    const percent = total > 0 ? Math.round((done / total) * 100) : 0;
+    const toFa = n => String(n).replace(/\d/g, x => '۰۱۲۳۴۵۶۷۸۹'[x]);
+    document.getElementById('hero-ring').style.setProperty('--p', percent);
+    document.getElementById('hero-percent').textContent = `${toFa(percent)}٪`;
+    const btn = document.getElementById('btn-hero-continue');
+    if (next) {
+        document.getElementById('hero-title').textContent = `${getDisplayName()}، آماده‌ای؟`;
+        document.getElementById('hero-sub').textContent = `${toFa(done)} از ${toFa(total)} مرحله رو حل کردی؛ مرحله‌ی بعدی توی «${next.name}» منتظرته`;
+        btn.classList.remove('hidden');
+        btn.onclick = () => { AudioEngine.tap(); requireChannelJoin(() => startCategory(next)); };
+    } else {
+        document.getElementById('hero-title').textContent = 'همه‌ی مرحله‌ها تموم شد 🎉';
+        document.getElementById('hero-sub').textContent = total > 0 ? 'فعلاً همه‌ی مرحله‌ها رو حل کردی! به‌زودی مرحله‌های جدید میاد.' : '';
+        btn.classList.add('hidden');
+        btn.onclick = null;
+    }
+}
+
+// جشن گرفتن جایزه: چند سکه‌ی فنری از روی المان می‌پرن بیرون
+function coinBurst(anchor) {
+    if (!anchor) return;
+    const r = anchor.getBoundingClientRect();
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    for (let i = 0; i < 9; i++) {
+        const c = document.createElement('span');
+        c.className = 'coin-burst';
+        c.textContent = '🪙';
+        const angle = (Math.PI * 2 * i) / 9 + Math.random() * 0.5;
+        const dist = 70 + Math.random() * 60;
+        c.style.left = cx + 'px'; c.style.top = cy + 'px';
+        c.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+        c.style.setProperty('--dy', Math.sin(angle) * dist - 30 + 'px');
+        c.style.setProperty('--rot', (Math.random() * 240 - 120) + 'deg');
+        document.body.appendChild(c);
+        setTimeout(() => c.remove(), 1000);
+    }
 }
 
 // بخش «پیشنهادات شما 🫂» — جایگزین کارت قبلی «به‌زودی...» است. تمام متن‌ها
@@ -1109,7 +1104,6 @@ function renderChannelPromos() {
                 <div class="channel-promo-icon"></div>
                 <div class="channel-promo-info">
                     <h3 class="channel-promo-title">${promo.name}</h3>
-                    <span class="channel-promo-handle">${promo.handle || ''}</span>
                     <p class="channel-promo-desc">${promo.desc}</p>
                 </div>
                 <div class="ad-cta-btn">${promo.buttonText || 'مشاهده'}</div>`;
@@ -1119,7 +1113,6 @@ function renderChannelPromos() {
                 <div class="channel-promo-icon"></div>
                 <div class="channel-promo-info">
                     <h3 class="channel-promo-title">${promo.name}</h3>
-                    <span class="channel-promo-handle">${promo.handle}</span>
                     <p class="channel-promo-desc">${promo.desc}</p>
                 </div>
                 <div class="channel-promo-arrow">‹</div>`;
@@ -1638,9 +1631,7 @@ function checkMedals() {
     MEDALS_DB.forEach(medal => {
         if (!GameState.unlockedMedals.includes(medal.id) && medal.check(GameState)) {
             GameState.unlockedMedals.push(medal.id);
-            GameState.globalScore += MEDAL_REWARD_SCORE;
-            GameState.totalEarned += MEDAL_REWARD_SCORE;
-            showToast(medal.icon, `مدال جدید: ${medal.name} (+${MEDAL_REWARD_SCORE} 🪙)`);
+            showToast(medal.icon, `مدال جدید: ${medal.name}`);
             AudioEngine.medal();
         }
     });
@@ -1886,6 +1877,10 @@ function claimDailyReward() {
     AudioEngine.success();
     renderHome();
     renderDailyRewardSection();
+    updateDailyReminderBadge();
+    const rewardCard = document.querySelector('.daily-reward-card');
+    if (rewardCard) { rewardCard.classList.remove('celebrate'); void rewardCard.offsetWidth; rewardCard.classList.add('celebrate'); }
+    coinBurst(document.getElementById('btn-claim-daily-reward'));
     showToast('🎁', `${amount} سکه امتیاز روزانه‌ت رو گرفتی! مبارکه 🎊`);
 }
 
@@ -1961,7 +1956,6 @@ function renderRewardChannelsSection() {
         const row = document.createElement('div');
         row.className = 'reward-channel-card';
         row.innerHTML = `
-            ${renderIconBadge(REWARD_ICONS, card.id, 'reward-channel-icon', card.icon)}
             <div class="reward-channel-info">
                 <h4 class="reward-channel-name">${card.name}</h4>
                 <span class="reward-channel-coins">🪙 ${card.reward} سکه</span>
@@ -2036,6 +2030,45 @@ function renderRewardsModal() {
     renderRewardChannelsSection();
 }
 
+/* =========================================
+   یادآوری روزانه‌ی امتیاز
+   (مینی‌اپ نمی‌تواند وقتی بسته است نوتیفیکیشن بفرستد؛ پس هر بار برنامه
+   باز شود یا به پیش‌زمینه برگردد، اگر امتیاز امروز گرفته نشده، روزی یک‌بار
+   پیام یادآوری نشان می‌دهیم + نقطه‌ی قرمز روی دکمه‌ی تنظیمات تا گرفته شود.)
+========================================= */
+const DAILY_REMINDER_KEY = 'razak_daily_reminder_shown';
+
+function updateDailyReminderBadge() {
+    const btn = document.getElementById('btn-open-settings');
+    if (btn) btn.classList.toggle('has-reminder', canClaimDailyRewardToday());
+}
+
+function maybeShowDailyReminder() {
+    updateDailyReminderBadge();
+    if (!canClaimDailyRewardToday()) return;
+    const todayKey = getTodayKey();
+    let shown = null;
+    try { shown = localStorage.getItem(DAILY_REMINDER_KEY); } catch (e) {}
+    if (shown === todayKey) return;
+    // اگر مودال دیگری باز است (مثلاً تازه‌های اپ یا عضویت اجباری)، تداخل نکن
+    if (document.querySelector('.modal-overlay:not(.hidden)')) return;
+    try { localStorage.setItem(DAILY_REMINDER_KEY, todayKey); } catch (e) {}
+    document.getElementById('modal-daily-reminder').classList.remove('hidden');
+}
+
+function setupDailyReminder() {
+    document.getElementById('btn-reminder-go').addEventListener('click', () => {
+        AudioEngine.tap();
+        document.getElementById('modal-daily-reminder').classList.add('hidden');
+        renderRewardsModal();
+        document.getElementById('modal-rewards').classList.remove('hidden');
+    });
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) setTimeout(maybeShowDailyReminder, 600);
+    });
+    setTimeout(maybeShowDailyReminder, 1800);
+}
+
 window.addEventListener('DOMContentLoaded', async () => {
     if (window.Eitaa && window.Eitaa.WebApp) {
         window.Eitaa.WebApp.ready();
@@ -2071,5 +2104,6 @@ window.addEventListener('DOMContentLoaded', async () => {
         renderHome();
         checkForUpdates();
         preloadUpcomingEmojis();
+        setupDailyReminder();
     });
 });
