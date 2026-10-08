@@ -14,6 +14,7 @@
 
     <link rel="preload" href="data.json" as="fetch" crossorigin>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="theme.css">
 
     <!-- Eitaa SDK: با defer لود می‌شود تا جلوی نمایش سریع صفحه را نگیرد -->
     <script src="https://developer.eitaa.com/eitaa-web-app.js" defer></script>
@@ -38,7 +39,7 @@
         <main class="home-scroll">
             <section class="daily-challenge-section">
                 <div class="daily-challenge-card" id="daily-challenge-card">
-                    <div class="daily-challenge-icon">🔥</div>
+                    <div class="daily-challenge-icon"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 17a2.5 2.5 0 0 0 2.5-2.5c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7.5 7.5 0 1 1-15 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg></div>
                     <div class="daily-challenge-info">
                         <div class="daily-challenge-top">
                             <h3>سوال روزانه</h3>
@@ -284,7 +285,18 @@
                 <button class="close-btn" data-close="modal-settings">×</button>
             </div>
 
-            <div class="settings-group-title">صدا و نمایش</div>
+            <div class="ios-list">
+                <div class="ios-list-item clickable" id="btn-open-rewards">
+                    <div class="setting-label">
+                        <span class="setting-icon-square icon-rewards">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+                        </span>
+                        <span>جایزه</span>
+                    </div>
+                    <span class="setting-chevron">‹</span>
+                </div>
+            </div>
+
             <div class="ios-list">
                 <div class="ios-list-item">
                     <div class="setting-label">
@@ -312,7 +324,6 @@
                 </div>
             </div>
 
-            <div class="settings-group-title">درباره برنامه</div>
             <div class="ios-list">
                 <div class="ios-list-item clickable" id="btn-open-changelog">
                     <div class="setting-label">
@@ -324,6 +335,7 @@
                     <span class="setting-version" id="settings-version-label">نسخه ۱.۰.۰</span>
                 </div>
             </div>
+
         </div>
     </div>
 
@@ -337,6 +349,41 @@
                 <button class="close-btn" data-close="modal-changelog">×</button>
             </div>
             <div class="changelog-body" id="changelog-body"></div>
+        </div>
+    </div>
+
+    <div id="modal-rewards" class="modal-overlay hidden">
+        <div class="ios-modal slide-up rewards-modal">
+            <div class="modal-header">
+                <h2>🎁 جایزه</h2>
+                <button class="close-btn" data-close="modal-rewards">×</button>
+            </div>
+            <div class="rewards-body">
+                <div class="daily-reward-card">
+                    <div class="daily-reward-title">🎁 امتیاز روزانه</div>
+                    <div class="daily-reward-sub">هر روز (شنبه تا جمعه) یک‌بار، بیا و سکه رایگان بگیر</div>
+                    <div class="daily-reward-pips" id="daily-reward-pips"></div>
+                    <button type="button" id="btn-claim-daily-reward" class="ios-btn daily-reward-btn">🎁 دریافت امتیاز امروز</button>
+                </div>
+
+                <div class="reward-channels-title">عضویت در کانال‌ها</div>
+                <div class="reward-channels-list" id="reward-channels-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- پیام اطلاع‌رسانی قبل از باز شدن کانال پاداش. متن این پاراگراف
+         داینامیک است و هر بار قبل از نمایش، با نام همان کانال توسط جاوااسکریپت
+         پر می‌شود (نگاه کن به تابع openRewardChannelInfo در app.js) -->
+    <div id="modal-reward-join-info" class="modal-overlay hidden">
+        <div class="ios-modal pop-in reward-join-info-modal">
+            <div class="modal-icon join-gate-icon">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1.5" fill="white" stroke="none"/></svg>
+            </div>
+            <h2>قبل از عضویت</h2>
+            <p id="reward-join-info-text">برای دریافت سکه، لطفاً داخل کانال عضو شوید و پست‌ها را با دقت و به‌آرامی سین کنید تا سکه‌های شما فعال شوند.</p>
+            <button type="button" id="btn-reward-enter-channel" class="ios-btn primary-btn w-100">ورود به کانال</button>
+            <button type="button" class="ios-btn ghost-btn w-100 close-btn" data-close="modal-reward-join-info">بعداً</button>
         </div>
     </div>
 
@@ -358,6 +405,7 @@
     </script>
     <script src="index.js"></script>
     <script src="channel-photos.js"></script>
+    <script src="reward-channels.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
