@@ -461,26 +461,16 @@ input:checked + .slider:before { transform: translateX(20px); }
 .channel-promo-info { flex: 1; min-width: 0; }
 .channel-promo-title {
     color: #ffffff;
-    font-size: 1rem;
+    font-size: 1.25rem; /* ۲۵٪ بزرگ‌تر از قبل (1rem) */
     font-weight: 700;
-    margin-bottom: 2px;
+    margin-bottom: 4px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.channel-promo-handle {
-    display: inline-block;
-    color: rgba(255, 255, 255, 0.95);
-    font-size: 0.76rem;
-    font-weight: 600;
-    direction: ltr;
-    margin-bottom: 4px;
-    text-decoration: underline;
-    text-underline-offset: 2px;
-}
 .channel-promo-desc {
     color: rgba(255, 255, 255, 0.85);
-    font-size: 0.76rem;
+    font-size: 0.82rem; /* حدود ۸٪ بزرگ‌تر از قبل (0.76rem) */
     line-height: 1.4;
 }
 .channel-promo-arrow {
@@ -606,17 +596,14 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 /* --- بازطراحی صفحه تنظیمات --- */
 .settings-modal { text-align: right; }
-.settings-group-title {
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: var(--text-muted);
-    margin: 18px 6px 8px;
-    text-transform: none;
-}
-.settings-group-title:first-of-type { margin-top: 4px; }
+/* فاصله‌ی بین کادرهای تنظیمات (بعد از حذف عنوان‌های گروه) — نزدیک‌تر از
+   قبل ولی نه چسبیده به هم */
+.settings-modal .ios-list { margin-bottom: 14px; }
+.settings-modal .ios-list:last-of-type { margin-bottom: 0; }
 .setting-label { display: flex; align-items: center; gap: 14px; }
+.setting-icon-square svg { width: 33px; height: 33px; } /* فقط خودِ آیکون ۵۰٪ بزرگ‌تر (22px ← 33px) */
 .setting-icon-square {
-    width: 52px; height: 52px;
+    width: 52px; height: 52px; /* کادر رنگی مثل قبل */
     border-radius: 14px;
     display: flex; align-items: center; justify-content: center;
     font-size: 1.45rem;
@@ -630,9 +617,6 @@ input:checked + .slider:before { transform: translateX(20px); }
 .ios-list-item.clickable { cursor: pointer; transition: opacity 0.15s; }
 .ios-list-item.clickable:active { opacity: 0.6; }
 .setting-version { font-size: 0.85rem; color: var(--text-muted); font-weight: 600; }
-/* فلش کوچیک کنار «جایزه» که نشون می‌ده این ردیف قابل‌کلیکه؛ عمداً بزرگ‌تر و
-   پررنگ‌تر از متن نسخه (setting-version) است تا کاربر راحت‌تر ببیندش. */
-.setting-chevron { font-size: 1.7rem; line-height: 1; color: var(--text-muted); font-weight: 700; }
 
 /* --- مودال تازه‌های اپ (Changelog) --- */
 .changelog-modal { text-align: right; max-height: 80vh; display: flex; flex-direction: column; }
@@ -851,46 +835,161 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 .reward-join-info-modal p { color: var(--text-muted); font-size: 0.95rem; line-height: 1.7; margin: 12px 0 20px; }
 
-/* =========================================================
-   آیکون‌های گرافیکی (به‌جای ایموجی) — دسته‌بندی‌ها، مدال‌ها، کارت‌های پاداش
-   همه یک زبان بصری مشترک دارن: مربع/دایره‌ی رنگی گرادیانی + آیکون خط‌محور
-   سفید وسطش (دقیقاً سبک آیکون‌های تنظیمات).
-========================================================= */
-.cat-icon-badge, .medal-icon-badge, .reward-channel-icon {
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.18);
-    background: linear-gradient(135deg, #8e8e93, #636366); /* پیش‌فرض خنثی برای idهای تعریف‌نشده */
+
+/* --- یادآوری امتیاز روزانه --- */
+#btn-open-settings { position: relative; }
+#btn-open-settings.has-reminder::after {
+    content: ''; position: absolute; top: 4px; right: 4px;
+    width: 13px; height: 13px; border-radius: 50%;
+    background: #ff3b30; border: 2px solid var(--card-bg);
+    animation: reminderPulse 1.6s ease-in-out infinite;
 }
-.cat-icon-badge svg, .medal-icon-badge svg, .reward-channel-icon svg { display: block; }
+@keyframes reminderPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.25); } }
+.daily-reminder-modal { text-align: center; }
+.daily-reminder-modal .modal-icon { font-size: 4rem; }
 
-/* کارت دسته‌بندی صفحه‌ی اصلی */
-.cat-icon-badge { width: 60px; height: 60px; border-radius: 18px; }
-.cat-icon-badge svg { width: 30px; height: 30px; }
-.category-card.locked .cat-icon-badge { filter: grayscale(0.6); opacity: 0.7; }
 
-/* مدال‌ها (خود .medal-card از قبل حالت قفل/باز رو با opacity+grayscale مدیریت می‌کنه) */
-.medal-icon-badge { width: 48px; height: 48px; border-radius: 14px; margin: 0 auto 8px; }
-.medal-icon-badge svg { width: 24px; height: 24px; }
+/* =====================================================
+   لایه‌ی هویت بصری (حس «کدی/تمپلیت» کمتر)
+   ۱) گرین/نویز ظریف  ۲) گرادینت نامتقارن  ۳) سایه‌ی رنگی
+   ۴) easing فنری  ۵) فونت تیتر/اعداد  ۶) بنر بزرگ وسط صفحه
+===================================================== */
+:root {
+    --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    /* برای عوض کردن فونت تیتر/اعداد: یک فونت جدید در fonts/ بگذار و اینجا
+       اسمش را جلوی --font-display بنویس (مثلاً "MyDisplay", var(--font-ios)) */
+    --font-display: var(--font-ios);
+    --tint: 0.14;
+    --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .16 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+[data-theme="dark"] {
+    --tint: 0.2;
+    --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .10 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
 
-/* کارت‌های پاداش کانالی */
-.reward-channel-icon { width: 44px; height: 44px; border-radius: 12px; }
-.reward-channel-icon svg { width: 22px; height: 22px; }
+/* --- فونت شخصیت‌دار (وزن سنگین فونت آراد) برای تیترها و اعداد --- */
+.score-pill, .section-header h2, .cat-title, .hero-score, .hero-title,
+.daily-challenge-info h3, .medal-name { font-family: var(--font-display); }
+.score-pill { font-weight: 900; font-variant-numeric: tabular-nums; letter-spacing: 0.3px; }
+.section-header h2 { font-weight: 900; }
+.cat-title { font-weight: 800; }
 
-/* رنگ هر آیکون (گرادیان‌های متفاوت برای تشخیص سریع بخش‌ها) */
-.icon-cat-proverbs, .icon-rc-avay { background: linear-gradient(135deg, #9d7bff, #6c47e0); }
-.icon-cat-movies { background: linear-gradient(135deg, #ff6b9d, #ff2d78); }
-.icon-cat-countries { background: linear-gradient(135deg, #34c3ff, #0a84ff); }
-.icon-cat-idioms { background: linear-gradient(135deg, #34d399, #059669); }
-.icon-cat-ideas { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
+/* --- رنگ تأکید هر دسته‌بندی (چرخشی) --- */
+.category-card { --accent-rgb: 0, 122, 255; --accent: rgb(var(--accent-rgb)); }
+.category-card:nth-child(5n+2) { --accent-rgb: 255, 149, 0; }
+.category-card:nth-child(5n+3) { --accent-rgb: 255, 45, 120; }
+.category-card:nth-child(5n+4) { --accent-rgb: 52, 199, 89; }
+.category-card:nth-child(5n+5) { --accent-rgb: 138, 99, 255; }
+.category-card.locked { --accent-rgb: 142, 142, 147; }
 
-.icon-medal-first { background: linear-gradient(135deg, #34d399, #047857); }
-.icon-medal-rich { background: linear-gradient(135deg, #c084fc, #7c3aed); }
-.icon-medal-daily { background: linear-gradient(135deg, #ff8a65, #ff5f6d); }
-.icon-medal-crown { background: linear-gradient(135deg, #ffd60a, #f59e0b); }
+/* --- گرادینت نامتقارن + گرین + سایه‌ی هم‌رنگ روی کارت‌ها --- */
+.category-card {
+    background-color: var(--card-bg);
+    background-image: var(--grain),
+        radial-gradient(130% 110% at 0% 0%, rgba(var(--accent-rgb), var(--tint)), transparent 58%);
+    box-shadow: 0 10px 24px -10px rgba(var(--accent-rgb), 0.45);
+    transition: transform 0.35s var(--spring), box-shadow 0.35s ease;
+}
+.category-card:nth-child(even) {
+    background-image: var(--grain),
+        radial-gradient(130% 110% at 100% 100%, rgba(var(--accent-rgb), var(--tint)), transparent 58%);
+}
+.category-card:active { transform: scale(0.96); }
+.category-card:not(.completed):not(.locked) .progress-fill { background: var(--accent); }
 
-.icon-rc-tech { background: linear-gradient(135deg, #34c3ff, #0a84ff); }
-.icon-rc-meme { background: linear-gradient(135deg, #ff6b9d, #ff2d78); }
-.icon-rc-my { background: linear-gradient(135deg, #ff9f0a, #ff6b00); }
-.icon-rc-ad { background: linear-gradient(135deg, #4ade80, #16a34a); }
-.icon-rc-star { background: linear-gradient(135deg, #ffd60a, #ff9500); }
+.medal-card {
+    background-color: var(--card-bg);
+    background-image: var(--grain), radial-gradient(120% 100% at 100% 0%, rgba(255,149,0,var(--tint)), transparent 60%);
+}
+.medal-card.unlocked { box-shadow: 0 8px 18px -8px rgba(255, 149, 0, 0.55); }
+
+.ios-card {
+    background-color: var(--card-bg);
+    background-image: var(--grain), radial-gradient(130% 100% at 0% 0%, rgba(0,122,255,calc(var(--tint) * 0.6)), transparent 55%);
+    box-shadow: 0 12px 28px -12px rgba(0, 122, 255, 0.32);
+}
+.suggestions-card {
+    background-color: var(--card-bg);
+    background-image: var(--grain), radial-gradient(130% 100% at 100% 0%, rgba(255,45,120,calc(var(--tint) * 0.7)), transparent 58%);
+    box-shadow: 0 12px 26px -12px rgba(255, 45, 120, 0.35);
+}
+.ios-list { background-color: var(--card-bg); background-image: var(--grain); }
+.score-pill { box-shadow: 0 6px 14px -6px rgba(255, 149, 0, 0.55); }
+
+.daily-challenge-card {
+    background-image: var(--grain), linear-gradient(120deg, #ff5f6d 0%, #ff8a3c 55%, #ffb400 100%);
+    box-shadow: 0 12px 26px -10px rgba(255, 110, 60, 0.6);
+    transition: transform 0.35s var(--spring);
+}
+.daily-challenge-card.done {
+    background-image: var(--grain), linear-gradient(120deg, #34c759 0%, #30b0c7 100%);
+    box-shadow: 0 12px 26px -10px rgba(48, 176, 199, 0.55);
+}
+.daily-challenge-card:active { transform: scale(0.95); }
+.daily-reward-card {
+    background-image: var(--grain), linear-gradient(120deg, #ffd60a 0%, #ff9500 70%, #ff6b00 100%);
+    box-shadow: 0 12px 24px -10px rgba(255, 149, 0, 0.6);
+}
+
+/* --- انیمیشن فنری (overshoot) باز شدن مودال‌ها --- */
+@keyframes modalSpring {
+    0%   { transform: translateY(28px) scale(0.84); opacity: 0; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+.modal-overlay:not(.hidden) .ios-modal,
+.modal-overlay:not(.hidden) .ios-modal.pop-in,
+.modal-overlay:not(.hidden) .ios-modal.slide-up {
+    animation: modalSpring 0.55s var(--spring) both;
+}
+.ios-btn { transition: opacity 0.2s, transform 0.3s var(--spring); }
+.ios-btn:active { transform: scale(0.94); }
+
+/* --- بامپ فنری امتیاز و جشن گرفتن جایزه --- */
+@keyframes scoreBump { 0% { transform: scale(1); } 40% { transform: scale(1.32) rotate(-3deg); } 100% { transform: scale(1); } }
+.score-pill.bump { animation: scoreBump 0.6s var(--spring); }
+@keyframes rewardPop { 0% { transform: scale(0.85); } 100% { transform: scale(1); } }
+.daily-reward-card.celebrate { animation: rewardPop 0.6s var(--spring); }
+.coin-burst { position: fixed; z-index: 300; pointer-events: none; font-size: 1.6rem; will-change: transform, opacity;
+    animation: coinFly 0.95s var(--spring) forwards; }
+@keyframes coinFly {
+    0%   { transform: translate(0, 0) scale(0.3); opacity: 0; }
+    25%  { opacity: 1; }
+    100% { transform: translate(var(--dx), var(--dy)) scale(1.1) rotate(var(--rot)); opacity: 0; }
+}
+
+/* --- بنر بزرگ وسط صفحه (شکستن ریتم «لیست زیر لیست») --- */
+.hero-section { margin-top: 26px; }
+.hero-banner {
+    position: relative; overflow: hidden; color: #fff;
+    border-radius: 30px; padding: 22px 22px 20px;
+    display: flex; align-items: center; gap: 18px;
+    background-image: var(--grain),
+        radial-gradient(90% 120% at 100% 0%, rgba(255,255,255,0.28), transparent 55%),
+        linear-gradient(135deg, #5b5bff 0%, #8a63ff 45%, #ff5fa2 100%);
+    box-shadow: 0 18px 34px -14px rgba(120, 90, 255, 0.7);
+}
+.hero-banner::before, .hero-banner::after {
+    content: ''; position: absolute; border-radius: 50%; pointer-events: none;
+}
+.hero-banner::before { width: 170px; height: 170px; left: -50px; bottom: -70px; background: rgba(255,255,255,0.12); }
+.hero-banner::after  { width: 90px; height: 90px; right: 36%; top: -34px; background: rgba(255,255,255,0.10); }
+.hero-ring {
+    --p: 0; position: relative; flex-shrink: 0;
+    width: 92px; height: 92px; border-radius: 50%;
+    background: conic-gradient(#fff calc(var(--p) * 1%), rgba(255,255,255,0.25) 0);
+    display: flex; align-items: center; justify-content: center;
+}
+.hero-ring::before { content: ''; position: absolute; inset: 9px; border-radius: 50%; background: rgba(60, 40, 170, 0.55); backdrop-filter: blur(4px); }
+.hero-ring-text { position: relative; font-family: var(--font-display); font-weight: 900; font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+.hero-info { flex: 1; min-width: 0; position: relative; z-index: 1; }
+.hero-title { font-size: 1.25rem; font-weight: 900; margin-bottom: 4px; }
+.hero-sub { font-size: 0.86rem; opacity: 0.92; line-height: 1.5; margin-bottom: 12px; }
+.hero-score { font-size: 1.05rem; font-weight: 900; }
+.hero-btn {
+    border: none; cursor: pointer; font-family: inherit; font-weight: 800; font-size: 0.95rem;
+    background: #fff; color: #5b3df0; padding: 9px 18px; border-radius: 14px;
+    box-shadow: 0 8px 16px -8px rgba(0,0,0,0.4);
+    transition: transform 0.3s var(--spring);
+}
+.hero-btn:active { transform: scale(0.92); }
+.hero-btn.hidden { display: none; }
