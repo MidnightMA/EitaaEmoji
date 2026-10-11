@@ -51,6 +51,17 @@
                 </div>
             </section>
 
+            <section class="hero-section">
+                <div class="hero-banner" id="hero-banner">
+                    <div class="hero-ring" id="hero-ring"><span class="hero-ring-text" id="hero-percent">۰٪</span></div>
+                    <div class="hero-info">
+                        <div class="hero-title" id="hero-title"></div>
+                        <div class="hero-sub" id="hero-sub"></div>
+                        <button type="button" id="btn-hero-continue" class="hero-btn hidden">ادامه بازی ▶</button>
+                    </div>
+                </div>
+            </section>
+
             <section class="medals-section">
                 <div class="section-header">
                     <h2><span class="header-icon-emoji">🏆</span> افتخارات شما</h2>
@@ -258,6 +269,15 @@
                 </ul>
             </div>
 
+            <div class="join-gate-channel-block hidden" data-channel-id="partner">
+                <p class="join-gate-msg">📌 یه کانال خوب دیگه هم منتظرته 👇</p>
+                <ul class="join-gate-benefits">
+                    <li><span class="jg-icon">✨</span> محتوای تازه و متفاوت</li>
+                    <li><span class="jg-icon">🫶</span> یه فضای دوست‌داشتنی برای تو</li>
+                    <li><span class="jg-icon">🔥</span> همیشه چیز جدیدی برای دیدن داره</li>
+                </ul>
+            </div>
+
             <div class="join-gate-channels" id="join-gate-channels"></div>
 
             <button id="btn-confirm-joined" class="ios-btn ghost-btn w-100">✅ بررسی عضویت و ادامه</button>
@@ -387,6 +407,16 @@
         </div>
     </div>
 
+    <div id="modal-daily-reminder" class="modal-overlay hidden">
+        <div class="ios-modal pop-in daily-reminder-modal">
+            <div class="modal-icon">🎁</div>
+            <h2>امتیاز امروزت منتظره!</h2>
+            <p>هنوز امتیاز روزانه‌ات رو نگرفتی؛ بیا و بگیرش 🪙</p>
+            <button type="button" id="btn-reminder-go" class="ios-btn primary-btn w-100">برو بگیر</button>
+            <button type="button" class="ios-btn ghost-btn w-100 close-btn" data-close="modal-daily-reminder">بعداً</button>
+        </div>
+    </div>
+
     <div id="toast-container" class="toast-container"></div>
 
     <!-- اسکریپت تبلیغات Adly (با defer، چون خودش هم فقط بعد از رویداد load اجرا می‌شود) -->
@@ -403,6 +433,7 @@
             }
         });
     </script>
+    <script src="partner.js"></script>
     <script src="index.js"></script>
     <script src="channel-photos.js"></script>
     <script src="reward-channels.js"></script>
