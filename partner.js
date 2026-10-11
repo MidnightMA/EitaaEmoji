@@ -25,12 +25,12 @@
 window.MANDATORY_CHANNEL_partner = {
     id: 'partner',
     type: 'partner', // فقط برای استفاده‌ی داخلی خودت؛ هیچ‌جا به کاربر نشان داده نمی‌شود
-    name: 'PARTNER_CHANNEL_NAME_HERE',
+    name: 'آشوب درون | Ashob daron',
     icon: '📌',
     // این یک لینک دعوت (joinchat) است، نه یک یوزرنیم معمولی؛ چون
     // getChannelUrl در app.js آدرس نهایی را با الگوی
     // https://eitaa.com/${username} می‌سازد، مقدار زیر همان مسیر دقیق بعد
     // از eitaa.com/ است (شامل خودِ کلمه‌ی joinchat) — دست‌کاریش نکن.
-    username: 'joinchat/263849219Ce7561aa688',
+    username: 'Ashob_daron',
     enabled: true
 };
