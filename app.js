@@ -931,7 +931,6 @@ function renderHome() {
     });
 
     renderDailyChallengeCard();
-    renderHeroBanner();
     renderChannelPromos();
     renderSuggestionsSection();
 }
