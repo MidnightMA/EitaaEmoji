@@ -1,3 +1,4 @@
+@import url('https://cdn.jsdelivr.net/npm/vazirmatn@33.0.0/Vazirmatn-font-face.css');
 /* فونت آراد (فونت وریابل، خودمون هاست می‌کنیم — بدون وابستگی به سرور بیرونی) */
 @font-face {
     font-family: 'Arad';
@@ -6,7 +7,6 @@
     font-style: normal;
     font-display: swap;
 }
-@import url('https://cdn.jsdelivr.net/npm/vazirmatn@33.0.0/Vazirmatn-font-face.css');
 
 :root {
     /* iOS Design System Variables */
