@@ -22,11 +22,11 @@
 //   فقط آبجکتش رو از آرایه بردار (یا اگه می‌خوای موقت مخفی بشه، active:false اضافه کن).
 window.REWARD_SETTINGS = {
     channels: [
-        { id: 'avay_khiyal', name: 'آوای‌خیال', icon: '🕊️', username: 'avay_khiyal', reward: 100 },
+        { id: 'avay_khiyal', name: 'آواي‌خـــــــــیال', icon: '🕊️', username: 'avay_khiyal', reward: 100 },
         { id: 'tech_nour', name: 'تک نور | Tech nour', icon: '📢', username: 'Tech_nour', reward: 100 },
         { id: 'rasa_meme', name: 'Rasa Meme | رسامیم', icon: '😂', username: 'Rasa_Meme', reward: 100 },
         // کانال/کانال‌های شخصی خودت. یوزرنیم رو جایگزین placeholder کن.
-        { id: 'my_channels', name: '🎭 کانال‌های من! 🎭', icon: '🎭', username: 'All_Channels', reward: 100 },
+        { id: 'ashob_daron', name: 'آشوب درون | Ashob daron', icon: '📌', username: 'Ashob_daron', reward: 100 },
         // همون تبلیغ‌کننده‌ی فعلی «کانال‌های ما» در صفحه اصلی (CHANNEL_PROMOS
         // در app.js)؛ یوزرنیم اینجا هم دستی هماهنگ نگه‌داشته می‌شه.
         { id: 'tab_amoo', name: 'تبلیغات عمو', icon: '📣', username: 'tab_amoo', reward: 200 }
@@ -47,10 +47,10 @@ window.REWARD_SETTINGS = {
     //      دیگه نمی‌تونن برای این‌یکی هم بگیرن.
     rotatingSlot: {
         id: 'chaharom',
-        slotVersion: 'v1',
-        name: 'آشوب درون | Ashob daron',
+        slotVersion: 'v2',
+        name: 'هیچ',
         icon: '📌',
-        username: 'Ashob_daron',
+        username: 'hich030',
         reward: 300
     }
 };
