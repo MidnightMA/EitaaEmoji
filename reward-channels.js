@@ -15,21 +15,21 @@
 // --- برای اضافه کردن یک کارت پاداش جدید (کانال ثابت، پاداش یک‌بار برای همیشه) ---
 //   یک آبجکت دیگر شبیه پایین به آرایه‌ی channels اضافه کن:
 //     { id: 'یک-شناسه-یکتا', name: 'نام دقیقاً همینطور به کاربر نشون داده می‌شه',
-//       icon: 'یک ایموجی', username: 'یوزرنیم بدون @', reward: 100 }
+//       icon: 'یک ایموجی', username: 'یوزرنیم بدون @', reward: 1000 }
 //   id را بعداً عوض نکن (پیشرفت/دریافت‌شدن کاربر با همین id ذخیره می‌شه).
 //
 // --- برای حذف یک کارت ---
 //   فقط آبجکتش رو از آرایه بردار (یا اگه می‌خوای موقت مخفی بشه، active:false اضافه کن).
 window.REWARD_SETTINGS = {
     channels: [
-        { id: 'avay_khiyal', name: 'آواي‌خـــــــــیال', icon: '🕊️', username: 'avay_khiyal', reward: 100 },
-        { id: 'tech_nour', name: 'تک نور | Tech nour', icon: '📢', username: 'Tech_nour', reward: 100 },
-        { id: 'rasa_meme', name: 'Rasa Meme | رسامیم', icon: '😂', username: 'Rasa_Meme', reward: 100 },
+        { id: 'avay_khiyal', name: 'آواي‌خـــــــــیال', icon: '🕊️', username: 'avay_khiyal', reward: 1000 },
+        { id: 'tech_nour', name: 'تک نور | Tech nour', icon: '📢', username: 'Tech_nour', reward: 1000 },
+        { id: 'rasa_meme', name: 'Rasa Meme | رسامیم', icon: '😂', username: 'Rasa_Meme', reward: 1000 },
         // کانال/کانال‌های شخصی خودت. یوزرنیم رو جایگزین placeholder کن.
-        { id: 'ashob_daron', name: 'آشوب درون | Ashob daron', icon: '📌', username: 'Ashob_daron', reward: 100 },
+        { id: 'ashob_daron', name: 'آشوب درون | Ashob daron', icon: '📌', username: 'Ashob_daron', reward: 1000 },
         // همون تبلیغ‌کننده‌ی فعلی «کانال‌های ما» در صفحه اصلی (CHANNEL_PROMOS
         // در app.js)؛ یوزرنیم اینجا هم دستی هماهنگ نگه‌داشته می‌شه.
-        { id: 'tab_amoo', name: 'تبلیغات عمو', icon: '📣', username: 'tab_amoo', reward: 200 }
+        { id: 'tab_amoo', name: 'تبلیغات عمو', icon: '📣', username: 'tab_amoo', reward: 2000 }
     ],
 
     // --- جایگاه «چهارم»: تبلیغات چرخشی کاربران (استثنا) ---
@@ -51,6 +51,6 @@ window.REWARD_SETTINGS = {
         name: 'هیچ',
         icon: '📌',
         username: 'hich030',
-        reward: 300
+        reward: 3000
     }
 };
