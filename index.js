@@ -27,10 +27,8 @@ window.MANDATORY_CHANNELS_ROTATION = {
     startDate: '2025-01-06T00:00:00+03:30',
     weeksPerChannel: 1, // هر کانال چند هفته پشت‌سرهم فعال بماند
     order: [
-        { id: 'avay_khiyal', type: 'channel', name: 'آواي‌خـــــــــیال', icon: '🕊️', username: 'avay_khiyal', enabled: true },
+        { id: 'avay_khiyal', type: 'channel', name: 'آوای‌خیال', icon: '🕊️', username: 'avay_khiyal', enabled: true },
         { id: 'tech_nour', type: 'channel', name: 'تِک‌نور', icon: '📢', username: 'Tech_nour', enabled: true },
-        { id: 'rasa_meme', type: 'channel', name: 'رسامیم', icon: '😂', username: 'Rasa_Meme', enabled: true },
-        // کانال چهارم (partner.js باید قبل از این فایل در index.html لود شود)
-        window.MANDATORY_CHANNEL_partner
-    ].filter(Boolean)
+        { id: 'rasa_meme', type: 'channel', name: 'رسامیم', icon: '😂', username: 'Rasa_Meme', enabled: true }
+    ]
 };
