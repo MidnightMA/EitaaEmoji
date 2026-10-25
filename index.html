@@ -13,8 +13,8 @@
     <link rel="preload" href="fonts/AradVF.ttf" as="font" type="font/ttf" crossorigin>
 
     <link rel="preload" href="data.json" as="fetch" crossorigin>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="style.css?v=1.14.0">
+    <link rel="stylesheet" href="theme.css?v=1.14.0">
 
     <!-- Eitaa SDK: با defer لود می‌شود تا جلوی نمایش سریع صفحه را نگیرد -->
     <script src="https://developer.eitaa.com/eitaa-web-app.js" defer></script>
@@ -66,20 +66,6 @@
                 <div class="categories-list" id="categories-container"></div>
             </section>
 
-            <section class="suggestions-section" id="suggestions-section">
-                <div class="section-header">
-                    <h2 id="suggestions-title">پیشنهادات شما 🫂</h2>
-                </div>
-                <div class="suggestions-card">
-                    <p class="suggestions-intro" id="suggestions-intro"></p>
-                    <pre class="suggestions-template" id="suggestions-template"></pre>
-                    <div class="suggestions-actions">
-                        <button type="button" id="btn-copy-suggestion-template" class="ios-btn ghost-btn">📋 کپی متن</button>
-                        <button type="button" id="btn-send-suggestion" class="ios-btn primary-btn">ارسال پیشنهاد</button>
-                    </div>
-                </div>
-            </section>
-
             <section class="channel-promo-section">
                 <div class="section-header">
                     <h2>
@@ -124,7 +110,7 @@
             <!-- بخش دکمه‌ها و تبلیغات -->
             <section class="actions-area">
                 <button id="btn-hint" class="ios-btn primary-btn w-100">
-                    💡 راهنما (۱۵- امتیاز)
+                    💡 راهنما (۱۵۰- امتیاز)
                 </button>
                 <!-- جایگاه تبلیغات -->
                 <div id="adly-container"></div>
@@ -133,6 +119,62 @@
             <section class="answer-area" id="answer-slots"></section>
 
             <section class="keyboard-area ios-card" id="keyboard"></section>
+        </main>
+    </div>
+
+    <!-- Screen: انتخاب مرحله (شبکه‌ی مراحل + ستاره‌ها + قفل) -->
+    <div id="screen-levels" class="screen">
+        <header class="ios-header glass-nav">
+            <button id="btn-back-levels" class="square-back-btn" aria-label="بازگشت">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15 18l-6-6 6-6"/>
+                </svg>
+            </button>
+            <div class="nav-title" id="levels-category-title">مرحله‌ها</div>
+            <div class="score-pill">🪙 <span id="levels-score">0</span></div>
+        </header>
+        <main class="game-container levels-container">
+            <div class="levels-summary" id="levels-summary"></div>
+            <div class="levels-grid" id="levels-grid"></div>
+        </main>
+    </div>
+
+    <!-- Screen: انتقادات و پیشنهادات (فرم ارسال ایده) -->
+    <div id="screen-suggestions" class="screen">
+        <header class="ios-header glass-nav">
+            <button id="btn-back-suggestions" class="square-back-btn" aria-label="بازگشت">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15 18l-6-6 6-6"/>
+                </svg>
+            </button>
+            <div class="nav-title" id="suggestions-page-title">ایده‌های شما 🫂</div>
+            <div class="header-spacer" aria-hidden="true"></div>
+        </header>
+        <main class="game-container suggest-container">
+            <p class="suggest-intro" id="suggestions-intro">هر ایده، انتقاد یا پیشنهادی داری، خوشحال می‌شیم بشنویم.</p>
+            <div class="ios-card suggest-card">
+                <label class="suggest-label" for="sg-name">نام شما <span class="suggest-optional">(اختیاری)</span></label>
+                <input id="sg-name" class="suggest-input" type="text" maxlength="30" autocomplete="off" placeholder="مثلاً: علی">
+                <div class="suggest-error" id="sg-name-err"></div>
+
+                <label class="suggest-label" for="sg-idea">ایده یا انتقاد شما</label>
+                <textarea id="sg-idea" class="suggest-input suggest-textarea" rows="5" maxlength="1000" placeholder="ایده، انتقاد یا پیشنهادت رو بنویس..."></textarea>
+                <div class="suggest-counter"><span id="sg-idea-count">0</span> / ۱۰۰۰</div>
+                <div class="suggest-error" id="sg-idea-err"></div>
+
+                <label class="suggest-label" for="sg-emojis">ایموجی‌های پیشنهادی <span class="suggest-optional">(اختیاری)</span></label>
+                <input id="sg-emojis" class="suggest-input suggest-emoji-input" type="text" maxlength="60" autocomplete="off" placeholder="🎬🍿🎭">
+                <div class="suggest-error" id="sg-emojis-err"></div>
+
+                <button type="button" id="btn-submit-suggestion" class="ios-btn primary-btn w-100">ارسال پیشنهاد</button>
+                <div class="suggest-result hidden" id="sg-result" role="status" aria-live="polite">
+                    <div class="suggest-result-text" id="sg-result-text"></div>
+                    <div class="suggest-result-actions hidden" id="sg-result-actions">
+                        <button type="button" id="btn-sg-copy" class="ios-btn ghost-btn">📋 کپی متن</button>
+                        <button type="button" id="btn-sg-open-pv" class="ios-btn ghost-btn">💬 باز کردن پیوی</button>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
 
@@ -281,8 +323,13 @@
             <h2>آفرین! درست حدس زدی 🎉</h2>
             <p>پاسخ شما کاملاً درست بود.</p>
             <div class="reward-box">
-                <span class="reward-row">🪙 امتیاز مرحله: <strong id="reward-base-score">+10</strong></span>
+                <span class="reward-row">🪙 امتیاز مرحله: <strong id="reward-base-score">+100</strong></span>
             </div>
+            <div class="reward-stars-wrap hidden" id="reward-stars-wrap">
+                <div class="reward-stars" id="reward-stars"></div>
+                <button type="button" class="stars-info-btn" id="btn-stars-info" aria-label="توضیح ستاره‌ها" aria-expanded="false">!</button>
+            </div>
+            <div class="stars-explain hidden" id="stars-explain"></div>
             <button id="btn-next-level" class="ios-btn success-btn w-100">ادامه بازی 🚀</button>
         </div>
     </div>
@@ -301,6 +348,18 @@
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
                         </span>
                         <span>جایزه</span>
+                    </div>
+                    <span class="setting-chevron">‹</span>
+                </div>
+            </div>
+
+            <div class="ios-list">
+                <div class="ios-list-item clickable" id="btn-open-feedback">
+                    <div class="setting-label">
+                        <span class="setting-icon-square icon-feedback">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        </span>
+                        <span>انتقادات و پیشنهادات</span>
                     </div>
                     <span class="setting-chevron">‹</span>
                 </div>
@@ -339,9 +398,9 @@
                         <span class="setting-icon-square icon-changelog">
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
                         </span>
-                        <span>نسخه‌ی جدید برنامک</span>
+                        <span>Game version</span>
                     </div>
-                    <span class="setting-version" id="settings-version-label">نسخه ۱.۰.۰</span>
+                    <span class="setting-version" id="settings-version-label">1.13.0</span>
                 </div>
             </div>
 
@@ -353,7 +412,7 @@
             <div class="modal-header">
                 <h2>
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--ios-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-4px; margin-left:6px;"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
-                    نسخه‌ی جدید برنامک
+                    Game version
                 </h2>
                 <button class="close-btn" data-close="modal-changelog">×</button>
             </div>
@@ -422,10 +481,10 @@
             }
         });
     </script>
-    <script src="partner.js"></script>
-    <script src="index.js"></script>
-    <script src="channel-photos.js"></script>
-    <script src="reward-channels.js"></script>
-    <script src="app.js"></script>
+    <script src="partner.js?v=1.14.0"></script>
+    <script src="index.js?v=1.14.0"></script>
+    <script src="channel-photos.js?v=1.14.0"></script>
+    <script src="reward-channels.js?v=1.14.0"></script>
+    <script src="app.js?v=1.14.0"></script>
 </body>
 </html>
