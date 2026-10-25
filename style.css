@@ -642,6 +642,15 @@ input:checked + .slider:before { transform: translateX(20px); }
     background: linear-gradient(135deg, #1a1a1a, #2b2b2b 55%, #3d1f1f);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255, 59, 48, 0.18);
 }
+/* کانال «آشوب درون»: همان فضای تیره و مه‌آلود آوای‌خیال، اما با حال‌وهوای
+   طلایی (گرادیان قهوه‌ای-طلایی تیره + قاب و درخشش طلایی ظریف). */
+.channel-promo-card.theme-gold {
+    background: linear-gradient(135deg, #1a1a1a, #2b2b2b 50%, #5a4214);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35), 0 0 16px rgba(212, 175, 55, 0.22), inset 0 0 0 1px rgba(212, 175, 55, 0.45);
+}
+.channel-promo-card.theme-gold .channel-promo-title { color: #f5d77a; }
+.channel-promo-card.theme-gold .channel-promo-icon { box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.6); background: rgba(212, 175, 55, 0.12); }
+.channel-promo-card.theme-gold .channel-promo-arrow { color: #f5d77a; }
 .channel-promo-card.theme-meme { background: linear-gradient(135deg, #f9d423, #ff4e50); }
 
 /* --- کارت تبلیغ (داخل همون کاروسل کانال‌ها، ولی عمداً رنگ/ظاهر متفاوت
@@ -993,3 +1002,83 @@ input:checked + .slider:before { transform: translateX(20px); }
 }
 .hero-btn:active { transform: scale(0.92); }
 .hero-btn.hidden { display: none; }
+
+
+/* =====================================================
+   صفحه‌ی انتخاب مرحله: مربع‌های گرد + ستاره + قفل
+===================================================== */
+.levels-summary { text-align: center; color: var(--text-muted); font-weight: 600; font-size: 0.92rem; margin: 6px 0 16px; }
+.levels-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px 12px; }
+@media (min-width: 420px) { .levels-grid { grid-template-columns: repeat(5, 1fr); } }
+.level-cell { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.level-tile {
+    width: 100%; aspect-ratio: 1 / 1; border-radius: 18px; border: 2px solid var(--border-color);
+    background: var(--card-bg); color: var(--text-main); font-family: inherit; font-weight: 800; font-size: 1.25rem;
+    display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0;
+    box-shadow: 0 3px 0 var(--border-color); transition: transform 0.1s, box-shadow 0.1s;
+}
+.level-tile:active { transform: translateY(3px); box-shadow: 0 0 0 var(--border-color); }
+.level-tile.current { border-color: var(--ios-blue); box-shadow: 0 3px 0 var(--ios-blue); color: var(--ios-blue); }
+.level-tile.completed { border-color: var(--ios-green); box-shadow: 0 3px 0 var(--ios-green); }
+.level-tile.locked {
+    background: var(--border-color); color: var(--text-muted); border-color: var(--border-color);
+    filter: grayscale(1); opacity: 0.6; box-shadow: none; cursor: not-allowed;
+}
+.level-lock { font-size: 2.73rem; line-height: 1; } /* قفل: ۳۵٪ مربع */
+.level-num { font-size: 2.2rem; line-height: 1; }
+.level-stars { display: flex; gap: 1px; direction: ltr; font-size: 1.4rem; line-height: 1; }
+.level-stars .star { color: var(--border-color); }
+.level-stars .star.on { color: var(--ios-orange); }
+.level-stars.locked { opacity: 0.45; }
+@supports (container-type: inline-size) {
+    /* اندازه‌ها نسبت به عرض مربع/خانه‌ی مرحله‌اند تا در هر گوشی داخل کادر بمانند */
+    .level-tile, .level-cell { container-type: inline-size; }
+    .level-lock { font-size: 54cqw; }
+    .level-num { font-size: 50cqw; }
+    .level-stars { font-size: 29cqw; }
+}
+.reward-stars-wrap { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 4px 0 14px; }
+.reward-stars-wrap.hidden { display: none; }
+.reward-stars { display: flex; justify-content: center; gap: 6px; direction: ltr; font-size: 2rem; margin: 0; }
+.stars-info-btn {
+    width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--ios-blue); background: transparent;
+    color: var(--ios-blue); font-family: inherit; font-weight: 800; font-size: 0.95rem; line-height: 1; padding: 0;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.stars-info-btn:active { transform: scale(0.9); }
+.stars-explain { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 14px; padding: 12px 14px; margin: 0 0 14px; text-align: right; font-size: 0.88rem; line-height: 1.9; }
+.stars-explain.hidden { display: none; }
+.stars-explain-rules { color: var(--text-muted); font-weight: 600; margin-bottom: 8px; }
+.stars-explain-why { font-weight: 700; color: var(--text-main); }
+.reward-stars .star { color: var(--border-color); }
+.reward-stars .star.on { color: var(--ios-orange); filter: drop-shadow(0 2px 4px rgba(255,149,0,0.45)); }
+
+/* =====================================================
+   صفحه‌ی انتقادات و پیشنهادات + آیتم تنظیمات
+===================================================== */
+.setting-icon-square.icon-feedback { background: linear-gradient(135deg, #30d158, #0a9d3a); }
+.header-spacer { width: 38px; height: 38px; }
+.suggest-intro { text-align: center; color: var(--text-muted); line-height: 1.8; font-weight: 600; margin: 8px 4px 16px; }
+.suggest-card { padding: 18px; display: flex; flex-direction: column; text-align: right; }
+.suggest-label { font-weight: 700; margin: 6px 0 8px; }
+.suggest-optional { color: var(--text-muted); font-weight: 500; font-size: 0.85rem; }
+.suggest-input {
+    width: 100%; box-sizing: border-box; padding: 12px 14px; border-radius: 14px; border: 2px solid var(--border-color);
+    background: var(--bg-main); color: var(--text-main); font-family: inherit; font-size: 1rem; outline: none;
+}
+.suggest-input:focus { border-color: var(--ios-blue); }
+.suggest-input.invalid { border-color: var(--ios-red, #ff3b30); }
+.suggest-textarea { resize: vertical; min-height: 110px; line-height: 1.7; }
+.suggest-emoji-input { font-size: 1.3rem; }
+.suggest-counter { text-align: left; color: var(--text-muted); font-size: 0.78rem; margin-top: 4px; }
+.suggest-error { color: var(--ios-red, #ff3b30); font-size: 0.82rem; min-height: 1.1em; margin: 4px 2px 8px; }
+#btn-submit-suggestion { margin-top: 8px; }
+#btn-submit-suggestion:disabled { opacity: 0.6; }
+.suggest-result { margin-top: 14px; padding: 12px 14px; border-radius: 14px; font-weight: 600; line-height: 1.8; }
+.suggest-result.hidden { display: none; }
+.suggest-result.success { background: rgba(52, 199, 89, 0.14); color: var(--ios-green); }
+.suggest-result.error { background: rgba(255, 59, 48, 0.12); color: var(--ios-red, #ff3b30); }
+.suggest-result.warn { background: rgba(255, 149, 0, 0.14); color: var(--ios-orange); }
+.suggest-result-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+.suggest-result-actions.hidden { display: none; }
+.suggest-result-actions .ios-btn { flex: 1; min-width: 130px; }
