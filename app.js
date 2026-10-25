@@ -23,8 +23,19 @@ function resolveEitaaUserId(rawUser) {
     return String(candidate);
 }
 
+// جایی که پیشنهادهای کاربران ذخیره می‌شود (فرم «انتقادات و پیشنهادات»).
+// به‌طور پیش‌فرض همان باکت KVDB بازی است؛ می‌توانی یک باکت جداگانه بسازی و
+// شناسه‌اش را اینجا بگذاری. تا وقتی شناسه‌ی واقعی تنظیم نشده باشد، ارسال
+// مستقیم ممکن نیست و فرم صادقانه کاربر را به ارسال دستی در پیوی راهنمایی می‌کند.
+const SUGGESTIONS_BUCKET_ID = KVDB_BUCKET_ID;
+const SUGGESTIONS_PV_URL = 'https://eitaa.com/ferstadeh';
 const PERSIAN_ALPHABET = "ابپتثجچحخدذرزژسشصضطظعغفقکگلمنوهی";
-const HINT_COST = 15;
+// ⚙️ اقتصاد سکه (نسخه‌ی ۲): همه‌ی پاداش‌ها و هزینه‌ها ۱۰ برابر نسخه‌ی ۱ هستند.
+// ECONOMY_VERSION داخل خود رکورد کاربر (settings.economyVersion) ذخیره می‌شود
+// تا مهاجرت ×۱۰ موجودی قدیمی دقیقاً یک‌بار برای هر کاربر انجام شود.
+const ECONOMY_VERSION = 2;
+const ECONOMY_MULTIPLIER = 10;
+const HINT_COST = 150;
 // این دو تا هنوز برای کارت‌های «کانال‌های ما» در پایین صفحه استفاده می‌شوند.
 const TECH_NOUR_LINK = 'https://eitaa.com/Tech_nour';
 const AVAY_KHIYAL_LINK = 'https://eitaa.com/avay_khiyal';
@@ -133,25 +144,36 @@ window.debugRotation = function (customDate) {
     return info;
 };
 
-const BASE_SCORE = 10;
-const DAILY_BASE_SCORE = 50;
+const BASE_SCORE = 100;
+const DAILY_BASE_SCORE = 500;
 // فاصله‌ی چرخش خودکار کارت‌های «کانال‌های ما»
 const PROMO_ROTATE_INTERVAL_MS = 5000;
 
 // امتیاز پایه‌ی هر دسته؛ اگر دسته‌ای اینجا نبود از BASE_SCORE استفاده می‌شود.
 // (درخواست: امتیاز ضرب‌المثل‌ها حداقل ۲۵ باشد)
 const CATEGORY_SCORES = {
-    proverbs: 25,
-    movies: 10,
-    countries: 10
+    proverbs: 250,
+    movies: 100,
+    countries: 100
 };
 
 // نسخه فعلی برنامه + لیست تغییرات هر نسخه. هر وقت آپدیت جدیدی منتشر کردی،
 // یک آبجکت جدید بالای این آرایه اضافه کن و APP_VERSION را هم به‌روز کن؛
 // خودکار یک بار برای کاربرهایی که نسخه قبلی را دیده‌اند، پنجره «تازه‌های این
 // نسخه» نمایش داده می‌شود (و همیشه هم از تنظیمات قابل مشاهده است).
-const APP_VERSION = '1.10.0';
+const APP_VERSION = '1.11.0';
 const CHANGELOG_DB = [
+    }
+    {
+        version: '1.11.0',
+        added: [
+            'دیزاین بازی ها به‌روز شدند',
+            'رفع تمامی باگ های گزارش شده از طرف کاربران',
+            'اضافه شدن بخش انتقادات و پیشنهادات در قسمت تنظیمات',
+            'کانال جدید «آشوب درون» به بخش کانال‌های ما اضافه شد',
+            'تعداد سوالات در تمامی بخش ها بیشتر شدند'
+        ]
+    },
     {
         version: '1.10.0',
         added: [
@@ -241,6 +263,13 @@ const GameState = {
     globalScore: 0,
     totalEarned: 0, // مجموع کل امتیازی که تا الان کسب شده (برخلاف globalScore که با خرج راهنما کم می‌شود)
     progress: {},
+    // levelStats: آمار هر مرحله به‌صورت جدا از progress (تا ساختار قدیمی progress
+    // که فقط آرایه‌ی اندیس مرحله‌های حل‌شده است دست‌نخورده بماند):
+    //   { [categoryId]: { [levelIndex]: { hints: تعداد راهنمای استفاده‌شده, stars: ۱ تا ۳ (بعد از حل) } } }
+    // مرحله‌ی حل‌شده‌ای که در levelStats رکوردی ندارد (کاربران قبل از این آپدیت)
+    // با ۳ ستاره نمایش داده می‌شود. ⚠️ ترتیب مرحله‌ها در data.json را عوض
+    // نکن، فقط به انتهای هر دسته اضافه کن.
+    levelStats: {},
     unlockedMedals: [],
     // gender: null | 'boy' | 'girl'
     // avatarId: رزرو شده برای انتخاب عکس پروفایل در آینده (فعلاً همیشه null)
@@ -285,9 +314,9 @@ const MEDALS_DB = [
     // نکته: عمداً از totalEarned استفاده می‌کنیم نه globalScore، چون globalScore با
     // خرج کردن روی راهنما کم می‌شود و ممکن بود کاربری که واقعاً ۵۰۰۰ امتیاز کسب
     // کرده ولی خرج کرده، هیچ‌وقت این مدال را نگیرد.
-    { id: 'rich', name: 'ثروتمند', icon: '💎', desc: '۵۰۰۰ امتیاز کسب کن',
-        check: (state) => state.totalEarned >= 5000,
-        progress: (state) => `${Math.min(state.totalEarned, 5000)}/5000` },
+    { id: 'rich', name: 'ثروتمند', icon: '💎', desc: '۵۰٬۰۰۰ امتیاز کسب کن',
+        check: (state) => state.totalEarned >= 50000,
+        progress: (state) => `${Math.min(state.totalEarned, 50000)}/50000` },
     { id: 'daily_fan', name: 'اهل چالش روزانه', icon: '🔥', desc: '۱۰ چالش روزانه را حل کن',
         check: (state) => (state.dailyChallenge?.completedCount || 0) >= 10,
         progress: (state) => `${Math.min(state.dailyChallenge?.completedCount || 0, 10)}/10` },
@@ -356,6 +385,16 @@ const CHANNEL_PROMOS = [
         photoKey: 'rasa_meme',
         link: 'https://eitaa.com/Rasa_Meme',
         theme: 'meme'
+    },
+    {
+        type: 'channel',
+        name: 'آشوب درون | Ashob daron',
+        handle: '@Ashob_daron',
+        desc: 'آشوب درون؛ جایی برای حرف‌های ناگفته، احساسات عمیق و افکاری که در سکوت جریان دارن.',
+        iconType: 'poetry',
+        photoKey: 'ashob_daron',
+        link: 'https://eitaa.com/Ashob_daron',
+        theme: 'gold'
     }
 ];
 
@@ -471,7 +510,9 @@ const StorageManager = {
         const payload = JSON.stringify({
             globalScore: GameState.globalScore,
             totalEarned: GameState.totalEarned,
+            economyVersion: ECONOMY_VERSION,
             progress: GameState.progress,
+            levelStats: GameState.levelStats,
             unlockedMedals: GameState.unlockedMedals,
             settings: GameState.settings,
             dailyChallenge: GameState.dailyChallenge,
@@ -482,6 +523,27 @@ const StorageManager = {
         if (GameState.user.id !== 'guest' && KVDB_BUCKET_ID !== "YOUR_BUCKET_ID_HERE") {
             try { await fetch(`https://kvdb.io/${KVDB_BUCKET_ID}/${GameState.user.id}`, { method: 'PUT', body: payload }); } catch (e) {}
         }
+    },
+    // ×۱۰ کردن موجودی و مجموع امتیاز یک رکورد قدیمی. ورودی را تغییر نمی‌دهد؛
+    // اگر نتیجه معتبر نباشد null برمی‌گرداند (و پرچم ثبت نمی‌شود تا بعداً دوباره
+    // امتحان شود). قبل از هر تغییر، نسخه‌ی پشتیبان رکورد اصلی ذخیره می‌شود.
+    migrateEconomy: function(data, rawRecord) {
+        const gs = Number(data.globalScore) || 0;
+        const te = typeof data.totalEarned === 'number' ? data.totalEarned : gs;
+        const newGs = gs * ECONOMY_MULTIPLIER;
+        const newTe = te * ECONOMY_MULTIPLIER;
+        // بررسی صحت: عدد صحیح و ایمن، و دقیقاً ۱۰ برابر مقدار قبلی
+        if (![gs, te, newGs, newTe].every(Number.isFinite) || !Number.isSafeInteger(newGs) || !Number.isSafeInteger(newTe)
+            || newGs !== gs * 10 || newTe !== te * 10 || gs < 0 || te < 0) {
+            console.error('مهاجرت اقتصاد انجام نشد: مقدار نامعتبر', gs, te);
+            return null;
+        }
+        try { localStorage.setItem(this.getKey() + '_backup_pre_x10', rawRecord); } catch (e) {}
+        if (GameState.user.id !== 'guest' && KVDB_BUCKET_ID !== "YOUR_BUCKET_ID_HERE") {
+            // پشتیبان ابری (best-effort؛ پشتیبان لوکال بالا تضمینی است)
+            try { fetch(`https://kvdb.io/${KVDB_BUCKET_ID}/${GameState.user.id}_backup_pre_x10`, { method: 'PUT', body: rawRecord }); } catch (e) {}
+        }
+        return { globalScore: newGs, totalEarned: newTe };
     },
     load: async function(callback) {
         let finalData = null;
@@ -505,12 +567,24 @@ const StorageManager = {
         if (finalData) {
             try {
                 const data = JSON.parse(finalData);
+                // --- مهاجرت یک‌باره‌ی اقتصاد (×۱۰) ---
+                // پرچم هم در settings (که نسخه‌های قدیمیِ کش‌شده هم عیناً نگه می‌دارند) و هم
+                // در سطح بالای رکورد خوانده می‌شود. باید «قبل از» merge شدن settings با
+                // مقادیر پیش‌فرض بررسی شود، وگرنه نبودنِ پرچم دیده نمی‌شود.
+                const alreadyMigrated = Math.max(Number(data.economyVersion) || 0,
+                    Number(data.settings && data.settings.economyVersion) || 0) >= ECONOMY_VERSION;
+                const migrated = alreadyMigrated ? null : this.migrateEconomy(data, finalData);
                 GameState.globalScore = data.globalScore || 0;
                 // برای کسانی که از قبل پیشرفت داشته‌اند و totalEarned ذخیره‌شده ندارند،
                 // globalScore فعلی را به‌عنوان تخمین اولیه در نظر می‌گیریم تا مدال «ثروتمند»
                 // ناگهان قفل نشود.
                 GameState.totalEarned = typeof data.totalEarned === 'number' ? data.totalEarned : (data.globalScore || 0);
+                if (migrated) {
+                    GameState.globalScore = migrated.globalScore;
+                    GameState.totalEarned = migrated.totalEarned;
+                }
                 GameState.progress = data.progress || {};
+                GameState.levelStats = (data.levelStats && typeof data.levelStats === 'object') ? data.levelStats : {};
                 GameState.unlockedMedals = data.unlockedMedals || [];
                 GameState.settings = { ...GameState.settings, ...(data.settings || {}) };
                 GameState.dailyChallenge = data.dailyChallenge || { lastCompletedDate: null, completedCount: 0 };
@@ -524,6 +598,8 @@ const StorageManager = {
                     channels: (data.rewards && data.rewards.channels) || {}
                 };
                 this.ready = true;
+                if (migrated || alreadyMigrated) GameState.settings.economyVersion = ECONOMY_VERSION;
+                if (migrated) this.save(); // نتیجه‌ی مهاجرت فوراً (لوکال + کلاد) ذخیره شود
             } catch (e) {
                 // دیتا وجود داشت ولی خراب/ناسازگار بود؛ به‌جای رفتن به مقادیر
                 // پیش‌فرض و ذخیره‌ی صفر روی آن، save() را قفل نگه می‌داریم تا
@@ -543,6 +619,7 @@ const StorageManager = {
             // نه دیتای کلاود بود نه لوکال، و کلاود هم واقعاً ۴۰۴/غیرفعال بود
             // (نه خطای شبکه) → این واقعاً یک کاربر جدید است، صفر بودن درست است.
             this.ready = true;
+            GameState.settings.economyVersion = ECONOMY_VERSION; // کاربر جدید: مستقیم با اقتصاد جدید
         }
         callback();
     }
@@ -915,24 +992,26 @@ function renderHome() {
         // نشده) خودکار همین رفتار را می‌گیرد، بدون نیاز به هیچ کد اضافه‌ای؛
         // به‌محض این‌که در data.json حداقل یک مرحله به levels آن اضافه شود،
         // خودش قابل‌بازی می‌شود.
-        const isLocked = total === 0;
+        const isIdeas = cat.id === 'ideas'; // کارت ایده‌های شما → صفحه‌ی فرم پیشنهادات
+        const isLocked = total === 0 && !isIdeas;
         div.className = `category-card ${isLocked ? 'locked' : (completed === total ? 'completed' : '')}`;
         div.innerHTML = `
             <div class="cat-icon">${cat.icon}</div>
             <div class="cat-info">
                 <h3 class="cat-title">${cat.name}</h3>
-                <div class="cat-stats">${isLocked ? 'به‌زودی...' : `${completed} از ${total} مرحله`}</div>
-                ${isLocked ? '' : `<div class="progress-track"><div class="progress-fill" style="width: ${perc}%"></div></div>`}
+                <div class="cat-stats">${isIdeas ? 'ایده یا انتقادت رو برامون بفرست' : (isLocked ? 'به‌زودی...' : `${completed} از ${total} مرحله`)}</div>
+                ${(isLocked || isIdeas) ? '' : `<div class="progress-track"><div class="progress-fill" style="width: ${perc}%"></div></div>`}
             </div>`;
-        if (!isLocked) {
-            div.addEventListener('click', () => { AudioEngine.tap(); requireChannelJoin(() => startCategory(cat)); });
+        if (isIdeas) {
+            div.addEventListener('click', () => { AudioEngine.tap(); openSuggestionsPage(); });
+        } else if (!isLocked) {
+            div.addEventListener('click', () => { AudioEngine.tap(); requireChannelJoin(() => openLevelSelect(cat)); });
         }
         catContainer.appendChild(div);
     });
 
     renderDailyChallengeCard();
     renderChannelPromos();
-    renderSuggestionsSection();
 }
 
 // بنر بزرگ وسط صفحه: درصد پیشرفت کل بازی + دکمه‌ی ادامه (اولین دسته‌ی ناتمام)
@@ -984,29 +1063,157 @@ function coinBurst(anchor) {
     }
 }
 
-// بخش «پیشنهادات شما 🫂» — جایگزین کارت قبلی «به‌زودی...» است. تمام متن‌ها
-// (عنوان، توضیح، متن الگو، برچسب دکمه‌ها، لینک ایتا) از DB.suggestions
-// خوانده می‌شود (بخش suggestions در data.json)، نه از این فایل — برای
-// تغییرشان فقط data.json را ویرایش کن.
-function renderSuggestionsSection() {
-    const s = DB.suggestions;
-    const section = document.getElementById('suggestions-section');
-    if (!section || !s) return;
+// =====================================================
+// صفحه‌ی «انتقادات و پیشنهادات» (کارت «ایده‌های شما» در صفحه‌ی اصلی)
+// =====================================================
+// ارسال واقعی: پیشنهاد با یک PUT به KVDB (کلید sug_<زمان>_<تصادفی>) ثبت
+// می‌شود و فقط وقتی «موفق» نمایش داده می‌شود که سرور واقعاً پاسخ ok بدهد.
+// خواندن پیشنهادها (مالک):
+//   https://kvdb.io/<BUCKET>/?prefix=sug_&values=true&format=json
+// اگر باکت تنظیم نشده یا ارسال شکست بخورد، پیام ساختگی «ارسال شد» نشان
+// داده نمی‌شود؛ به‌جایش متن آماده برای کپی و دکمه‌ی باز کردن پیوی می‌آید.
+const SUGGESTION_COOLDOWN_MS = 60 * 1000;
+const SUGGESTION_LAST_KEY = 'razak_last_suggestion_at';
+let suggestionSending = false;
 
-    document.getElementById('suggestions-title').textContent = s.title || 'پیشنهادات شما 🫂';
-    document.getElementById('suggestions-intro').textContent = s.intro || '';
-    document.getElementById('suggestions-template').textContent = s.template || '';
+function suggestionsBackendReady() {
+    return !!SUGGESTIONS_BUCKET_ID && SUGGESTIONS_BUCKET_ID !== 'YOUR_BUCKET_ID_HERE';
+}
 
-    const copyBtn = document.getElementById('btn-copy-suggestion-template');
-    copyBtn.textContent = s.copyButtonText || '📋 کپی متن';
-    copyBtn.onclick = () => copySuggestionTemplate(s.template || '');
+function openSuggestionsPage() {
+    const s = DB.suggestions || {};
+    if (s.intro) document.getElementById('suggestions-intro').textContent = s.intro;
+    clearSuggestionErrors();
+    hideSuggestionResult();
+    showScreen('screen-suggestions');
+    if (window.Eitaa && window.Eitaa.WebApp && window.Eitaa.WebApp.BackButton) {
+        window.Eitaa.WebApp.BackButton.show();
+    }
+}
 
-    const contactBtn = document.getElementById('btn-send-suggestion');
-    contactBtn.textContent = s.contactButtonText || 'ارسال پیشنهاد';
-    contactBtn.onclick = () => {
-        AudioEngine.tap();
-        openExternalLink(s.contactUrl || 'https://eitaa.com/ferstadeh');
+function clearSuggestionErrors() {
+    ['sg-name-err', 'sg-idea-err', 'sg-emojis-err'].forEach(id => { document.getElementById(id).textContent = ''; });
+    ['sg-name', 'sg-idea', 'sg-emojis'].forEach(id => document.getElementById(id).classList.remove('invalid'));
+}
+function hideSuggestionResult() {
+    document.getElementById('sg-result').classList.add('hidden');
+    document.getElementById('sg-result-actions').classList.add('hidden');
+}
+function showSuggestionResult(kind, text, withFallback) {
+    const box = document.getElementById('sg-result');
+    box.className = `suggest-result ${kind}`;
+    document.getElementById('sg-result-text').textContent = text;
+    document.getElementById('sg-result-actions').classList.toggle('hidden', !withFallback);
+}
+
+function readSuggestionForm() {
+    return {
+        name: document.getElementById('sg-name').value.replace(/\s+/g, ' ').trim(),
+        idea: document.getElementById('sg-idea').value.replace(/[ \t]+\n/g, '\n').trim(),
+        emojis: document.getElementById('sg-emojis').value.trim()
     };
+}
+
+function validateSuggestion(f) {
+    const errors = {};
+    if (f.name.length > 30) errors['sg-name'] = 'نام حداکثر ۳۰ کاراکتر باشد.';
+    if (f.idea.length === 0) errors['sg-idea'] = 'لطفاً ایده یا انتقادت رو بنویس.';
+    else if (f.idea.length < 10) errors['sg-idea'] = 'متن خیلی کوتاهه؛ حداقل ۱۰ کاراکتر بنویس.';
+    else if (f.idea.length > 1000) errors['sg-idea'] = 'متن حداکثر ۱۰۰۰ کاراکتر باشد.';
+    if (f.emojis) {
+        if (f.emojis.length > 60) errors['sg-emojis'] = 'ایموجی‌ها حداکثر ۶۰ کاراکتر باشند.';
+        else if (!/\p{Extended_Pictographic}/u.test(f.emojis)) errors['sg-emojis'] = 'اینجا فقط ایموجی بنویس (مثلاً 🎬🍿).';
+    }
+    return errors;
+}
+
+function buildSuggestionText(f) {
+    return `نام شما(اختیاری): ${f.name}\nایده و یا انتقاد شما: ${f.idea}\nایموجی های پیشنهادی: ${f.emojis}`;
+}
+
+// برمی‌گرداند: { ok: true } یا { ok: false, reason: 'not-configured' | 'network' | 'server' }
+async function sendSuggestion(f) {
+    if (!suggestionsBackendReady()) return { ok: false, reason: 'not-configured' };
+    const key = `sug_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const body = JSON.stringify({
+        name: f.name, idea: f.idea, emojis: f.emojis,
+        date: new Date().toISOString(), appVersion: APP_VERSION
+    });
+    try {
+        const res = await fetch(`https://kvdb.io/${SUGGESTIONS_BUCKET_ID}/${key}`, { method: 'PUT', body });
+        return res.ok ? { ok: true } : { ok: false, reason: 'server' };
+    } catch (e) {
+        return { ok: false, reason: 'network' };
+    }
+}
+
+async function submitSuggestion() {
+    if (suggestionSending) return;
+    AudioEngine.tap();
+    clearSuggestionErrors();
+    hideSuggestionResult();
+    const f = readSuggestionForm();
+    const errors = validateSuggestion(f);
+    const ids = Object.keys(errors);
+    if (ids.length) {
+        ids.forEach(id => {
+            document.getElementById(id).classList.add('invalid');
+            document.getElementById(`${id}-err`).textContent = errors[id];
+        });
+        document.getElementById(ids[0]).focus();
+        return;
+    }
+    const last = parseInt(localStorage.getItem(SUGGESTION_LAST_KEY) || '0', 10);
+    if (last && Date.now() - last < SUGGESTION_COOLDOWN_MS) {
+        showSuggestionResult('warn', 'چند لحظه پیش یه پیشنهاد فرستادی؛ یه دقیقه صبر کن و دوباره امتحان کن.', false);
+        return;
+    }
+
+    const btn = document.getElementById('btn-submit-suggestion');
+    suggestionSending = true;
+    btn.disabled = true;
+    btn.textContent = 'در حال ارسال...';
+    const result = await sendSuggestion(f);
+    suggestionSending = false;
+    btn.disabled = false;
+    btn.textContent = 'ارسال پیشنهاد';
+
+    if (result.ok) {
+        localStorage.setItem(SUGGESTION_LAST_KEY, String(Date.now()));
+        AudioEngine.success();
+        showSuggestionResult('success', 'ممنون! پیشنهادت با موفقیت ارسال شد 💙', false);
+        ['sg-name', 'sg-idea', 'sg-emojis'].forEach(id => { document.getElementById(id).value = ''; });
+        document.getElementById('sg-idea-count').textContent = '0';
+    } else {
+        AudioEngine.error();
+        const msg = result.reason === 'not-configured'
+            ? 'ارسال مستقیم از داخل بازی هنوز فعال نشده. متنت آماده‌ست؛ کپی کن و توی پیوی بفرست.'
+            : 'ارسال انجام نشد (مشکل اتصال یا سرور). می‌تونی دوباره امتحان کنی یا متن رو کپی کنی و توی پیوی بفرستی.';
+        showSuggestionResult('error', msg, true);
+    }
+}
+
+function setupSuggestionsPage() {
+    document.getElementById('btn-back-suggestions').addEventListener('click', goBackToHome);
+    document.getElementById('btn-submit-suggestion').addEventListener('click', submitSuggestion);
+    document.getElementById('sg-idea').addEventListener('input', e => {
+        document.getElementById('sg-idea-count').textContent = toFaDigits(e.target.value.length);
+    });
+    ['sg-name', 'sg-idea', 'sg-emojis'].forEach(id => {
+        document.getElementById(id).addEventListener('input', e => {
+            e.target.classList.remove('invalid');
+            document.getElementById(`${id}-err`).textContent = '';
+        });
+    });
+    document.getElementById('btn-sg-copy').addEventListener('click', () => copySuggestionTemplate(buildSuggestionText(readSuggestionForm())));
+    document.getElementById('btn-sg-open-pv').addEventListener('click', () => {
+        AudioEngine.tap();
+        openExternalLink((DB.suggestions && DB.suggestions.contactUrl) || SUGGESTIONS_PV_URL);
+    });
+    document.getElementById('btn-open-feedback').addEventListener('click', () => {
+        AudioEngine.tap();
+        openExternalLink(SUGGESTIONS_PV_URL);
+    });
 }
 
 // کپی متن الگو در کلیپ‌بورد. روش اصلی navigator.clipboard (مرورگرهای مدرن،
@@ -1368,19 +1575,147 @@ function computeDifficulty(levelData, isWordMode) {
     return 'hard';
 }
 
-function startCategory(category) {
+// =====================================================
+// مراحل، قفل مراحل و ستاره‌ها
+// =====================================================
+// قواعد:
+//  • مرحله‌ی اول هر دسته همیشه باز است؛ مرحله‌ی i+1 فقط وقتی باز می‌شود که
+//    مرحله‌ی i حل شده باشد (یا خودش قبلاً حل شده باشد).
+//  • ستاره بر اساس تعداد راهنمای استفاده‌شده در همان مرحله:
+//    ۰ بار = ۳ ستاره، ۱ تا ۳ بار = ۲ ستاره، بیشتر از ۳ بار = ۱ ستاره.
+//  • این قواعد در منطق (renderLevel / checkWin / useHint) اعمال می‌شوند،
+//    نه فقط در ظاهر صفحه‌ی انتخاب مرحله.
+const toFaDigits = n => String(n).replace(/\d/g, x => '۰۱۲۳۴۵۶۷۸۹'[x]);
+
+function isLevelCompleted(catId, idx) {
+    return (GameState.progress[catId] || []).includes(idx);
+}
+function isLevelUnlocked(category, idx) {
+    if (idx < 0 || idx >= category.levels.length) return false;
+    if (idx === 0) return true;
+    return isLevelCompleted(category.id, idx) || isLevelCompleted(category.id, idx - 1);
+}
+function getLevelStat(catId, idx) {
+    const cat = GameState.levelStats[catId];
+    return (cat && cat[idx]) || null;
+}
+function getLevelHints(catId, idx) {
+    const s = getLevelStat(catId, idx);
+    return s && typeof s.hints === 'number' ? s.hints : 0;
+}
+function calcStars(hints) {
+    if (hints <= 0) return 3;
+    if (hints <= 3) return 2;
+    return 1;
+}
+function getLevelStars(catId, idx) {
+    if (!isLevelCompleted(catId, idx)) return 0;
+    const s = getLevelStat(catId, idx);
+    return s && typeof s.stars === 'number' ? s.stars : 3; // کاربران قدیمی بدون رکورد: ۳ ستاره
+}
+function recordLevelHint(catId, idx) {
+    if (!GameState.levelStats[catId]) GameState.levelStats[catId] = {};
+    const s = GameState.levelStats[catId][idx] || (GameState.levelStats[catId][idx] = { hints: 0 });
+    s.hints = (s.hints || 0) + 1;
+}
+function recordLevelStars(catId, idx) {
+    if (!GameState.levelStats[catId]) GameState.levelStats[catId] = {};
+    const s = GameState.levelStats[catId][idx] || (GameState.levelStats[catId][idx] = { hints: 0 });
+    s.stars = calcStars(s.hints || 0);
+    return s.stars;
+}
+// متن توضیح ستاره‌ها (با کلیک روی ❗ در پنجره‌ی پایان مرحله)
+function starsExplanationHtml(catId, idx) {
+    const hints = getLevelHints(catId, idx);
+    const stars = getLevelStars(catId, idx);
+    const why = hints === 0
+        ? 'در این مرحله از هیچ راهنمایی استفاده نکردی، برای همین ۳ ستاره گرفتی.'
+        : `در این مرحله ${toFaDigits(hints)} بار از راهنما استفاده کردی، برای همین ${toFaDigits(stars)} ستاره گرفتی.`;
+    return `<div class="stars-explain-rules">
+        <div>⭐⭐⭐ بدون استفاده از راهنما</div>
+        <div>⭐⭐ ۱ تا ۳ بار استفاده از راهنما</div>
+        <div>⭐ بیشتر از ۳ بار استفاده از راهنما</div>
+    </div><div class="stars-explain-why">${why}</div>`;
+}
+
+function starsMarkup(n) {
+    let out = '';
+    for (let i = 1; i <= 3; i++) out += `<span class="star ${i <= n ? 'on' : ''}">★</span>`;
+    return out;
+}
+
+function openLevelSelect(category) {
     GameState.isDailyChallenge = false;
     GameState.activeCategory = category;
+    document.getElementById('levels-category-title').textContent = category.name;
+    renderLevelSelect();
+    showScreen('screen-levels');
+    if (window.Eitaa && window.Eitaa.WebApp && window.Eitaa.WebApp.BackButton) {
+        window.Eitaa.WebApp.BackButton.show();
+    }
+}
+
+function renderLevelSelect() {
+    const cat = GameState.activeCategory;
+    if (!cat) return;
+    document.getElementById('levels-score').textContent = GameState.globalScore;
+    const done = (GameState.progress[cat.id] || []).filter(i => i < cat.levels.length).length;
+    document.getElementById('levels-summary').textContent =
+        `${toFaDigits(done)} تا ${toFaDigits(cat.levels.length)}`;
+
+    const grid = document.getElementById('levels-grid');
+    grid.innerHTML = '';
+    cat.levels.forEach((_, i) => {
+        const unlocked = isLevelUnlocked(cat, i);
+        const completed = isLevelCompleted(cat.id, i);
+        const stars = getLevelStars(cat.id, i);
+        const cell = document.createElement('div');
+        cell.className = 'level-cell';
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `level-tile ${!unlocked ? 'locked' : (completed ? 'completed' : 'current')}`;
+        btn.setAttribute('aria-label', unlocked ? `مرحله ${toFaDigits(i + 1)}` : `مرحله ${toFaDigits(i + 1)} قفل است`);
+        btn.innerHTML = unlocked ? `<span class="level-num">${i + 1}</span>` : '<span class="level-lock">🔒</span>';
+        btn.addEventListener('click', () => {
+            if (!isLevelUnlocked(cat, i)) {
+                AudioEngine.error();
+                showToast('🔒', 'اول مرحله‌ی قبلی رو حل کن تا این مرحله باز بشه');
+                return;
+            }
+            AudioEngine.tap();
+            startLevel(cat, i);
+        });
+        const starsEl = document.createElement('div');
+        starsEl.className = `level-stars ${!unlocked ? 'locked' : ''}`;
+        starsEl.innerHTML = starsMarkup(stars);
+        cell.appendChild(btn);
+        cell.appendChild(starsEl);
+        grid.appendChild(cell);
+    });
+}
+
+// دکمه‌ی بازگشت: از صفحه‌ی بازی (دسته‌ی عادی) → صفحه‌ی انتخاب مرحله؛ از
+// بقیه‌ی صفحه‌ها → صفحه‌ی اصلی.
+function handleBack() {
+    const active = document.querySelector('.screen.active');
+    const id = active ? active.id : '';
+    if (id === 'screen-game' && !GameState.isDailyChallenge && GameState.activeCategory
+        && GameState.activeCategory.id !== 'daily') {
+        AudioEngine.tap();
+        openLevelSelect(GameState.activeCategory);
+        return;
+    }
+    goBackToHome();
+}
+
+function startLevel(category, index) {
+    if (!isLevelUnlocked(category, index)) { openLevelSelect(category); return; }
+    GameState.isDailyChallenge = false;
+    GameState.activeCategory = category;
+    GameState.activeLevelIndex = index;
     document.getElementById('game-category-title').textContent = category.name;
     document.getElementById('daily-type-badge').classList.add('hidden');
-    
-    let completedArr = GameState.progress[category.id] || [];
-    let nextIndex = 0;
-    for(let i=0; i < category.levels.length; i++) {
-        if(!completedArr.includes(i)) { nextIndex = i; break; }
-    }
-    GameState.activeLevelIndex = nextIndex;
-    
+
     // نمایش هشدار برای بخش‌هایی که ماهیت محاوره‌ای/عامیانه دارند
     const noticeEl = document.getElementById('category-notice');
     if (category.id === 'proverbs' || category.id === 'idioms') {
@@ -1393,15 +1728,31 @@ function startCategory(category) {
     showScreen('screen-game');
     renderLevel();
 
-    // فعال‌سازی دکمه بازگشت سیستمی ایتا
     if (window.Eitaa && window.Eitaa.WebApp && window.Eitaa.WebApp.BackButton) {
         window.Eitaa.WebApp.BackButton.show();
     }
 }
 
+// «ادامه» از صفحه‌ی اصلی: اولین مرحله‌ی حل‌نشده؛ اگر همه حل شده باشند
+// به‌جای شروع دوباره (که قبلاً امتیاز تکراری می‌داد) صفحه‌ی انتخاب مرحله باز می‌شود.
+function startCategory(category) {
+    const completedArr = GameState.progress[category.id] || [];
+    let nextIndex = -1;
+    for (let i = 0; i < category.levels.length; i++) {
+        if (!completedArr.includes(i)) { nextIndex = i; break; }
+    }
+    if (nextIndex === -1) { openLevelSelect(category); return; }
+    startLevel(category, nextIndex);
+}
+
 function renderLevel() {
     const cat = GameState.activeCategory;
-    if (GameState.activeLevelIndex >= cat.levels.length) GameState.activeLevelIndex = 0;
+    if (!GameState.isDailyChallenge) {
+        // گارد منطقی: ورود به مرحله‌ی قفل یا خارج از محدوده ممنوع است
+        if (!isLevelUnlocked(cat, GameState.activeLevelIndex)) { openLevelSelect(cat); return; }
+    } else if (GameState.activeLevelIndex >= cat.levels.length) {
+        GameState.activeLevelIndex = 0;
+    }
 
     const levelData = cat.levels[GameState.activeLevelIndex];
     const answer = levelData.answer.replace(/ي/g, "ی").replace(/ك/g, "ک").trim();
@@ -1539,7 +1890,12 @@ function handleSlotClick(slotId) {
 }
 
 function useHint() {
-    if (GameState.globalScore < HINT_COST) { showToast('🪙', 'امتیاز کافی نیست!'); return; }
+    // در مرحله‌ی حل‌شده (تکرار برای تفریح) راهنما رایگان است و روی ستاره‌ها
+    // یا امتیاز اثری ندارد.
+    const catId = GameState.activeCategory && GameState.activeCategory.id;
+    const replay = !GameState.isDailyChallenge && isLevelCompleted(catId, GameState.activeLevelIndex);
+    const cost = replay ? 0 : HINT_COST;
+    if (GameState.globalScore < cost) { showToast('🪙', 'امتیاز کافی نیست!'); return; }
     const candidates = GameState.slots.filter(s => !s.locked && s.filledWith !== s.char);
     if (candidates.length === 0) return;
     
@@ -1562,7 +1918,8 @@ function useHint() {
     }
 
     if (validKeyId !== -1) {
-        GameState.globalScore -= HINT_COST;
+        GameState.globalScore -= cost;
+        if (!GameState.isDailyChallenge && !replay) recordLevelHint(catId, GameState.activeLevelIndex);
         target.filledWith = target.char;
         target.keyId = validKeyId;
         target.locked = true;
@@ -1581,31 +1938,55 @@ function checkWin() {
     if (isCorrect) {
         AudioEngine.success();
         let base;
+        let firstTime = false;
+        let stars = 0;
 
         if (GameState.isDailyChallenge) {
-            base = DAILY_BASE_SCORE;
-            GameState.globalScore += base;
-            GameState.totalEarned += base;
             const todayKey = getTodayKey();
             if (GameState.dailyChallenge.lastCompletedDate !== todayKey) {
+                base = DAILY_BASE_SCORE;
+                GameState.globalScore += base;
+                GameState.totalEarned += base;
                 GameState.dailyChallenge.completedCount = (GameState.dailyChallenge.completedCount || 0) + 1;
+            } else {
+                base = 0; // گارد منطقی: چالش روزانه در هر روز فقط یک‌بار امتیاز می‌دهد
             }
             GameState.dailyChallenge.lastCompletedDate = todayKey;
         } else {
-            const catId = GameState.activeCategory.id;
-            base = CATEGORY_SCORES[catId] ?? BASE_SCORE;
-            GameState.globalScore += base;
-            GameState.totalEarned += base;
-            if (!GameState.progress[catId]) GameState.progress[catId] = [];
-            if (!GameState.progress[catId].includes(GameState.activeLevelIndex)) {
-                GameState.progress[catId].push(GameState.activeLevelIndex);
+            const cat = GameState.activeCategory;
+            const catId = cat.id;
+            const idx = GameState.activeLevelIndex;
+            // گارد منطقی: هر مرحله فقط یک‌بار امتیاز می‌دهد و فقط اگر باز باشد
+            if (isLevelCompleted(catId, idx) || !isLevelUnlocked(cat, idx)) {
+                base = 0;
+            } else {
+                base = CATEGORY_SCORES[catId] ?? BASE_SCORE;
+                GameState.globalScore += base;
+                GameState.totalEarned += base;
+                if (!GameState.progress[catId]) GameState.progress[catId] = [];
+                GameState.progress[catId].push(idx);
+                recordLevelStars(catId, idx);
+                firstTime = true;
             }
+            stars = getLevelStars(catId, idx);
         }
         
         checkMedals();
         StorageManager.save();
 
-        document.getElementById('reward-base-score').textContent = `+${base}`;
+        document.getElementById('reward-base-score').textContent =
+            (base > 0) ? `+${base}` : (GameState.isDailyChallenge ? '۰' : '۰ (قبلاً دریافت شده)');
+        const starsWrap = document.getElementById('reward-stars-wrap');
+        const explainBox = document.getElementById('stars-explain');
+        explainBox.classList.add('hidden');
+        document.getElementById('btn-stars-info').setAttribute('aria-expanded', 'false');
+        if (GameState.isDailyChallenge) {
+            starsWrap.classList.add('hidden');
+        } else {
+            document.getElementById('reward-stars').innerHTML = starsMarkup(stars);
+            explainBox.innerHTML = starsExplanationHtml(GameState.activeCategory.id, GameState.activeLevelIndex);
+            starsWrap.classList.remove('hidden');
+        }
         
         document.getElementById('modal-success').classList.remove('hidden');
     } else {
@@ -1640,11 +2021,19 @@ function checkMedals() {
    6. Bootstrapping
 ========================================= */
 function setupEvents() {
-    document.getElementById('btn-back-home').addEventListener('click', goBackToHome);
+    document.getElementById('btn-back-home').addEventListener('click', handleBack);
+    document.getElementById('btn-back-levels').addEventListener('click', goBackToHome);
+    setupSuggestionsPage();
+    document.getElementById('btn-stars-info').addEventListener('click', () => {
+        AudioEngine.tap();
+        const box = document.getElementById('stars-explain');
+        const open = box.classList.toggle('hidden') === false;
+        document.getElementById('btn-stars-info').setAttribute('aria-expanded', String(open));
+    });
     
     // اتصال دکمه بازگشت سخت‌افزاری/سیستمی ایتا به برنامه ما
     if (window.Eitaa && window.Eitaa.WebApp && window.Eitaa.WebApp.BackButton) {
-        window.Eitaa.WebApp.BackButton.onClick(goBackToHome);
+        window.Eitaa.WebApp.BackButton.onClick(handleBack);
     }
 
     document.getElementById('btn-next-level').addEventListener('click', () => {
@@ -1655,11 +2044,18 @@ function setupEvents() {
             goBackToHome();
             return;
         }
-        GameState.activeLevelIndex++;
+        const cat = GameState.activeCategory;
+        const next = GameState.activeLevelIndex + 1;
+        if (next >= cat.levels.length) {
+            openLevelSelect(cat); // آخرین مرحله بود؛ دیگر به ابتدا برنمی‌گردیم
+            return;
+        }
+        GameState.activeLevelIndex = next;
         renderLevel();
     });
     
     document.getElementById('btn-hint').addEventListener('click', useHint);
+    document.getElementById('btn-hint').innerHTML = `💡 راهنما (${toFaDigits(HINT_COST)}- امتیاز)`;
 
     document.getElementById('daily-challenge-card').addEventListener('click', () => requireChannelJoin(startDailyChallenge));
 
@@ -1783,7 +2179,7 @@ function renderChangelog(showAll) {
 
     body.innerHTML = entries.map(entry => `
         <div class="changelog-entry">
-            <div class="changelog-version">نسخه ${entry.version}</div>
+            <div class="changelog-version">${entry.version}</div>
             ${entry.added?.length ? `
                 <ul class="changelog-list">${entry.added.map(t => `<li>✨ ${t}</li>`).join('')}</ul>` : ''}
         </div>`).join('');
@@ -1811,8 +2207,8 @@ const REWARD_CONFIG = (typeof window !== 'undefined' && window.REWARD_SETTINGS)
     : { channels: [], rotatingSlot: null };
 
 const REWARD_DAYS_FA = ['شنبه', 'یک‌شنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه'];
-const DAILY_REWARD_MIN = 10;
-const DAILY_REWARD_MAX = 85;
+const DAILY_REWARD_MIN = 100;
+const DAILY_REWARD_MAX = 850;
 
 // همون فرمت YYYY-MM-DD که getTodayKey هم استفاده می‌کند (بر مبنای ساعت محلی دستگاه)
 function getDateKey(d) {
@@ -2091,7 +2487,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
 
     try {
-        const res = await fetch('data.json');
+        const res = await fetch('data.json?v=' + APP_VERSION);
         DB = await res.json();
     } catch (e) {
         DB = { categories: [{ id: "proverbs", name: "ضرب‌المثل‌ها", icon: "🎭", levels: [{ emoji: "👂🏻🚪👂🏻🥅", answer: "یه گوشش دره یه گوشش دروازه" }] }] };
@@ -2100,7 +2496,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     StorageManager.load(() => {
         document.getElementById('toggle-theme').checked = GameState.settings.darkMode;
         document.getElementById('toggle-sound').checked = GameState.settings.sound;
-        document.getElementById('settings-version-label').textContent = `نسخه ${APP_VERSION}`;
+        document.getElementById('settings-version-label').textContent = APP_VERSION;
         applyTheme();
         setupEvents();
         renderHome();
