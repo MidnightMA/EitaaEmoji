@@ -9,7 +9,6 @@
 // برای عکس جدید: فایل را در پوشه‌ی photos/ بگذار (مربعی، حدود ۳۰۰×۳۰۰
 // کافی است) و یک خط شبیه پایین اضافه کن.
 const CHANNEL_PHOTOS = {
-    'avay_khiyal': { photo: 'photos/avay_khiyal.webp' },
     'tech_nour':   { photo: 'photos/tech_nour.webp' },
     'rasa_meme':   { photo: 'photos/rasa_meme.webp' },
     'ashob_daron': { photo: 'photos/ashob_daron.webp' },
