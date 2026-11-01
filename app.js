@@ -36,9 +36,8 @@ const PERSIAN_ALPHABET = "ابپتثجچحخدذرزژسشصضطظعغفقکگل
 const ECONOMY_VERSION = 2;
 const ECONOMY_MULTIPLIER = 10;
 const HINT_COST = 150;
-// این دو تا هنوز برای کارت‌های «کانال‌های ما» در پایین صفحه استفاده می‌شوند.
+// این لینک هنوز برای کارت‌های «کانال‌های ما» در پایین صفحه استفاده می‌شود.
 const TECH_NOUR_LINK = 'https://eitaa.com/Tech_nour';
-const AVAY_KHIYAL_LINK = 'https://eitaa.com/avay_khiyal';
 
 /* =========================================
    عضویت اجباری چرخشی هفتگی (Weekly Mandatory Channel Rotation)
@@ -75,7 +74,6 @@ const ROTATION_CONFIG = (typeof window !== 'undefined' && window.MANDATORY_CHANN
         startDate: '2025-01-06T00:00:00+03:30',
         weeksPerChannel: 1,
         channels: [
-            { id: 'avay_khiyal', type: 'channel', name: 'آواي‌خـــــــــیال', icon: '🕊️', username: 'avay_khiyal', enabled: true },
             { id: 'tech_nour', type: 'channel', name: 'تِک‌نور', icon: '📢', username: 'Tech_nour', enabled: true },
             { id: 'rasa_meme', type: 'channel', name: 'رسامیم', icon: '😂', username: 'Rasa_Meme', enabled: true },
             { id: 'partner', type: 'partner', name: 'آشوب درون | Ashob daron', icon: '📌', username: 'Ashob_daron', enabled: true }
@@ -334,23 +332,13 @@ const MEDALS_DB = [
 //   type: 'ad'       → کارت تبلیغ، ظاهر و رنگش عمداً متفاوته که کاربر سریع
 //                      بفهمه تبلیغه (badge, desc, iconType, link, buttonText)
 // برای افزودن کانال جدید، فقط یک آبجکت دیگر شبیه پایین به آرایه اضافه کن.
-// theme برای کانال‌ها: 'tech' / 'poetry' / 'meme' (یا خالی برای آبی پیش‌فرض).
+// theme برای کانال‌ها: 'tech' / 'gold' / 'meme' (یا خالی برای آبی پیش‌فرض).
 // iconType باید یکی از کلیدهای PROMO_ICONS باشد (چند خط پایین‌تر همین فایل)؛
 // این آیکون فقط وقتی نمایش داده می‌شود که عکس پروفایل واقعی موجود نباشد.
 // photoKey → کلید مربوطه در channel-photos.js (فایل جدا برای عکس‌های
 // پروفایل)؛ اگر آنجا عکسی برای این کلید ثبت شده باشد همان نمایش داده
 // می‌شود، وگرنه آیکون SVG (iconType) جایگزینش می‌شود.
 const CHANNEL_PROMOS = [
-    {
-        type: 'channel',
-        name: 'آواي‌خـــــــــیال',
-        handle: '@avay_khiyal',
-        desc: 'کانال شعر؛ اگه دلت یه گوشه‌ی آروم برای خوندن شعر می‌خواد، بیا اینجا',
-        iconType: 'poetry',
-        photoKey: 'avay_khiyal',
-        link: AVAY_KHIYAL_LINK,
-        theme: 'poetry'
-    },
     {
         type: 'ad',
         name: 'تبلیغات عمو',
@@ -444,7 +432,7 @@ function populateChannelIcon(container, photoKey, iconType) {
     const img = document.createElement('img');
     img.src = photoUrl;
     img.alt = '';
-    img.loading = 'lazy';
+    img.loading = 'eager'; // عکس‌ها کوچک‌اند (≈۱۰ تا ۳۰ کیلوبایت)؛ lazy باعث تأخیر دیده‌شدنشان می‌شد
     img.decoding = 'async';
     img.addEventListener('error', () => {
         container.innerHTML = getPromoIconMarkup(iconType);
@@ -833,43 +821,116 @@ const AVATAR_ICONS = {
 // عنصر آواتار (هدر صفحه اصلی یا صفحه پروفایل) را بر اساس عکس ایتا (اگر بود)
 // یا آیکون جنسیت انتخابی کاربر پر می‌کند، و کلاس گرادیان پس‌زمینه متناسب با
 // جنسیت را ست می‌کند (آبی برای پسر، صورتی برای دختر، آبی خنثی پیش‌فرض).
+// ⚡ سرعت لود عکس پروفایل:
+//  ۱. هدر (عکس و اسم) همان لحظه‌ی باز شدن برنامک و «قبل از» دریافت data.json و
+//     دیتای کلاد کشیده می‌شود (earlyPaintUser)، نه بعد از آن‌ها.
+//  ۲. نسخه‌ی کوچک (۱۲۸ پیکسل) عکس ایتا در localStorage کش می‌شود تا دفعات بعد
+//     بدون هیچ درخواست شبکه و آنی نمایش داده شود.
+//  ۳. اتصال زودهنگام (preconnect) به سرور عکس و اولویت بالا برای لود آن.
+const AVATAR_CACHE_PREFIX = 'razak_avatar_cache_';
+const AVATAR_CACHE_SIZE = 128;
+
+function readAvatarCache() {
+    try {
+        const c = JSON.parse(localStorage.getItem(AVATAR_CACHE_PREFIX + GameState.user.id) || 'null');
+        return (c && typeof c.data === 'string' && c.data.startsWith('data:image/')) ? c : null;
+    } catch (e) { return null; }
+}
+
+// عکس را یک‌بار می‌گیرد، به ۱۲۸×۱۲۸ کوچک می‌کند و ذخیره می‌کند (best-effort؛ اگر
+// سرور عکس CORS را اجازه ندهد یا هر خطایی بیاید، بی‌صدا رد می‌شود).
+async function cacheAvatarPhoto(url) {
+    try {
+        const cached = readAvatarCache();
+        if (cached && cached.src === url) return;
+        const blob = await (await fetch(url, { mode: 'cors', credentials: 'omit' })).blob();
+        const bmp = await createImageBitmap(blob);
+        const canvas = document.createElement('canvas');
+        canvas.width = canvas.height = AVATAR_CACHE_SIZE;
+        const side = Math.min(bmp.width, bmp.height);
+        canvas.getContext('2d').drawImage(bmp, (bmp.width - side) / 2, (bmp.height - side) / 2, side, side, 0, 0, AVATAR_CACHE_SIZE, AVATAR_CACHE_SIZE);
+        const data = canvas.toDataURL('image/jpeg', 0.82);
+        if (data.length < 60000) {
+            localStorage.setItem(AVATAR_CACHE_PREFIX + GameState.user.id, JSON.stringify({ src: url, data, t: Date.now() }));
+        }
+    } catch (e) { /* کش نشد؛ مشکلی نیست، عکس اصلی همچنان نمایش داده می‌شود */ }
+}
+
+function warmUpAvatarConnection(url) {
+    try {
+        const origin = new URL(url, location.href).origin;
+        if (origin !== location.origin && !document.querySelector(`link[rel="preconnect"][href="${origin}"]`)) {
+            const l = document.createElement('link');
+            l.rel = 'preconnect'; l.href = origin; l.crossOrigin = 'anonymous';
+            document.head.appendChild(l);
+        }
+    } catch (e) {}
+}
+
+function getAvatarPhotoSrc() {
+    const url = GameState.user.photo_url;
+    const cached = readAvatarCache();
+    if (cached && (!url || cached.src === url)) return cached.data; // آنی، بدون شبکه
+    return url || null;
+}
+
+function makeAvatarImg(src, onFail) {
+    const img = document.createElement('img');
+    img.src = src;
+    img.alt = 'Profile';
+    img.decoding = 'async';
+    img.loading = 'eager';
+    img.setAttribute('fetchpriority', 'high');
+    img.addEventListener('error', onFail, { once: true });
+    return img;
+}
+
 function applyAvatarVisual(avatarEl, gender) {
     avatarEl.classList.remove('gender-boy', 'gender-girl');
     if (gender === 'boy') avatarEl.classList.add('gender-boy');
     if (gender === 'girl') avatarEl.classList.add('gender-girl');
 
-    const avatarId = GameState.settings.avatarId;
-    if (avatarId) {
-        avatarEl.innerHTML = '';
-        const img = document.createElement('img');
-        img.src = `Profile/${avatarId}.jpg`;
-        img.alt = 'Profile';
-        img.addEventListener('error', () => {
-            // اگه فایل عکس پیدا نشد (مثلاً پاک/جابه‌جا شده)، به‌جای آیکون شکسته
-            // برمی‌گردیم به همون آیکون هندسی جنسیت
-            avatarEl.innerHTML = AVATAR_ICONS[gender] || AVATAR_ICONS.neutral;
-            avatarEl.style.background = '';
-        });
-        avatarEl.appendChild(img);
-        avatarEl.style.background = 'transparent';
-        return;
-    }
-
-    if (GameState.user.photo_url) {
-        avatarEl.innerHTML = '';
-        const img = document.createElement('img');
-        img.src = GameState.user.photo_url;
-        img.alt = 'Profile';
-        img.addEventListener('error', () => {
-            avatarEl.innerHTML = AVATAR_ICONS[gender] || AVATAR_ICONS.neutral;
-            avatarEl.style.background = '';
-        });
-        avatarEl.appendChild(img);
-        avatarEl.style.background = 'transparent';
-    } else {
+    const fallbackIcon = () => {
         avatarEl.innerHTML = AVATAR_ICONS[gender] || AVATAR_ICONS.neutral;
         avatarEl.style.background = '';
+        delete avatarEl.dataset.src;
+    };
+    const avatarId = GameState.settings.avatarId;
+    const src = avatarId ? `Profile/${avatarId}.jpg` : getAvatarPhotoSrc();
+    if (!src) { fallbackIcon(); return; }
+
+    // همان عکس از قبل نمایش داده شده؛ دوباره ساختنش باعث چشمک‌زدن و لود مجدد می‌شود
+    if (avatarEl.dataset.src === src && avatarEl.querySelector('img')) return;
+
+    avatarEl.innerHTML = '';
+    // اگه فایل پیدا نشد (مثلاً پاک/جابه‌جا شده)، به‌جای آیکون شکسته برمی‌گردیم
+    // به همون آیکون هندسی جنسیت
+    avatarEl.appendChild(makeAvatarImg(src, fallbackIcon));
+    avatarEl.dataset.src = src;
+    avatarEl.style.background = 'transparent';
+
+    if (!avatarId && GameState.user.photo_url && src === GameState.user.photo_url) {
+        cacheAvatarPhoto(GameState.user.photo_url); // دفعه‌ی بعد آنی بیاید
     }
+}
+
+// قبل از هر await در شروع برنامک صدا زده می‌شود: عکس و اسم از روی داده‌ی
+// لوکالِ همین دستگاه (همزمان، بدون شبکه) کشیده می‌شوند. وقتی لود کامل (کلاد)
+// تمام شد، renderHome همین‌ها را درست و بدون چشمک به‌روز می‌کند.
+function earlyPaintUser() {
+    try {
+        if (GameState.user.photo_url) warmUpAvatarConnection(GameState.user.photo_url);
+        const raw = localStorage.getItem(StorageManager.getKey());
+        if (raw) {
+            const local = JSON.parse(raw);
+            if (local && local.settings && typeof local.settings === 'object') {
+                const s = local.settings;
+                GameState.settings = { ...GameState.settings, avatarId: s.avatarId ?? null, gender: s.gender ?? null, displayName: s.displayName ?? null };
+            }
+        }
+        document.getElementById('user-name').textContent = getDisplayName();
+        applyAvatarVisual(document.getElementById('user-avatar'), GameState.settings.gender);
+    } catch (e) { /* رندر اولیه اختیاری است؛ renderHome بعداً همه‌چیز را درست می‌کند */ }
 }
 
 // مجموعه‌ی عکس‌های آماده‌ی پروفایل (داخل پوشه‌ی Profile/). نام واقعی
@@ -2484,6 +2545,8 @@ window.addEventListener('DOMContentLoaded', async () => {
         // دیده شود تا اینکه با کلید نادرست (eitaa_game_undefined) به رکورد
         // اشتباهی وصل شود یا رکورد واقعی‌اش گم به‌نظر برسد.
     }
+
+    earlyPaintUser();
 
     try {
         const res = await fetch('data.json?v=' + APP_VERSION);
