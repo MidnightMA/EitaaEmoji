@@ -635,15 +635,8 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 /* --- رنگ‌بندی اختصاصی کارت‌های کانال بر اساس حال‌وهوای هرکدام --- */
 .channel-promo-card.theme-tech { background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); }
-/* رنگ‌بندی هماهنگ با هویت بصری واقعی کانال آوای‌خیال: پس‌زمینه‌ی تیره و
-   مه‌آلود (مثل عکس پروفایل خودش) + یک درخشش قرمز ظریف، به‌جای بنفش/صورتیِ
-   ژنریک قبلی. */
-.channel-promo-card.theme-poetry {
-    background: linear-gradient(135deg, #1a1a1a, #2b2b2b 55%, #3d1f1f);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255, 59, 48, 0.18);
-}
-/* کانال «آشوب درون»: همان فضای تیره و مه‌آلود آوای‌خیال، اما با حال‌وهوای
-   طلایی (گرادیان قهوه‌ای-طلایی تیره + قاب و درخشش طلایی ظریف). */
+/* کانال «آشوب درون»: فضای تیره و مه‌آلود با حال‌وهوای طلایی (گرادیان
+   قهوه‌ای-طلایی تیره + قاب و درخشش طلایی ظریف). */
 .channel-promo-card.theme-gold {
     background: linear-gradient(135deg, #1a1a1a, #2b2b2b 50%, #5a4214);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35), 0 0 16px rgba(212, 175, 55, 0.22), inset 0 0 0 1px rgba(212, 175, 55, 0.45);
