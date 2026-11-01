@@ -3,7 +3,7 @@
 // EDIT ROTATION ORDER / START DATE / CHANNEL DATA HERE
 // =====================================================
 // این فایل «ترتیب چرخش» و «تاریخ شروع» را مشخص می‌کند، و اطلاعات ساختاری
-// هر سه کانال (آوای‌خیال، تک‌نور، رسامیم) را مستقیماً همینجا نگه می‌دارد.
+// کانال‌های چرخش (تک‌نور، رسامیم) را مستقیماً همینجا نگه می‌دارد.
 //
 // فیلدهایی که برای هر کانال می‌توانی عوض کنی: name, username, icon, enabled.
 // id را عوض نکن (پیشرفت ذخیره‌شده‌ی کاربر با همین id شناخته می‌شود).
@@ -27,7 +27,6 @@ window.MANDATORY_CHANNELS_ROTATION = {
     startDate: '2025-01-06T00:00:00+03:30',
     weeksPerChannel: 1, // هر کانال چند هفته پشت‌سرهم فعال بماند
     order: [
-        { id: 'avay_khiyal', type: 'channel', name: 'آوای‌خیال', icon: '🕊️', username: 'avay_khiyal', enabled: true },
         { id: 'tech_nour', type: 'channel', name: 'تِک‌نور', icon: '📢', username: 'Tech_nour', enabled: true },
         { id: 'rasa_meme', type: 'channel', name: 'رسامیم', icon: '😂', username: 'Rasa_Meme', enabled: true }
     ]
