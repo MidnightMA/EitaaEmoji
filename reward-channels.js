@@ -22,13 +22,20 @@
 //   فقط آبجکتش رو از آرایه بردار (یا اگه می‌خوای موقت مخفی بشه، active:false اضافه کن).
 window.REWARD_SETTINGS = {
     channels: [
-        { id: 'tech_nour', name: 'تک نور | Tech nour', icon: '📢', username: 'Tech_nour', reward: 1000 },
-        { id: 'rasa_meme', name: 'Rasa Meme | رسامیم', icon: '😂', username: 'Rasa_Meme', reward: 1000 },
+        { id: 'tech_nour', name: 'تک‌نور', icon: '📢', username: 'Tech_nour', reward: 1000 },
+        { id: 'rasa_meme', name: 'رسامیم', icon: '😂', username: 'Rasa_Meme', reward: 1000 },
         // کانال/کانال‌های شخصی خودت. یوزرنیم رو جایگزین placeholder کن.
-        { id: 'ashob_daron', name: 'آشوب درون | Ashob daron', icon: '📌', username: 'Ashob_daron', reward: 1000 },
+        { id: 'ashob_daron', name: 'آشوب درون', icon: '📌', username: 'Ashob_daron', reward: 1000 },
         // همون تبلیغ‌کننده‌ی فعلی «کانال‌های ما» در صفحه اصلی (CHANNEL_PROMOS
         // در app.js)؛ یوزرنیم اینجا هم دستی هماهنگ نگه‌داشته می‌شه.
-        { id: 'tab_amoo', name: 'تبلیغات عمو', icon: '📣', username: 'tab_amoo', reward: 2000 }
+        { id: 'tab_amoo', name: 'تبلیغات عمو', icon: '📣', username: 'tab_amoo', reward: 2000 },
+        // --- کانال‌های جدید (پاداش یک‌بار برای همیشه) ---
+        { id: 'razak_plus', name: 'رازک', username: 'RazakPlus', reward: 1000 },
+        { id: 'avay_khiyal', name: 'آوای خیال', username: 'avay_khiyal', reward: 1000 },
+        { id: 'eitaayazd', name: 'ایتایز', username: 'eitaayazd', reward: 1000 },
+        { id: 'all_channels', name: 'کانال‌های من!', username: 'all_Channels', reward: 1000 },
+        { id: 'im_monk', name: 'راهب', username: 'im_monk', reward: 1000 },
+        { id: 'amoo_rasool', name: 'عمو رسول', username: 'Amoo_rasool', reward: 1000 }
     ],
 
     // --- جایگاه «چهارم»: تبلیغات چرخشی کاربران (استثنا) ---
