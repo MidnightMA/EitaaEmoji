@@ -20,43 +20,39 @@
 //
 // --- برای حذف یک کارت ---
 //   فقط آبجکتش رو از آرایه بردار (یا اگه می‌خوای موقت مخفی بشه، active:false اضافه کن).
+//
+// ترتیب نمایش = ترتیب همین آرایه (از بالا به پایین)؛ الان بر اساس تعداد اعضای کانال
+// از بیشترین به کمترین چیده شده (تعداد اعضا کنار هر خط نوشته شده).
 window.REWARD_SETTINGS = {
     channels: [
-        { id: 'tech_nour', name: 'تک‌نور', icon: '📢', username: 'Tech_nour', reward: 1000 },
-        { id: 'rasa_meme', name: 'رسامیم', icon: '😂', username: 'Rasa_Meme', reward: 1000 },
-        // کانال/کانال‌های شخصی خودت. یوزرنیم رو جایگزین placeholder کن.
-        { id: 'ashob_daron', name: 'آشوب درون', icon: '📌', username: 'Ashob_daron', reward: 1000 },
-        // همون تبلیغ‌کننده‌ی فعلی «کانال‌های ما» در صفحه اصلی (CHANNEL_PROMOS
-        // در app.js)؛ یوزرنیم اینجا هم دستی هماهنگ نگه‌داشته می‌شه.
-        { id: 'tab_amoo', name: 'تبلیغات عمو', icon: '📣', username: 'tab_amoo', reward: 2000 },
-        // --- کانال‌های جدید (پاداش یک‌بار برای همیشه) ---
-        { id: 'razak_plus', name: 'رازک', username: 'RazakPlus', reward: 1000 },
-        { id: 'avay_khiyal', name: 'آوای خیال', username: 'avay_khiyal', reward: 1000 },
-        { id: 'eitaayazd', name: 'ایتایز', username: 'eitaayazd', reward: 1000 },
-        { id: 'all_channels', name: 'کانال‌های من!', username: 'all_Channels', reward: 1000 },
-        { id: 'im_monk', name: 'راهب', username: 'im_monk', reward: 1000 },
-        { id: 'amoo_rasool', name: 'عمو رسول', username: 'Amoo_rasool', reward: 1000 }
+        { id: 'tech_nour',   name: 'تِک‌نور | Tech nour',       icon: '📢', username: 'Tech_nour',   reward: 1000 }, // ۲۲۰۶
+        { id: 'rasa_meme',   name: 'Rasa Meme | رسامیم',        icon: '😂', username: 'Rasa_Meme',   reward: 1000 }, // ۸۲۷
+        { id: 'tab_amoo',    name: '.تبلیغات عمو.',             icon: '📣', username: 'tab_amoo',    reward: 2000 }, // ۱۹۶
+        { id: 'ashob_daron', name: 'آشوب درون | Ashob daron',   icon: '📌', username: 'Ashob_daron', reward: 1000 }, // ۱۶۷
+
+        // --- جایگاه «چرخشی»: تبلیغات چرخشی کاربران (استثنا) ---
+        // این کارت عمداً داخل همین آرایه (بین بقیه، بر اساس تعداد اعضا) قرار
+        // گرفته تا جایگاهش در لیست درست باشد. بر خلاف بقیه‌ی کارت‌ها «یک‌بار برای
+        // همیشه» نیست، بلکه «یک‌بار برای هر slotVersion» است: کلید ذخیره‌ی پاداش
+        // این کارت ترکیب id+slotVersion است (chaharom:v2)، پس وقتی تبلیغ‌کننده
+        // عوض شد و slotVersion جلو رفت، کاربران قبلی دوباره واجد شرایط می‌شوند.
+        //
+        // برای عوض کردن تبلیغ‌کننده‌ی این جایگاه:
+        //   ۱. name/icon/username رو با اطلاعات تبلیغ‌کننده‌ی جدید جایگزین کن.
+        //   ۲. slotVersion رو یکی جلو ببر (مثلاً از 'v2' به 'v3'). اگه فراموشش کنی،
+        //      کسانی که برای تبلیغ‌کننده‌ی قبلی گرفته بودن نمی‌تونن دوباره بگیرن.
+        //   id ('chaharom') رو عوض نکن.
+        { id: 'chaharom', slotVersion: 'v2', name: 'هیچ؛', icon: '📌', username: 'hich030', reward: 3000 }, // ۱۳۶
+
+        { id: 'all_channels', name: 'کانال‌های من!',            username: 'all_Channels', reward: 1000 }, // ۵۳
+        { id: 'eitaayazd',    name: 'ایتایز | Eitaayz',          username: 'eitaayazd',    reward: 1000 }, // ۱۱
+        { id: 'razak_plus',   name: '.رازک پلاس.',               username: 'RazakPlus',    reward: 1000 }, // ۲
+        { id: 'avay_khiyal',  name: 'آواي‌خـــــیال',             username: 'avay_khiyal',  reward: 1000 }, // ۱
+        { id: 'im_monk',      name: 'راهب!',                     username: 'im_monk',      reward: 1000 }, // ۱
+        { id: 'amoo_rasool',  name: '.عمو رسول.',                username: 'Amoo_rasool',  reward: 1000 }  // ۱
     ],
 
-    // --- جایگاه «چهارم»: تبلیغات چرخشی کاربران (استثنا) ---
-    // بر خلاف ۵ کارت بالا، این جایگاه قراره بعداً بارها بین تبلیغ‌کننده‌های
-    // مختلف دست‌به‌دست بشه. برای همین «یک‌بار برای همیشه» معنی نداره؛ منطقش
-    // «یک‌بار برای هر slotVersion» است: کاربری که برای تبلیغ‌کننده‌ی فعلی
-    // (v1) پاداش گرفته، وقتی تبلیغ‌کننده عوض بشه (v2)، دوباره واجد شرایط
-    // پاداشه — چون واقعاً یک کانال جدید معرفی شده.
-    //
-    // برای عوض کردن تبلیغ‌کننده‌ی این جایگاه:
-    //   ۱. name/icon/username رو با اطلاعات تبلیغ‌کننده‌ی جدید جایگزین کن.
-    //   ۲. slotVersion رو یکی جلو ببر (مثلاً از 'v1' به 'v2'). این خط دقیقاً
-    //      همون چیزیه که به کاربرهای قبلی اجازه‌ی دریافت دوباره رو می‌ده؛
-    //      اگه فراموشش کنی، کسانی که برای تبلیغ‌کننده‌ی قبلی گرفته بودن
-    //      دیگه نمی‌تونن برای این‌یکی هم بگیرن.
-    rotatingSlot: {
-        id: 'chaharom',
-        slotVersion: 'v2',
-        name: 'هیچ',
-        icon: '📌',
-        username: 'hich030',
-        reward: 3000
-    }
+    // جایگاه چرخشی حالا داخل آرایه‌ی channels (با slotVersion) تعریف شده؛
+    // این مقدار باید null بماند تا کارتش دوبار نمایش داده نشود.
+    rotatingSlot: null
 };
