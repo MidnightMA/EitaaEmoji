@@ -27,7 +27,9 @@ window.MANDATORY_CHANNELS_ROTATION = {
     startDate: '2025-01-06T00:00:00+03:30',
     weeksPerChannel: 1, // هر کانال چند هفته پشت‌سرهم فعال بماند
     order: [
-        { id: 'tech_nour', type: 'channel', name: 'تِک‌نور', icon: '📢', username: 'Tech_nour', enabled: true },
-        { id: 'rasa_meme', type: 'channel', name: 'رسامیم', icon: '😂', username: 'Rasa_Meme', enabled: false } // موقت: فقط تک‌نور اجباری است. از 2026-11-16 (دوشنبه) به بعد دوباره true کن
+        // ترتیب: هفته‌های زوج (از startDate) = رسامیم، هفته‌های فرد = تک‌نور.
+        // این هفته (تا دوشنبه ۲۰۲۶-۱۱-۱۶ ساعت ۰۰:۰۰ به وقت تهران) نوبت رسامیم است.
+        { id: 'rasa_meme', type: 'channel', name: 'رسامیم', icon: '😂', username: 'Rasa_Meme', enabled: true },
+        { id: 'tech_nour', type: 'channel', name: 'تِک‌نور', icon: '📢', username: 'Tech_nour', enabled: true }
     ]
 };
