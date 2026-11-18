@@ -29,7 +29,7 @@ window.MANDATORY_CHANNELS_ROTATION = {
     order: [
         // ترتیب: هفته‌های زوج (از startDate) = رسامیم، هفته‌های فرد = تک‌نور.
         // این هفته (تا دوشنبه ۲۰۲۶-۱۱-۱۶ ساعت ۰۰:۰۰ به وقت تهران) نوبت رسامیم است.
-        { id: 'rasa_meme', type: 'channel', name: 'رسامیم', icon: '😂', username: 'Rasa_Meme', enabled: true },
-        { id: 'tech_nour', type: 'channel', name: 'تِک‌نور', icon: '📢', username: 'Tech_nour', enabled: true }
+        { id: 'tech_nour', type: 'channel', name: 'تِک‌نور', icon: '📢', username: 'Tech_nour', enabled: true },
+        { id: 'rasa_meme', type: 'channel', name: 'رسامیم', icon: '😂', username: 'Rasa_Meme', enabled: true }
     ]
 };
