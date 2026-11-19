@@ -78,7 +78,7 @@
 
     /* ---------------------------------------------------------------- state */
 
-    const DEFAULT_SETTINGS = { sound: true, darkMode: false, gender: null, avatarId: null, displayName: null };
+    const DEFAULT_SETTINGS = { sound: true, darkMode: false, theme: null, gender: null, avatarId: null, displayName: null };
 
     const S = {
         user: { id: 'guest', first_name: 'کاربر مهمان', photo_url: null },
@@ -688,17 +688,67 @@
 
     /* ---------------------------------------------------------------- theme */
 
+    // sky = [بالا، وسط، پایین] آسمان؛ tile = کاشی/دکمه؛ bar = نوار پایین. فقط برای پیش‌نمایش در انتخابگر است؛
+    // رنگ‌های واقعی هر تم در app.css (default و dark) و themes.css هستند.
+    const THEMES = [
+        { id: 'default', name: 'بنفش', sky: ['#3b1f9c', '#2b1b72', '#1a1150'], tile: ['#8b6cff', '#5337d6'], bar: ['#34217f', '#1c1260'] },
+        { id: 'dark',    name: 'شب',    sky: ['#1b1154', '#110c3c', '#0a0826'], tile: ['#8b6cff', '#5337d6'], bar: ['#34217f', '#1c1260'] },
+        { id: 'ocean',   name: 'اقیانوس', sky: ['#0f5c8f', '#0a3d6b', '#06213f'], tile: ['#5ad8ee', '#1a8fc4'], bar: ['#0f4f82', '#072a52'] },
+        { id: 'neon',    name: 'نئون',   sky: ['#2a0a4f', '#160533', '#07021a'], tile: ['#ff5ad8', '#b81aa8'], bar: ['#2c0f5e', '#120530'] },
+        { id: 'sunset',  name: 'غروب',  sky: ['#a2306f', '#6b1f6e', '#2d1052'], tile: ['#ff9a62', '#e2445f'], bar: ['#6b1f6e', '#34104f'] },
+        { id: 'desert',  name: 'شب‌های کویر', sky: ['#6b3f2a', '#4a2a22', '#241214'], tile: ['#efb26a', '#c4733a'], bar: ['#55302a', '#2a1512'] },
+        { id: 'forest',  name: 'جنگل',  sky: ['#1c6b4a', '#0f4a36', '#061f18'], tile: ['#62e6a8', '#1fa36b'], bar: ['#165c43', '#072b20'] }
+    ];
+    const THEME_IDS = THEMES.map(t => t.id);
+
+    // تم ذخیره‌شده‌ی کاربر؛ رکوردهای قدیمی (فقط darkMode) به‌طور خودکار به 'dark' یا 'default' می‌روند.
+    function currentThemeId() {
+        const t = S.settings.theme;
+        if (THEME_IDS.includes(t)) return t;
+        return S.settings.darkMode ? 'dark' : 'default';
+    }
+    function setThemeId(id) {
+        if (!THEME_IDS.includes(id)) id = 'default';
+        S.settings.theme = id;
+        S.settings.darkMode = id === 'dark'; // سازگاری با نسخه‌های قبلی
+    }
+
     function applyTheme() {
-        const dark = !!S.settings.darkMode;
-        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-        store.set('razak_theme', dark ? 'dark' : 'light');
-        const color = dark ? '#1b1154' : '#3b1f9c';
+        const id = currentThemeId();
+        const root = document.documentElement;
+        root.dataset.theme = id;
+        store.set('razak_theme', id);
+        // رنگ نوار بالای مرورگر/اتایا را از خود تم می‌خوانیم
+        let color = (THEMES.find(t => t.id === id) || THEMES[0]).sky[0];
+        try {
+            const v = getComputedStyle(root).getPropertyValue('--sky-1').trim();
+            if (v) color = v;
+        } catch (e) { /* ignore */ }
         const meta = document.querySelector('meta[name="theme-color"]');
         if (meta) meta.content = color;
         try {
             const wa = webApp();
             if (wa && wa.setHeaderColor) wa.setHeaderColor(color);
         } catch (e) { /* ignore */ }
+        const label = $('theme-label');
+        if (label) label.textContent = (THEMES.find(t => t.id === id) || THEMES[0]).name;
+        $$('.theme-opt').forEach(el => el.classList.toggle('is-on', el.dataset.theme === id));
+    }
+
+    function renderThemePicker() {
+        const grid = $('theme-grid');
+        if (!grid) return;
+        grid.innerHTML = THEMES.map(t => `
+            <button type="button" class="theme-opt" data-theme="${t.id}" aria-label="${esc(t.name)}">
+                <span class="theme-opt__sw" style="background:linear-gradient(180deg,${t.sky[0]} 0%,${t.sky[1]} 50%,${t.sky[2]} 100%)">
+                    <i class="t-logo"></i><i class="t-play"></i>
+                    <i class="t-tile" style="background:linear-gradient(180deg,${t.tile[0]},${t.tile[1]})"></i>
+                    <i class="t-tile2" style="background:linear-gradient(180deg,${t.tile[0]},${t.tile[1]})"></i>
+                    <i class="t-bar" style="background:linear-gradient(180deg,${t.bar[0]},${t.bar[1]})"></i>
+                </span>
+                <span>${esc(t.name)}</span>
+            </button>`).join('');
+        applyTheme();
     }
 
     /* --------------------------------------------------------------- avatar */
@@ -818,6 +868,7 @@
                 S.settings.gender = s.gender || null;
                 S.settings.displayName = s.displayName || null;
                 S.settings.darkMode = !!s.darkMode;
+                S.settings.theme = THEME_IDS.includes(s.theme) ? s.theme : null;
             }
         } catch (e) { /* ignore */ }
         renderUser();
@@ -1992,7 +2043,23 @@
             openModal('modal-changelog');
         });
         on('toggle-sound', 'change', e => { S.settings.sound = e.target.checked; Storage.save(); Sound.tap(); });
-        on('toggle-theme', 'change', e => { S.settings.darkMode = e.target.checked; applyTheme(); Storage.save(); });
+        on('btn-open-themes', 'click', () => {
+            Sound.tap();
+            closeModal('modal-settings');
+            openModal('modal-themes');
+        });
+        on('theme-grid', 'click', e => {
+            const b = e.target.closest('.theme-opt');
+            if (!b) return;
+            Sound.tap();
+            setThemeId(b.dataset.theme);
+            applyTheme();
+            Storage.save();
+        });
+        on('modal-themes', 'click', e => {
+            // با بستن انتخابگر به تنظیمات برمی‌گردیم
+            if (e.target.closest('[data-close]') || e.target.id === 'modal-themes') setTimeout(() => openModal('modal-settings'), 0);
+        });
 
         // profile
         $('gender-picker').addEventListener('click', e => {
@@ -2109,7 +2176,7 @@
     }
 
     async function boot() {
-        if (store.get('razak_theme') === 'dark') document.documentElement.dataset.theme = 'dark';
+        { const t = store.get('razak_theme'); document.documentElement.dataset.theme = THEME_IDS.includes(t) ? t : 'default'; }
         const dataReady = loadData();
 
         initEitaa();
@@ -2125,8 +2192,7 @@
         await Storage.load();
 
         $('toggle-sound').checked = !!S.settings.sound;
-        $('toggle-theme').checked = !!S.settings.darkMode;
-        applyTheme();
+        renderThemePicker();
         appReady = true;
         renderHome();
         announceUpdate();
