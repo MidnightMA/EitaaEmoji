@@ -19,6 +19,7 @@
     const BUCKET = isRealBucket(CFG.kvdbBucket) ? CFG.kvdbBucket : null;
     const SUGGEST_BUCKET = isRealBucket(CFG.suggestionsBucket) ? CFG.suggestionsBucket : BUCKET;
     const FEEDBACK_URL = CFG.feedbackUrl || 'https://eitaa.com/ferstadeh';
+    const AVATAR_BASE = CFG.avatarBase || 'carbar/';
 
     // Old saves stored 1/10 of today's coin values; records without this flag get migrated once.
     const ECONOMY_VERSION = 2;
@@ -29,9 +30,9 @@
 
     const $ = id => document.getElementById(id);
     const $$ = (sel, root) => (root || document).querySelectorAll(sel);
-    const FA = '۰۱۲۳۴۵۶۷۸۹';
-    const fa = v => String(v).replace(/\d/g, d => FA[d]);
-    const faNum = n => fa(String(Math.round(Number(n) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, '٬'));
+    // اعداد در کل بازی انگلیسی (0-9) نمایش داده می‌شوند. fa() نگه داشته شده تا بقیه‌ی کد دست نخورد.
+    const fa = v => String(v);
+    const faNum = n => String(Math.round(Number(n) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
     const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ESC[c]);
     const rand = n => Math.floor(Math.random() * n);
@@ -83,6 +84,7 @@
         user: { id: 'guest', first_name: 'کاربر مهمان', photo_url: null },
         globalScore: 0,
         totalEarned: 0,
+        savedAt: 0,        // آخرین زمان ذخیره؛ برای تشخیص نسخه‌ی جدیدتر بین گوشی و سرور
         progress: {},      // { catId: [solved level indexes] }
         levelStats: {},    // { catId: { index: { hints, stars } } }
         unlockedMedals: [],
@@ -178,6 +180,7 @@
             return JSON.stringify({
                 globalScore: S.globalScore,
                 totalEarned: S.totalEarned,
+                savedAt: S.savedAt,
                 economyVersion: ECONOMY_VERSION,
                 progress: S.progress,
                 levelStats: S.levelStats,
@@ -191,6 +194,7 @@
 
         save() {
             if (!this.ready) return;
+            S.savedAt = Date.now();
             store.set(this.key(), this.payload());
             if (!this.hasCloud()) return;
             this.pending = true;
@@ -202,8 +206,14 @@
             clearTimeout(this.timer);
             if (!this.pending || !this.ready || !this.hasCloud()) return;
             this.pending = false;
+            const retry = () => {
+                this.pending = true;
+                clearTimeout(this.timer);
+                this.timer = setTimeout(() => this.flush(), 15000);
+            };
             fetch(this.cloudUrl(), { method: 'PUT', body: this.payload(), keepalive: !!keepalive })
-                .catch(() => { this.pending = true; });
+                .then(res => { if (!res.ok) retry(); })
+                .catch(retry);
         },
 
         migrateEconomy(data, raw) {
@@ -229,6 +239,7 @@
 
             S.globalScore = Number(data.globalScore) || 0;
             S.totalEarned = typeof data.totalEarned === 'number' ? data.totalEarned : S.globalScore;
+            S.savedAt = Number(data.savedAt) || 0;
             if (upgrade) {
                 S.globalScore = upgrade.globalScore;
                 S.totalEarned = upgrade.totalEarned;
@@ -251,23 +262,71 @@
             if (upgrade) this.save();
         },
 
+        // پیشرفت نسخه‌ی قدیمی‌تر را در نسخه‌ی جدیدتر ادغام می‌کند. اگر چیزی عوض شد true برمی‌گرداند.
+        mergeProgress(win, lose) {
+            let changed = false;
+            const wp = win.progress && typeof win.progress === 'object' ? win.progress : (win.progress = {});
+            const lp = lose.progress && typeof lose.progress === 'object' ? lose.progress : {};
+            Object.keys(lp).forEach(cat => {
+                if (!Array.isArray(lp[cat])) return;
+                const cur = Array.isArray(wp[cat]) ? wp[cat] : (wp[cat] = []);
+                const have = new Set(cur);
+                lp[cat].forEach(i => { if (!have.has(i)) { cur.push(i); have.add(i); changed = true; } });
+            });
+            const ws = win.levelStats && typeof win.levelStats === 'object' ? win.levelStats : (win.levelStats = {});
+            const ls = lose.levelStats && typeof lose.levelStats === 'object' ? lose.levelStats : {};
+            Object.keys(ls).forEach(cat => {
+                const dst = ws[cat] && typeof ws[cat] === 'object' ? ws[cat] : (ws[cat] = {});
+                Object.keys(ls[cat] || {}).forEach(i => { if (!dst[i]) { dst[i] = ls[cat][i]; changed = true; } });
+            });
+            const wm = Array.isArray(win.unlockedMedals) ? win.unlockedMedals : (win.unlockedMedals = []);
+            (Array.isArray(lose.unlockedMedals) ? lose.unlockedMedals : []).forEach(m => { if (!wm.includes(m)) { wm.push(m); changed = true; } });
+            return changed;
+        },
+
         async load() {
-            let raw = null;
+            let cloudRaw = null;
             let cloudFailed = false;
             if (this.hasCloud()) {
                 try {
                     const res = await fetchWithTimeout(this.cloudUrl(), {}, 7000);
-                    if (res.ok) raw = await res.text();
+                    if (res.ok) cloudRaw = await res.text();
                     else if (res.status !== 404) cloudFailed = true;
                 } catch (e) {
                     cloudFailed = true;
                 }
             }
-            if (!raw) raw = store.get(this.key());
+            const localRaw = store.get(this.key());
+            const parse = r => {
+                if (!r) return null;
+                try { const d = JSON.parse(r); return d && typeof d === 'object' ? d : null; } catch (e) { return null; }
+            };
+            const cloudData = parse(cloudRaw);
+            const localData = parse(localRaw);
+
+            // هر کدام (سرور یا همین گوشی) جدیدتر ذخیره شده برنده است؛ اگر گوشی جدیدتر بود
+            // (مثلاً آپلود قبلی قطع شده) بعد از بارگذاری به سرور فرستاده می‌شود.
+            let raw;
+            let pushBack = false;
+            if (cloudRaw && !cloudData) {
+                raw = cloudRaw; // رکورد سرور خراب است؛ مثل قبل ذخیره قفل می‌شود تا رویش ننویسیم
+            } else if (cloudData && localData) {
+                const localNewer = (Number(localData.savedAt) || 0) > (Number(cloudData.savedAt) || 0);
+                const win = localNewer ? localData : cloudData;
+                const lose = localNewer ? cloudData : localData;
+                // سکه و تنظیمات از نسخه‌ی جدیدتر می‌آید، ولی مرحله‌ها/ستاره‌ها/مدال‌های دو نسخه ادغام می‌شود
+                const merged = this.mergeProgress(win, lose);
+                raw = merged ? JSON.stringify(win) : (localNewer ? localRaw : cloudRaw);
+                pushBack = localNewer || merged;
+            } else {
+                raw = cloudRaw || localRaw;
+                pushBack = !cloudRaw && !cloudFailed && !!localRaw && this.hasCloud();
+            }
 
             if (raw) {
                 try {
                     this.apply(JSON.parse(raw), raw);
+                    if (pushBack && this.ready) { this.pending = true; this.flush(); }
                 } catch (e) {
                     // corrupt record: keep saving locked so we don't overwrite it
                     console.error('saved data is unreadable, writes disabled', e);
@@ -644,12 +703,30 @@
 
     /* --------------------------------------------------------------- avatar */
 
-    const SHOULDERS = '<path d="M14 94 24 64h52l10 30z"/><circle cx="50" cy="36" r="19"/>';
-    const HAIR = '<path d="M28 26Q50 2 72 26v8Q50 14 28 34z" opacity=".8"/>';
+    // آواتارهای پیش‌فرض (طراحی تازه). neutral تک‌رنگ سفید است؛ boy و girl رنگی‌اند و
+    // کلاس av-char می‌گیرند تا کل قاب را پر کنند.
+    const AV_FACE = (skin, shade) => `<rect x="42" y="56" width="16" height="16" rx="6" fill="${shade}"/><circle cx="32.5" cy="45" r="4" fill="${skin}"/><circle cx="67.5" cy="45" r="4" fill="${skin}"/><ellipse cx="50" cy="43" rx="17.5" ry="19.5" fill="${skin}"/>`;
+    const AV_EYES = '<circle cx="43" cy="45" r="2.3" fill="#2b1d3a"/><circle cx="57" cy="45" r="2.3" fill="#2b1d3a"/><circle cx="43.8" cy="44.2" r=".8" fill="#fff"/><circle cx="57.8" cy="44.2" r=".8" fill="#fff"/><path d="M44.5 52.5Q50 57.5 55.5 52.5" fill="none" stroke="#b0553a" stroke-width="2.2" stroke-linecap="round"/><circle cx="38" cy="51" r="3" fill="#ff8a8a" opacity=".35"/><circle cx="62" cy="51" r="3" fill="#ff8a8a" opacity=".35"/>';
     const AVATAR_SVG = {
-        neutral: `<svg viewBox="0 0 100 100" aria-hidden="true">${SHOULDERS}</svg>`,
-        boy: `<svg viewBox="0 0 100 100" aria-hidden="true">${SHOULDERS}${HAIR}</svg>`,
-        girl: `<svg viewBox="0 0 100 100" aria-hidden="true"><rect x="19" y="28" width="13" height="42" rx="6.5" opacity=".8"/><rect x="68" y="28" width="13" height="42" rx="6.5" opacity=".8"/>${SHOULDERS}${HAIR}</svg>`
+        neutral: '<svg viewBox="0 0 100 100" aria-hidden="true"><path d="M14 94 24 64h52l10 30z"/><circle cx="50" cy="36" r="19"/></svg>',
+        boy: `<svg class="av-char" viewBox="0 0 100 100" aria-hidden="true">
+            <path d="M8 100C8 80 26 70 50 70s42 10 42 30z" fill="#ffc83d"/>
+            <path d="M39 71Q50 82 61 71" fill="none" stroke="#e8960c" stroke-width="3.5" stroke-linecap="round"/>
+            ${AV_FACE('#ffd9b8', '#f0b98d')}
+            <path d="M31.5 42C28 22 41 12 53 13.5 67 15 73 27 68.5 42 67 34 62 28.5 54 27.5 46 29.5 37 30 31.5 42z" fill="#3a2418"/>
+            <path d="M34 26Q40 20 47 19" fill="none" stroke="#6b4530" stroke-width="2" stroke-linecap="round" opacity=".7"/>
+            ${AV_EYES}</svg>`,
+        girl: `<svg class="av-char" viewBox="0 0 100 100" aria-hidden="true">
+            <path d="M26 46C22 22 36 10 50 10s28 12 24 36c3 18 2 34-4 42H30c-6-8-7-24-4-42z" fill="#4a2a1a"/>
+            <path d="M8 100C8 80 26 70 50 70s42 10 42 30z" fill="#7c4dff"/>
+            <path d="M37 71Q50 86 63 71" fill="#ffd9b8" stroke="#ffd9b8" stroke-width="1"/>
+            ${AV_FACE('#ffd9b8', '#f0b98d')}
+            <path d="M26.5 48C24 62 25.5 76 31 86c6-8 6-24 3-38z" fill="#4a2a1a"/>
+            <path d="M73.5 48C76 62 74.5 76 69 86c-6-8-6-24-3-38z" fill="#4a2a1a"/>
+            <path d="M30.5 43C28.5 24 40 13 52 13.5 65 14.5 72 25 69.5 43 64 36 58 29.5 49 26 42 32 36 38 30.5 43z" fill="#4a2a1a"/>
+            <path d="M40 22Q47 17 55 18" fill="none" stroke="#7a4a30" stroke-width="2" stroke-linecap="round" opacity=".7"/>
+            <path d="M63 23 71 17v12z" fill="#ffc83d"/><path d="M63 23 55 17v12z" fill="#ffc83d"/><circle cx="63" cy="23" r="3" fill="#ff8fab"/>
+            ${AV_EYES}</svg>`
     };
     const AVATAR_CACHE = 'razak_avatar_cache_';
     const brokenAvatars = new Set();
@@ -679,7 +756,7 @@
     }
 
     function avatarSrc() {
-        if (S.settings.avatarId) return `Profile/${S.settings.avatarId}.jpg`;
+        if (S.settings.avatarId) return `${AVATAR_BASE}${S.settings.avatarId}.jpg`;
         const url = S.user.photo_url;
         const cached = readAvatarCache();
         if (cached && (!url || cached.src === url)) return cached.data;
@@ -755,7 +832,7 @@
             html += `<p class="avatar-section">${label}</p><div class="avatar-grid">`;
             (photos[key] || []).forEach(n => {
                 const id = `profile_${key}${n}`;
-                html += `<button type="button" class="avatar-opt ${cur === id ? 'is-on' : ''}" data-avatar="${id}" data-gender="${key.toLowerCase()}"><img src="Profile/${id}.jpg" alt="" loading="lazy" decoding="async" width="64" height="64"></button>`;
+                html += `<button type="button" class="avatar-opt ${cur === id ? 'is-on' : ''}" data-avatar="${id}" data-gender="${key.toLowerCase()}"><img src="${AVATAR_BASE}${id}.jpg" alt="" loading="lazy" decoding="async" width="64" height="64"></button>`;
             });
             html += '</div>';
         });
@@ -803,7 +880,7 @@
             }
         });
         const pct = total ? Math.round((done / total) * 100) : 0;
-        $('continue-percent').textContent = fa(pct) + '٪';
+        $('continue-percent').textContent = fa(pct) + '%';
         $('continue-ring').style.setProperty('--p', pct);
         continueTarget = next;
         if (next) {
@@ -936,7 +1013,7 @@
                 side = '<span class="cat__soon">به‌زودی</span>';
                 sub = 'به‌زودی...';
             } else {
-                side = complete ? '<span class="cat__check">✓</span>' : `<span class="cat__pct">${fa(pct)}٪</span>`;
+                side = complete ? '<span class="cat__check">✓</span>' : `<span class="cat__pct">${fa(pct)}%</span>`;
                 sub = `${fa(done)} از ${fa(total)} مرحله${stars ? ` · ⭐ ${fa(stars)}` : ''}`;
             }
             return `<button type="button" class="cat ${locked ? 'is-locked' : ''} ${complete ? 'is-done' : ''}" data-cat="${esc(cat.id)}">
@@ -962,13 +1039,13 @@
 
     const MEDALS = [
         { id: 'first_blood', name: 'اولین قدم', icon: '👣', desc: 'اولین مرحله را حل کن', goal: () => 1, value: () => totalSolved() },
-        { id: 'proverbs_novice', name: 'ضرب‌المثل آموز', icon: '📜', desc: '۵۰ ضرب‌المثل را حل کن', goal: () => 50, value: () => doneSet('proverbs').size },
-        { id: 'movies_novice', name: 'فیلم‌باز', icon: '🎬', desc: '۵۰ فیلم و سریال را حل کن', goal: () => 50, value: () => doneSet('movies').size },
-        { id: 'countries_novice', name: 'جهانگرد', icon: '🌍', desc: '۵۰ کشور را حل کن', goal: () => 50, value: () => doneSet('countries').size },
-        { id: 'idioms_novice', name: 'اصطلاح‌دان', icon: '💬', desc: '۵۰ اصطلاح را حل کن', goal: () => 50, value: () => doneSet('idioms').size },
+        { id: 'proverbs_novice', name: 'ضرب‌المثل آموز', icon: '📜', desc: '50 ضرب‌المثل را حل کن', goal: () => 50, value: () => doneSet('proverbs').size },
+        { id: 'movies_novice', name: 'فیلم‌باز', icon: '🎬', desc: '50 فیلم و سریال را حل کن', goal: () => 50, value: () => doneSet('movies').size },
+        { id: 'countries_novice', name: 'جهانگرد', icon: '🌍', desc: '50 کشور را حل کن', goal: () => 50, value: () => doneSet('countries').size },
+        { id: 'idioms_novice', name: 'اصطلاح‌دان', icon: '💬', desc: '50 اصطلاح را حل کن', goal: () => 50, value: () => doneSet('idioms').size },
         // totalEarned, not the balance: spending on hints shouldn't block this one
-        { id: 'rich', name: 'ثروتمند', icon: '💎', desc: '۵۰٬۰۰۰ سکه کسب کن', goal: () => 50000, value: () => S.totalEarned },
-        { id: 'daily_fan', name: 'اهل چالش روزانه', icon: '🔥', desc: '۱۰ چالش روزانه را حل کن', goal: () => 10, value: () => S.dailyChallenge.completedCount || 0 },
+        { id: 'rich', name: 'ثروتمند', icon: '💎', desc: '50,000 سکه کسب کن', goal: () => 50000, value: () => S.totalEarned },
+        { id: 'daily_fan', name: 'اهل چالش روزانه', icon: '🔥', desc: '10 چالش روزانه را حل کن', goal: () => 10, value: () => S.dailyChallenge.completedCount || 0 },
         { id: 'all_categories', name: 'استاد بازی', icon: '👑', desc: 'همه دسته‌ها را صد‌درصد کامل کن', goal: () => totalLevels(), value: () => totalSolved() }
     ];
     const medalEarned = m => { const g = m.goal(); return g > 0 && m.value() >= g; };
@@ -1007,6 +1084,7 @@
     function renderProfile() {
         $('profile-name').textContent = displayName();
         paintAvatar($('profile-avatar'));
+        $$('.gender').forEach(el => { const ico = el.querySelector('.gender__ico'); if (ico && !ico.firstChild) ico.innerHTML = AVATAR_SVG[el.dataset.gender] || ''; });
         $$('.gender').forEach(el => el.classList.toggle('is-on', el.dataset.gender === S.settings.gender));
 
         const solved = totalSolved();
@@ -1022,7 +1100,7 @@
 
         const pct = total ? Math.min(100, (solved / total) * 100) : 0;
         $('profile-bar').style.width = pct + '%';
-        $('profile-progress-txt').textContent = `${faNum(solved)} از ${faNum(total)} مرحله (${fa(Math.round(pct))}٪)`;
+        $('profile-progress-txt').textContent = `${faNum(solved)} از ${faNum(total)} مرحله (\u200E${fa(Math.round(pct))}%\u200E)`;
 
         $('profile-cats').innerHTML = DB.categories.filter(c => c.levels.length).map(c => {
             const d = doneCount(c);
@@ -1468,7 +1546,7 @@
         syncCoins();
 
         $('win-answer').textContent = `«${session.level.answer.trim().replace(/\s+/g, ' ')}»`;
-        $('win-coins').textContent = coins > 0 ? '+' + faNum(coins) : (session.mode === 'daily' ? '۰' : '۰ (قبلاً گرفتی)');
+        $('win-coins').textContent = coins > 0 ? '+' + faNum(coins) : (session.mode === 'daily' ? '0' : '0 (قبلاً گرفتی)');
         const daily = session.mode === 'daily';
         $('win-stars-wrap').hidden = daily;
         $('stars-help').hidden = true;
@@ -1476,8 +1554,8 @@
         if (!daily) {
             $('win-stars').innerHTML = [1, 2, 3].map(n => `<i class="${n <= stars ? 'on' : ''}">★</i>`).join('');
             const hints = levelHints(session.cat.id, session.idx);
-            $('stars-help').innerHTML = '<div>⭐⭐⭐ بدون راهنما</div><div>⭐⭐ ۱ تا ۳ راهنما</div><div>⭐ بیشتر از ۳ راهنما</div>'
-                + `<b>${hints ? `این مرحله ${fa(hints)} بار راهنما گرفتی و ${fa(stars)} ستاره بردی.` : 'بدون هیچ راهنمایی حلش کردی؛ ۳ ستاره مال تو!'}</b>`;
+            $('stars-help').innerHTML = '<div>⭐⭐⭐ بدون راهنما</div><div>⭐⭐ 1 تا 3 راهنما</div><div>⭐ بیشتر از 3 راهنما</div>'
+                + `<b>${hints ? `این مرحله ${fa(hints)} بار راهنما گرفتی و ${fa(stars)} ستاره بردی.` : 'بدون هیچ راهنمایی حلش کردی؛ 3 ستاره مال تو!'}</b>`;
         }
         $('btn-next').textContent = daily ? 'برگشت به خانه 🏠' : 'مرحله‌ی بعد 🚀';
 
@@ -1585,7 +1663,6 @@
 
     function updateGiftDot() {
         const on = canClaimGift();
-        $('btn-settings').classList.toggle('has-dot', on);
         $('btn-free-coins').classList.toggle('has-dot', on);
         const tab = document.querySelector('.tab[data-tab="rewards"]');
         if (tab) tab.classList.toggle('has-dot', on);
@@ -1681,12 +1758,12 @@
 
     function validateSuggest(f) {
         const err = {};
-        if (f.name.length > 30) err['sg-name'] = 'نام حداکثر ۳۰ کاراکتر باشد.';
+        if (f.name.length > 30) err['sg-name'] = 'نام حداکثر 30 کاراکتر باشد.';
         if (!f.idea) err['sg-idea'] = 'لطفاً ایده یا انتقادت رو بنویس.';
-        else if (f.idea.length < 10) err['sg-idea'] = 'متن خیلی کوتاهه؛ حداقل ۱۰ کاراکتر بنویس.';
-        else if (f.idea.length > 1000) err['sg-idea'] = 'متن حداکثر ۱۰۰۰ کاراکتر باشد.';
+        else if (f.idea.length < 10) err['sg-idea'] = 'متن خیلی کوتاهه؛ حداقل 10 کاراکتر بنویس.';
+        else if (f.idea.length > 1000) err['sg-idea'] = 'متن حداکثر 1000 کاراکتر باشد.';
         if (f.emojis) {
-            if (f.emojis.length > 60) err['sg-emojis'] = 'ایموجی‌ها حداکثر ۶۰ کاراکتر باشند.';
+            if (f.emojis.length > 60) err['sg-emojis'] = 'ایموجی‌ها حداکثر 60 کاراکتر باشند.';
             else if (!/\p{Extended_Pictographic}/u.test(f.emojis)) err['sg-emojis'] = 'اینجا فقط ایموجی بنویس (مثلاً 🎬🍿).';
         }
         return err;
@@ -1750,7 +1827,7 @@
             Sound.success();
             suggestResult('ok', 'ممنون! پیشنهادت با موفقیت ارسال شد 💙', false);
             $('suggest-form').reset();
-            $('sg-count').textContent = '۰';
+            $('sg-count').textContent = '0';
         } else {
             Sound.error();
             suggestResult('err', 'ارسال انجام نشد (مشکل اتصال یا سرور). دوباره امتحان کن یا متن رو کپی کن و توی پیوی بفرست.', true);
