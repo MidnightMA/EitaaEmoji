@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#24166a">
+    <meta name="format-detection" content="telephone=no">
+    <title>رازک | بازی حدس ایموجی</title>
+
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preload" href="fonts/AradVF.ttf" as="font" type="font/ttf" crossorigin>
+    <!-- با هر نسخه‌ی جدید، عدد v این چهار خط را با version در config.js یکی کن -->
+    <link rel="preload" href="data.json?v=2.0.0" as="fetch" crossorigin>
+    <link rel="stylesheet" href="app.css?v=2.0.0">
+    <script src="https://developer.eitaa.com/eitaa-web-app.js" defer></script>
+    <script src="config.js?v=2.0.0" defer></script>
+    <script src="app.js?v=2.0.0" defer></script>
+</head>
+<body data-screen="home">
+    <div class="sky" aria-hidden="true">
+        <div class="sky__stars"></div>
+        <div class="sky__floaters" id="floaters"></div>
+    </div>
+
+    <!-- ============ خانه ============ -->
+    <section id="screen-home" class="screen is-active" data-tab="home">
+        <div class="page has-tabs">
+            <header class="topbar">
+                <button type="button" class="user" id="user-chip" aria-label="پروفایل">
+                    <span class="avatar" id="user-avatar"></span>
+                    <span class="user__text">
+                        <small>سلام،</small>
+                        <b id="user-name">کاربر عزیز</b>
+                    </span>
+                </button>
+                <div class="topbar__end">
+                    <span class="chip chip--star"><i class="ei" data-emoji="⭐"></i><b data-stars>0</b></span>
+                    <span class="chip chip--coin"><i class="ei" data-emoji="🪙"></i><b data-coins>0</b></span>
+                    <button type="button" class="icon-btn" id="btn-settings" aria-label="تنظیمات">
+                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    </button>
+                </div>
+            </header>
+
+            <div class="hero">
+                <div class="logo">
+                    <div class="logo__emoji"><i class="ei" data-emoji="🤔"></i></div>
+                    <h1 class="logo__text">رازک</h1>
+                    <p class="logo__sub">بازی حدس ایموجی</p>
+                </div>
+
+                <button type="button" class="continue" id="btn-continue">
+                    <span class="continue__shine" aria-hidden="true"></span>
+                    <span class="continue__play" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" width="28" height="28"><path d="M8.3 5v14l11-7z" fill="currentColor"/></svg>
+                    </span>
+                    <span class="continue__text">
+                        <b id="continue-label">شروع بازی</b>
+                        <small id="continue-sub"></small>
+                    </span>
+                    <span class="ring ring--continue" id="continue-ring"><span id="continue-percent">۰٪</span></span>
+                </button>
+
+                <button type="button" class="mode mode--daily" id="btn-daily">
+                    <span class="mode__ico"><i class="ei" data-emoji="⏱️"></i></span>
+                    <span class="mode__text">
+                        <b>چالش روزانه <span class="mode__badge" id="daily-badge">🔥 جدید</span></b>
+                        <small id="daily-sub">یه معمای ایموجی مخصوص امروز، هر روز عوض می‌شه</small>
+                    </span>
+                </button>
+
+                <div class="modes-row">
+                    <button type="button" class="mode mode--levels mode--sq" id="btn-mode-levels">
+                        <span class="mode__ico"><i class="ei" data-emoji="🧩"></i></span>
+                        <b>مرحله‌ها</b>
+                        <small>دسته‌بندی‌ها</small>
+                    </button>
+                    <button type="button" class="mode mode--board mode--sq" id="btn-mode-board">
+                        <span class="mode__ico"><i class="ei" data-emoji="🏆"></i></span>
+                        <b>برترین‌ها</b>
+                        <small><span class="soon">به‌زودی</span></small>
+                    </button>
+                </div>
+            </div>
+
+            <section class="promos">
+                <h2 class="section-title">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1.6" fill="currentColor" stroke="none"/></svg>
+                    کانال‌های ما
+                </h2>
+                <div class="promo-track" id="promo-track"></div>
+                <div class="promo-dots" id="promo-dots"></div>
+            </section>
+        </div>
+    </section>
+
+    <!-- ============ دسته‌بندی‌ها ============ -->
+    <section id="screen-categories" class="screen" data-tab="levels">
+        <div class="page has-tabs">
+            <header class="pagehead">
+                <h1 class="pagehead__title"><i class="ei" data-emoji="🧩"></i>مرحله‌ها</h1>
+                <span class="chip chip--coin"><i class="ei" data-emoji="🪙"></i><b data-coins>0</b></span>
+            </header>
+            <p class="pagehead__sub">یک دسته‌بندی انتخاب کن و از هرجا که ماندی ادامه بده.</p>
+            <div class="cat-list" id="cat-list"></div>
+        </div>
+    </section>
+
+    <!-- ============ جایزه‌ها ============ -->
+    <section id="screen-rewards" class="screen" data-tab="rewards">
+        <div class="page has-tabs">
+            <header class="pagehead">
+                <h1 class="pagehead__title"><i class="ei" data-emoji="🏆"></i>جایزه‌ها</h1>
+                <span class="chip chip--coin"><i class="ei" data-emoji="🪙"></i><b data-coins>0</b></span>
+            </header>
+            <div class="card summary">
+                <div class="ring ring--gold" id="medals-ring"><span id="medals-count">۰/۰</span></div>
+                <div class="summary__text">
+                    <b>افتخارات شما</b>
+                    <small>هر مدال یک هدف داره؛ یکی‌یکی بازشون کن</small>
+                </div>
+                <button type="button" class="btn btn--gold btn--sm" id="btn-free-coins">🎁 سکه رایگان</button>
+            </div>
+            <div class="medal-list" id="medal-list"></div>
+        </div>
+    </section>
+
+    <!-- ============ پروفایل ============ -->
+    <section id="screen-profile" class="screen" data-tab="profile">
+        <div class="page has-tabs">
+            <header class="pagehead">
+                <h1 class="pagehead__title"><i class="ei" data-emoji="😎"></i>پروفایل</h1>
+                <span class="chip chip--coin"><i class="ei" data-emoji="🪙"></i><b data-coins>0</b></span>
+            </header>
+
+            <div class="profile-head">
+                <button type="button" class="avatar avatar--xl" id="profile-avatar" aria-label="انتخاب عکس پروفایل"></button>
+                <div class="profile-head__name">
+                    <h2 id="profile-name">کاربر عزیز</h2>
+                    <button type="button" class="link-btn" id="btn-edit-name">✏️ تغییر نام</button>
+                </div>
+                <span class="rank" id="profile-rank">🌱 تازه‌وارد</span>
+            </div>
+
+            <div class="stats">
+                <div class="stat"><i class="ei" data-emoji="🪙"></i><b id="stat-coins">۰</b><small>سکه‌ی فعلی</small></div>
+                <div class="stat"><i class="ei" data-emoji="💰"></i><b id="stat-earned">۰</b><small>کل سکه‌ی کسب‌شده</small></div>
+                <div class="stat"><i class="ei" data-emoji="⭐"></i><b id="stat-stars">۰</b><small>ستاره</small></div>
+                <div class="stat"><i class="ei" data-emoji="🧩"></i><b id="stat-solved">۰</b><small>مرحله‌ی حل‌شده</small></div>
+                <div class="stat"><i class="ei" data-emoji="🔥"></i><b id="stat-daily">۰</b><small>چالش روزانه</small></div>
+                <div class="stat"><i class="ei" data-emoji="🏅"></i><b id="stat-medals">۰</b><small>مدال</small></div>
+            </div>
+
+            <h3 class="block-title">پیشرفت کلی</h3>
+            <div class="card progress-card">
+                <div class="bar"><i id="profile-bar"></i></div>
+                <p id="profile-progress-txt">۰ از ۰ مرحله</p>
+                <div class="cat-progress" id="profile-cats"></div>
+            </div>
+
+            <h3 class="block-title">افتخارات</h3>
+            <div class="medal-chips" id="profile-medals"></div>
+
+            <h3 class="block-title">جنسیت</h3>
+            <div class="gender-picker" id="gender-picker">
+                <button type="button" class="gender" data-gender="boy">
+                    <svg viewBox="0 0 100 100" aria-hidden="true"><path d="M14 94 24 64h52l10 30z"/><circle cx="50" cy="36" r="19"/><path d="M28 26Q50 2 72 26v8Q50 14 28 34z" opacity=".75"/></svg>
+                    <span>پسر</span>
+                </button>
+                <button type="button" class="gender" data-gender="girl">
+                    <svg viewBox="0 0 100 100" aria-hidden="true"><rect x="19" y="28" width="13" height="42" rx="6.5" opacity=".75"/><rect x="68" y="28" width="13" height="42" rx="6.5" opacity=".75"/><path d="M14 94 24 64h52l10 30z"/><circle cx="50" cy="36" r="19"/><path d="M28 26Q50 2 72 26v8Q50 14 28 34z" opacity=".75"/></svg>
+                    <span>دختر</span>
+                </button>
+            </div>
+            <button type="button" class="btn btn--violet btn--block" id="btn-avatar-picker">🖼️ انتخاب عکس پروفایل</button>
+        </div>
+    </section>
+
+    <!-- ============ انتخاب مرحله ============ -->
+    <section id="screen-levels" class="screen" data-tab="levels">
+        <header class="navbar">
+            <button type="button" class="back-btn" data-back aria-label="بازگشت"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+            <h1 class="navbar__title" id="levels-title">مرحله‌ها</h1>
+            <span class="chip chip--coin"><i class="ei" data-emoji="🪙"></i><b data-coins>0</b></span>
+        </header>
+        <div class="page">
+            <div class="card levels-summary" id="levels-summary"></div>
+            <div class="level-grid" id="level-grid"></div>
+        </div>
+    </section>
+
+    <!-- ============ بازی ============ -->
+    <section id="screen-game" class="screen screen--game">
+        <header class="navbar">
+            <button type="button" class="back-btn" data-back aria-label="بازگشت"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+            <h1 class="navbar__title" id="game-title">مرحله</h1>
+            <span class="chip chip--coin" id="game-coins"><i class="ei" data-emoji="🪙"></i><b data-coins>0</b></span>
+        </header>
+
+        <div class="game">
+            <div class="game__scroll">
+                <p class="notice" id="game-notice" hidden></p>
+                <div class="game__meta">
+                    <span class="pill" id="game-level">مرحله ۱</span>
+                    <span class="diff" id="game-diff"></span>
+                    <button type="button" class="hint-btn" id="btn-hint">💡 <span id="hint-cost">راهنما</span></button>
+                </div>
+                <div class="stage" id="stage"></div>
+                <div class="slots" id="slots"></div>
+                <div class="ad-slot" id="adly-container"></div>
+            </div>
+            <div class="kb" id="keyboard"></div>
+        </div>
+    </section>
+
+    <!-- ============ پیشنهادات ============ -->
+    <section id="screen-suggest" class="screen">
+        <header class="navbar">
+            <button type="button" class="back-btn" data-back aria-label="بازگشت"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+            <h1 class="navbar__title">ایده‌های شما 🫂</h1>
+            <span class="navbar__spacer"></span>
+        </header>
+        <div class="page">
+            <p class="suggest-intro" id="suggest-intro">هر ایده، انتقاد یا پیشنهادی داری، خوشحال می‌شیم بشنویم.</p>
+            <form class="card form" id="suggest-form" novalidate>
+                <label for="sg-name">نام شما <small>(اختیاری)</small></label>
+                <input id="sg-name" class="input" type="text" maxlength="30" autocomplete="off" placeholder="مثلاً: علی">
+                <p class="form__err" data-err="sg-name"></p>
+
+                <label for="sg-idea">ایده یا انتقاد شما</label>
+                <textarea id="sg-idea" class="input input--area" rows="5" maxlength="1000" placeholder="ایده، انتقاد یا پیشنهادت رو بنویس..."></textarea>
+                <p class="form__count"><span id="sg-count">۰</span> / ۱۰۰۰</p>
+                <p class="form__err" data-err="sg-idea"></p>
+
+                <label for="sg-emojis">ایموجی‌های پیشنهادی <small>(اختیاری)</small></label>
+                <input id="sg-emojis" class="input input--emoji" type="text" maxlength="60" autocomplete="off" placeholder="🎬🍿🎭">
+                <p class="form__err" data-err="sg-emojis"></p>
+
+                <button type="submit" class="btn btn--green btn--block" id="btn-suggest-send">ارسال پیشنهاد</button>
+                <div class="form__result" id="sg-result" role="status" aria-live="polite" hidden>
+                    <p id="sg-result-text"></p>
+                    <div class="btn-row" id="sg-result-actions" hidden>
+                        <button type="button" class="btn btn--ghost" id="btn-sg-copy">📋 کپی متن</button>
+                        <button type="button" class="btn btn--ghost" id="btn-sg-pv">💬 باز کردن پیوی</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <!-- ============ نوار پایین ============ -->
+    <nav class="tabbar" id="tabbar" aria-label="ناوبری اصلی">
+        <button type="button" class="tab is-active" data-tab="home"><i class="ei" data-emoji="🏠"></i><span>خانه</span></button>
+        <button type="button" class="tab" data-tab="levels"><i class="ei" data-emoji="🧩"></i><span>مرحله‌ها</span></button>
+        <button type="button" class="tab" data-tab="rewards"><i class="ei" data-emoji="🏆"></i><span>جایزه‌ها</span></button>
+        <button type="button" class="tab" data-tab="profile"><i class="ei" data-emoji="😎"></i><span>پروفایل</span></button>
+    </nav>
+
+    <!-- ============ پنجره‌ها ============ -->
+
+    <!-- عضویت اجباری هفتگی. هر هفته فقط بلوکی که data-channel-id آن با کانال
+         همان هفته یکی است نمایش داده می‌شود؛ اگر برای کانالی بلوک نباشد،
+         بلوک «default» نشان داده می‌شود. -->
+    <div class="modal" id="modal-join">
+        <div class="modal__card">
+            <div class="modal__badge modal__badge--blue">
+                <svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1.6" fill="#fff" stroke="none"/></svg>
+            </div>
+            <h2>قبل از شروع...</h2>
+
+            <div class="join-block" data-channel-id="tech_nour" hidden>
+                <p>💡 وقتشه بیشتر با تکنولوژی آشنا بشی 👇</p>
+                <ul class="perks">
+                    <li><span>📱</span> اخبار داغ دنیای تکنولوژی</li>
+                    <li><span>💻</span> معرفی ابزارها و برنامه‌های کاربردی</li>
+                    <li><span>🧠</span> ترفندهایی که واقعاً به کارت میان</li>
+                    <li><span>🔥</span> همیشه به‌روز، همیشه جدید</li>
+                </ul>
+            </div>
+            <div class="join-block" data-channel-id="rasa_meme" hidden>
+                <p>😂 با رسامیم شادی رو به خودت هدیه بده 👇</p>
+                <ul class="perks">
+                    <li><span>🤣</span> میم‌هایی که حسابی می‌خندونن</li>
+                    <li><span>🎭</span> طنزهایی که کیفش رو می‌بری</li>
+                    <li><span>😂</span> یه وقفه‌ی خنده وسط روزت</li>
+                    <li><span>🫠</span> برای هر سلیقه‌ای، یه چیزی داره</li>
+                </ul>
+            </div>
+            <div class="join-block" data-channel-id="partner" hidden>
+                <p>📌 یه کانال خوب دیگه هم منتظرته 👇</p>
+                <ul class="perks">
+                    <li><span>✨</span> محتوای تازه و متفاوت</li>
+                    <li><span>🫶</span> یه فضای دوست‌داشتنی برای تو</li>
+                    <li><span>🔥</span> همیشه چیز جدیدی برای دیدن داره</li>
+                </ul>
+            </div>
+            <div class="join-block" data-channel-id="default" hidden>
+                <p>برای ادامه‌ی بازی، به این کانال سر بزن و عضو شو 👇</p>
+            </div>
+
+            <div class="join-row">
+                <span id="join-channel-name"></span>
+                <button type="button" class="btn btn--gold btn--sm" id="btn-join-open">عضویت</button>
+            </div>
+            <button type="button" class="btn btn--ghost btn--block" id="btn-join-confirm">✅ عضو شدم، ادامه</button>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-win">
+        <div class="modal__card">
+            <div class="modal__badge modal__badge--win">
+                <svg viewBox="0 0 24 24" width="46" height="46" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            </div>
+            <h2>آفرین! درست حدس زدی 🎉</h2>
+            <p class="win-answer" id="win-answer"></p>
+            <div class="win-reward"><span>🪙 سکه‌ی این مرحله</span><b id="win-coins">+۱۰۰</b></div>
+            <div class="win-stars" id="win-stars-wrap" hidden>
+                <div class="stars stars--lg" id="win-stars"></div>
+                <button type="button" class="info-btn" id="btn-stars-info" aria-expanded="false" aria-label="ستاره‌ها چطور حساب می‌شوند؟">!</button>
+            </div>
+            <div class="stars-help" id="stars-help" hidden></div>
+            <button type="button" class="btn btn--green btn--block" id="btn-next">ادامه بازی 🚀</button>
+        </div>
+    </div>
+
+    <div class="modal modal--sheet" id="modal-settings" data-dismiss>
+        <div class="modal__card">
+            <div class="sheet-head">
+                <h2>تنظیمات</h2>
+                <button type="button" class="x-btn" data-close aria-label="بستن">×</button>
+            </div>
+            <div class="list">
+                <button type="button" class="list__item" id="btn-open-gifts">
+                    <span class="list__ico list__ico--gold"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zm0 0h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg></span>
+                    <span class="list__label">جایزه‌ی روزانه و سکه رایگان</span>
+                    <span class="list__chev">‹</span>
+                </button>
+                <button type="button" class="list__item" id="btn-open-feedback">
+                    <span class="list__ico list__ico--green"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+                    <span class="list__label">انتقادات و پیشنهادات</span>
+                    <span class="list__chev">‹</span>
+                </button>
+            </div>
+            <div class="list">
+                <label class="list__item">
+                    <span class="list__ico list__ico--orange"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4zM15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></svg></span>
+                    <span class="list__label">صداهای بازی</span>
+                    <input type="checkbox" class="switch" id="toggle-sound" checked>
+                </label>
+                <label class="list__item">
+                    <span class="list__ico list__ico--violet"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></svg></span>
+                    <span class="list__label">آسمان شب</span>
+                    <input type="checkbox" class="switch" id="toggle-theme">
+                </label>
+            </div>
+            <div class="list">
+                <button type="button" class="list__item" id="btn-open-changelog">
+                    <span class="list__ico list__ico--blue"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09zM12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg></span>
+                    <span class="list__label">تازه‌های نسخه</span>
+                    <span class="list__value" id="version-label"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal modal--sheet" id="modal-changelog" data-dismiss>
+        <div class="modal__card">
+            <div class="sheet-head">
+                <h2>تازه‌های رازک</h2>
+                <button type="button" class="x-btn" data-close aria-label="بستن">×</button>
+            </div>
+            <div class="sheet-body" id="changelog-body"></div>
+        </div>
+    </div>
+
+    <div class="modal modal--sheet" id="modal-gifts" data-dismiss>
+        <div class="modal__card">
+            <div class="sheet-head">
+                <h2>🎁 جایزه</h2>
+                <button type="button" class="x-btn" data-close aria-label="بستن">×</button>
+            </div>
+            <div class="sheet-body">
+                <div class="gift-card" id="gift-card">
+                    <b class="gift-card__title">🎁 سکه‌ی روزانه</b>
+                    <small>هر روز بیا اینجا و سکه‌ی مفتی بگیر 😉</small>
+                    <div class="week" id="gift-week"></div>
+                    <button type="button" class="btn btn--gold btn--block" id="btn-claim-gift">🎁 دریافت سکه‌ی امروز</button>
+                </div>
+                <h3 class="block-title">عضویت در کانال‌ها</h3>
+                <div class="reward-list" id="reward-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-reward-info" data-dismiss>
+        <div class="modal__card">
+            <div class="modal__badge modal__badge--blue">
+                <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1.6" fill="#fff" stroke="none"/></svg>
+            </div>
+            <h2>قبل از عضویت</h2>
+            <p id="reward-info-text"></p>
+            <button type="button" class="btn btn--violet btn--block" id="btn-reward-enter">ورود به کانال</button>
+            <button type="button" class="btn btn--ghost btn--block" data-close>بعداً</button>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-reminder" data-dismiss>
+        <div class="modal__card">
+            <div class="modal__emoji"><i class="ei" data-emoji="🎁"></i></div>
+            <h2>سکه‌ی امروزت منتظره!</h2>
+            <p>هنوز سکه‌ی روزانه‌ات رو نگرفتی؛ بیا و بگیرش.</p>
+            <button type="button" class="btn btn--gold btn--block" id="btn-reminder-go">برو بگیر</button>
+            <button type="button" class="btn btn--ghost btn--block" data-close>بعداً</button>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-name" data-dismiss>
+        <form class="modal__card" id="name-form">
+            <h2>تغییر نام</h2>
+            <p>اسمی که می‌خوای توی بازی دیده بشه رو بنویس.</p>
+            <input type="text" id="name-input" class="input" maxlength="40" placeholder="نام شما" autocomplete="off">
+            <div class="btn-row">
+                <button type="button" class="btn btn--ghost" data-close>انصراف</button>
+                <button type="submit" class="btn btn--violet">ذخیره</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="modal modal--sheet" id="modal-avatar" data-dismiss>
+        <div class="modal__card">
+            <div class="sheet-head">
+                <h2>🖼️ عکس پروفایل</h2>
+                <button type="button" class="x-btn" data-close aria-label="بستن">×</button>
+            </div>
+            <div class="sheet-body" id="avatar-grid"></div>
+        </div>
+    </div>
+
+    <div class="toasts" id="toasts" aria-live="polite"></div>
+</body>
+</html>
