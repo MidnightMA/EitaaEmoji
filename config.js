@@ -44,7 +44,6 @@ window.RAZAK_CONFIG = {
         startDate: '2025-01-06T00:00:00+03:30',
         weeksPerChannel: 1,
         channels: [
-            { id: 'avay_khiyal', name: 'آوای‌خیال', icon: '🕊️', username: 'avay_khiyal', enabled: true },
             { id: 'tech_nour', name: 'تِک‌نور', icon: '📢', username: 'Tech_nour', enabled: true },
             { id: 'rasa_meme', name: 'رسامیم', icon: '😂', username: 'Rasa_Meme', enabled: true },
             // جایگاه کانال همکار. name فقط اسم واقعی کانال باشد (کلمه‌ی «تبلیغ» نگذار).
@@ -56,12 +55,12 @@ window.RAZAK_CONFIG = {
     // ---------- کارت‌های «کانال‌های ما» در صفحه‌ی اصلی ----------
     // type: 'channel' یا 'ad'. theme: tech | gold | meme | default
     // icon: tech | poetry | meme | ad (وقتی عکس نباشد)
-    // photo: مسیر عکس مربعی (حدود ۳۰۰×۳۰۰). active: false = مخفی
+    // photo: مسیر عکس مربعی داخل پوشه‌ی prof/ (حدود ۳۰۰×۳۰۰). active: false = مخفی
     promos: [
-        { type: 'ad', name: 'تبلیغات عمو', desc: 'برای رزرو تبلیغات پیام بدهید.', link: 'https://eitaa.com/tab_amoo', icon: 'ad', photo: 'photos/tab_amoo.webp', badge: 'Ads', cta: 'مشاهده' },
-        { type: 'channel', name: 'تِک نور | 𝙏𝙚𝙘𝙝 𝙣𝙤𝙪𝙧', desc: 'اخبار هوش مصنوعی و آپدیت‌های بازی رو اینجا دنبال کن', link: 'https://eitaa.com/Tech_nour', icon: 'tech', photo: 'photos/tech_nour.webp', theme: 'tech' },
-        { type: 'channel', name: 'Rasa Meme | رسامیم', desc: 'یسری میم جذاب و فان', link: 'https://eitaa.com/Rasa_Meme', icon: 'meme', photo: 'photos/rasa_meme.webp', theme: 'meme' },
-        { type: 'channel', name: 'آشوب درون | Ashob daron', desc: 'آشوب درون؛ جایی برای حرف‌های ناگفته، احساسات عمیق و افکاری که در سکوت جریان دارن.', link: 'https://eitaa.com/Ashob_daron', icon: 'poetry', photo: 'photos/ashob_daron.webp', theme: 'gold' }
+        { type: 'ad', name: 'تبلیغات عمو', desc: 'برای رزرو تبلیغات پیام بدهید.', link: 'https://eitaa.com/tab_amoo', icon: 'ad', photo: 'prof/tab_ligh.webp', badge: 'Ads', cta: 'مشاهده' },
+        { type: 'channel', name: 'تِک نور | 𝙏𝙚𝙘𝙝 𝙣𝙤𝙪𝙧', desc: 'اخبار هوش مصنوعی و آپدیت‌های بازی رو اینجا دنبال کن', link: 'https://eitaa.com/Tech_nour', icon: 'tech', photo: 'prof/tech_nour.webp', theme: 'tech' },
+        { type: 'channel', name: 'Rasa Meme | رسامیم', desc: 'یسری میم جذاب و فان', link: 'https://eitaa.com/Rasa_Meme', icon: 'meme', photo: 'prof/rasa_meme.webp', theme: 'meme' },
+        { type: 'channel', name: 'آشوب درون | Ashob daron', desc: 'آشوب درون؛ جایی برای حرف‌های ناگفته، احساسات عمیق و افکاری که در سکوت جریان دارن.', link: 'https://eitaa.com/Ashob_daron', icon: 'poetry', photo: 'prof/ashob_dar.webp', theme: 'gold' }
     ],
     promoInterval: 5000,
 
@@ -73,7 +72,6 @@ window.RAZAK_CONFIG = {
         { id: 'ashob_daron', name: 'آشوب درون | Ashob daron', username: 'Ashob_daron', reward: 1000 },
         { id: 'tab_amoo', name: 'تبلیغات عمو', username: 'tab_amoo', reward: 2000 },
         { id: 'razak_plus', name: 'رازک | Razak', username: 'RazakPlus', reward: 1000 },
-        { id: 'avay_khiyal', name: 'آوای خیال', username: 'avay_khiyal', reward: 1000 },
         { id: 'eitaayazd', name: 'ایتایز', username: 'eitaayazd', reward: 1000 },
         { id: 'all_channels', name: 'کانال‌های من!', username: 'all_Channels', reward: 1000 },
         { id: 'im_monk', name: 'راهب', username: 'im_monk', reward: 1000 },
@@ -83,7 +81,9 @@ window.RAZAK_CONFIG = {
     // (مثلاً v2 → v3) تا کاربرها دوباره بتوانند سکه بگیرند.
     rewardRotatingSlot: { id: 'chaharom', slotVersion: 'v2', name: 'هیچ', username: 'hich030', reward: 3000 },
 
-    // ---------- عکس‌های آماده‌ی پروفایل (پوشه‌ی Profile/) ----------
+    // ---------- عکس‌های آماده‌ی پروفایل ----------
+    // پوشه‌ی عکس‌ها (حتماً با / تمام شود و دقیقاً هم‌نام پوشه‌ی مخزن باشد؛ حروف بزرگ/کوچک مهم است)
+    avatarBase: 'carbar/',
     avatarPhotos: {
         Boy: [1, 2, 3, 4, 5, 6, 7, 10, 11, 12],
         Girl: [1, 3, 4, 5, 6, 7, 8, 9, 10, 11]
