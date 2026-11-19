@@ -1,0 +1,79 @@
+/*
+ * رازک — تم‌ها
+ * استفاده: این فایل را بعد از app.css در index.html وصل کن:
+ *   <link rel="stylesheet" href="themes.css?v=2.0.0">
+ * و با  document.documentElement.dataset.theme = 'ocean'  تم را عوض کن.
+ * نام‌ها: ocean | neon | sunset | desert | forest  (و dark که در app.css است)
+ * هر تم فقط متغیرهای رنگ را عوض می‌کند؛ منطق بازی دست‌نخورده می‌ماند.
+ */
+
+/* ---------- اقیانوس ---------- */
+:root[data-theme="ocean"] {
+    --modal-1: #0e5a94; --modal-2: #06284d; --toast-bg: #0a3f6d;
+    --m1: #4fd1e8; --m2: #1a8fc4; --m3: #0b5a86;
+    --sky-1: #0f5c8f; --sky-2: #0a3d6b; --sky-3: #06213f;
+    --glow-a: rgba(0,200,220,.45); --glow-b: rgba(40,120,255,.35);
+    --panel: #0c4577; --panel-2: #08345f;
+    --violet: #4fd1e8; --violet-2: #1a8fc4; --violet-deep: #0b5a86;
+    --tile-1: #5ad8ee; --tile-2: #1a8fc4; --tile-shadow: #0b5a86;
+    --key-1: #5ad8ee; --key-2: #1a8fc4;
+    --bar-1: #0f4f82; --bar-2: #072a52;
+    --logo-stroke: rgba(10,70,120,.55); --logo-shadow: #0a4f8a;
+}
+
+/* ---------- نئون ---------- */
+:root[data-theme="neon"] {
+    --modal-1: #4a1480; --modal-2: #12062e; --toast-bg: #1a0838;
+    --m1: #ff4fd8; --m2: #c21fb0; --m3: #6e0f66;
+    --sky-1: #2a0a4f; --sky-2: #160533; --sky-3: #07021a;
+    --glow-a: rgba(255,40,180,.5); --glow-b: rgba(0,230,255,.38);
+    --panel: #1f0a45; --panel-2: #14072e;
+    --violet: #ff4fd8; --violet-2: #c21fb0; --violet-deep: #6e0f66;
+    --tile-1: #ff5ad8; --tile-2: #b81aa8; --tile-shadow: #6e0f66;
+    --key-1: #ff6ae0; --key-2: #b81aa8;
+    --bar-1: #2c0f5e; --bar-2: #120530;
+    --logo-stroke: rgba(0,230,255,.6); --logo-shadow: #8a0f86;
+}
+
+/* ---------- غروب ---------- */
+:root[data-theme="sunset"] {
+    --modal-1: #8a2a74; --modal-2: #34104f; --toast-bg: #4a1658;
+    --m1: #ff8a5c; --m2: #ea4e6a; --m3: #9c2447;
+    --sky-1: #a2306f; --sky-2: #6b1f6e; --sky-3: #2d1052;
+    --glow-a: rgba(255,140,60,.5); --glow-b: rgba(255,60,120,.35);
+    --panel: #5a1c66; --panel-2: #451552;
+    --violet: #ff8a5c; --violet-2: #ea4e6a; --violet-deep: #9c2447;
+    --tile-1: #ff9a62; --tile-2: #e2445f; --tile-shadow: #9c2447;
+    --key-1: #ff9a62; --key-2: #e2445f;
+    --bar-1: #6b1f6e; --bar-2: #34104f;
+    --logo-stroke: rgba(150,30,80,.55); --logo-shadow: #9c2447;
+}
+
+/* ---------- شب‌های کویر ---------- */
+:root[data-theme="desert"] {
+    --modal-1: #6a3c2c; --modal-2: #2a1512; --toast-bg: #3a2019;
+    --m1: #efb26a; --m2: #c4733a; --m3: #7a3f1c;
+    --sky-1: #6b3f2a; --sky-2: #4a2a22; --sky-3: #241214;
+    --glow-a: rgba(255,170,60,.4); --glow-b: rgba(200,90,50,.3);
+    --panel: #4d2d26; --panel-2: #3a2019;
+    --violet: #e8a45c; --violet-2: #c4733a; --violet-deep: #7a3f1c;
+    --tile-1: #efb26a; --tile-2: #c4733a; --tile-shadow: #7a3f1c;
+    --key-1: #efb26a; --key-2: #c4733a;
+    --bar-1: #55302a; --bar-2: #2a1512;
+    --logo-stroke: rgba(110,50,20,.55); --logo-shadow: #7a3f1c;
+}
+
+/* ---------- جنگل ---------- */
+:root[data-theme="forest"] {
+    --modal-1: #17704c; --modal-2: #072b20; --toast-bg: #0e4331;
+    --m1: #62e6a8; --m2: #1fa36b; --m3: #0d6a40;
+    --sky-1: #1c6b4a; --sky-2: #0f4a36; --sky-3: #061f18;
+    --glow-a: rgba(80,220,140,.4); --glow-b: rgba(30,160,120,.3);
+    --panel: #14583f; --panel-2: #0e4331;
+    --violet: #5fe0a0; --violet-2: #1fa36b; --violet-deep: #0d6a40;
+    --tile-1: #62e6a8; --tile-2: #1fa36b; --tile-shadow: #0d6a40;
+    --key-1: #62e6a8; --key-2: #1fa36b;
+    --bar-1: #165c43; --bar-2: #072b20;
+    --logo-stroke: rgba(10,90,60,.55); --logo-shadow: #0d6a40;
+}
+
